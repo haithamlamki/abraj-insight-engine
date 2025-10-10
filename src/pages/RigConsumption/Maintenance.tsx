@@ -77,6 +77,7 @@ const Maintenance = () => {
         <ExcelUploadZone
           title="Upload Maintenance Report"
           templateName="maintenance_template.xlsx"
+          reportType="maintenance"
         />
       }
     />

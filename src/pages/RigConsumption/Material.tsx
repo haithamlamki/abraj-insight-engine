@@ -77,6 +77,7 @@ const Material = () => {
         <ExcelUploadZone
           title="Upload Material Report"
           templateName="material_template.xlsx"
+          reportType="material"
         />
       }
     />

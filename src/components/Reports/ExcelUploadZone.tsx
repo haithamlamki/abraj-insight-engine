@@ -1,20 +1,32 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Upload, FileSpreadsheet, Download, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { parseExcelFile } from "@/lib/excelParser";
+import { downloadTemplate } from "@/lib/excelTemplates";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface ExcelUploadZoneProps {
   title: string;
   templateName: string;
-  onUpload?: (file: File) => void;
+  reportType: string;
+  onDataParsed?: (data: any[]) => void;
 }
 
-export const ExcelUploadZone = ({ title, templateName, onUpload }: ExcelUploadZoneProps) => {
+export const ExcelUploadZone = ({ 
+  title, 
+  templateName, 
+  reportType,
+  onDataParsed 
+}: ExcelUploadZoneProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadStatus, setUploadStatus] = useState<"idle" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -50,19 +62,45 @@ export const ExcelUploadZone = ({ title, templateName, onUpload }: ExcelUploadZo
     }
   };
 
-  const handleFileUpload = (file: File) => {
+  const handleFileUpload = async (file: File) => {
     setUploadedFile(file);
-    setUploadStatus("success");
-    toast.success(`File "${file.name}" uploaded successfully`);
-    
-    if (onUpload) {
-      onUpload(file);
+    setUploading(true);
+    setUploadStatus("idle");
+    setErrorMessage('');
+
+    try {
+      const result = await parseExcelFile(file);
+      
+      if (result.errors.length > 0) {
+        setUploadStatus("error");
+        setErrorMessage(`Found ${result.errors.length} errors in the file.`);
+        toast.error(`Validation failed: ${result.errors.length} errors found`);
+      } else {
+        setUploadStatus("success");
+        const firstSheet = Object.keys(result.data)[0];
+        const data = result.data[firstSheet];
+        
+        if (onDataParsed) {
+          onDataParsed(data);
+        }
+        
+        toast.success(`File "${file.name}" uploaded successfully - ${data.length} rows parsed`);
+      }
+    } catch (error) {
+      setUploadStatus("error");
+      setErrorMessage('Failed to parse Excel file. Please ensure it matches the template format.');
+      toast.error("Failed to parse the Excel file");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
   const handleDownloadTemplate = () => {
-    toast.info("Downloading Excel template...");
-    // In a real implementation, this would download the actual template file
+    downloadTemplate(reportType, templateName);
+    toast.success("Template downloaded successfully");
   };
 
   return (
@@ -73,6 +111,21 @@ export const ExcelUploadZone = ({ title, templateName, onUpload }: ExcelUploadZo
           <CardDescription>Upload Excel files or download the template to get started</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {uploadStatus === 'success' && (
+            <Alert>
+              <CheckCircle2 className="h-4 w-4" />
+              <AlertDescription>
+                File uploaded and parsed successfully!
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {uploadStatus === 'error' && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
           <div
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -99,17 +152,19 @@ export const ExcelUploadZone = ({ title, templateName, onUpload }: ExcelUploadZo
               </div>
 
               <input
+                ref={fileInputRef}
                 type="file"
                 accept=".xlsx,.xls"
                 onChange={handleFileSelect}
                 className="hidden"
                 id="file-upload"
+                disabled={uploading}
               />
               <label htmlFor="file-upload">
-                <Button asChild variant="outline">
+                <Button asChild variant="outline" disabled={uploading}>
                   <span className="cursor-pointer flex items-center gap-2">
                     <FileSpreadsheet className="h-4 w-4" />
-                    Browse Files
+                    {uploading ? 'Processing...' : 'Browse Files'}
                   </span>
                 </Button>
               </label>

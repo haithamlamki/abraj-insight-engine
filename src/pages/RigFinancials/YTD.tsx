@@ -76,6 +76,7 @@ const YTD = () => {
         <ExcelUploadZone
           title="Upload YTD Report"
           templateName="ytd_template.xlsx"
+          reportType="ytd"
         />
       }
     />

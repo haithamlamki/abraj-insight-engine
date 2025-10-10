@@ -87,6 +87,7 @@ const WorkOrders = () => {
         <ExcelUploadZone
           title="Upload Work Order Report"
           templateName="work_orders_template.xlsx"
+          reportType="work_orders"
         />
       }
     />

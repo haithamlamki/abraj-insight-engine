@@ -82,6 +82,7 @@ const CustomerSatisfaction = () => {
         <ExcelUploadZone
           title="Upload Satisfaction Report"
           templateName="satisfaction_template.xlsx"
+          reportType="customer_satisfaction"
         />
       }
     />

@@ -89,6 +89,7 @@ const Revenue = () => {
         <ExcelUploadZone
           title="Upload Revenue Report"
           templateName="revenue_template.xlsx"
+          reportType="revenue"
         />
       }
     />

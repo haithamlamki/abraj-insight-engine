@@ -88,6 +88,7 @@ const BillingNPT = () => {
         <ExcelUploadZone
           title="Upload NPT Report"
           templateName="npt_template.xlsx"
+          reportType="billing_npt"
         />
       }
     />

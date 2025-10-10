@@ -77,6 +77,7 @@ const Stock = () => {
         <ExcelUploadZone
           title="Upload Stock Report"
           templateName="stock_template.xlsx"
+          reportType="stock"
         />
       }
     />

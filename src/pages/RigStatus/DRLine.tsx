@@ -79,6 +79,7 @@ const DRLine = () => {
         <ExcelUploadZone
           title="Upload DR Line Report"
           templateName="dr_line_template.xlsx"
+          reportType="dr_line"
         />
       }
     />

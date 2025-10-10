@@ -86,6 +86,7 @@ const WellTracker = () => {
         <ExcelUploadZone
           title="Upload Well Tracker Report"
           templateName="well_tracker_template.xlsx"
+          reportType="well_tracker"
         />
       }
     />

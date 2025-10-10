@@ -82,6 +82,7 @@ const Utilization = () => {
         <ExcelUploadZone
           title="Upload Utilization Report"
           templateName="utilization_template.xlsx"
+          reportType="utilization"
         />
       }
     />

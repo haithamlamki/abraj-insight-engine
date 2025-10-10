@@ -85,6 +85,7 @@ const Fuel = () => {
         <ExcelUploadZone
           title="Upload Fuel Report"
           templateName="fuel_template.xlsx"
+          reportType="fuel"
         />
       }
     />

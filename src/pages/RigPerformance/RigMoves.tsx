@@ -88,6 +88,7 @@ const RigMoves = () => {
         <ExcelUploadZone
           title="Upload Rig Move Report"
           templateName="rig_moves_template.xlsx"
+          reportType="rig_moves"
         />
       }
     />
