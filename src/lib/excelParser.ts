@@ -126,6 +126,61 @@ export function validateWorkOrdersData(data: any[]): ValidationError[] {
 }
 
 /**
+ * Validate billing NPT data
+ */
+export function validateBillingNptData(data: any[]): ValidationError[] {
+  const errors: ValidationError[] = [];
+  
+  data.forEach((row, index) => {
+    if (!row.Rig && !row['Rig Number'] && !row['Rig Numb']) {
+      errors.push({
+        row: index + 2,
+        column: 'Rig',
+        message: 'Rig number is required',
+        value: row.Rig || row['Rig Number'] || row['Rig Numb']
+      });
+    }
+    
+    // Validate date - this is critical as the database requires it
+    const dateValue = row.Date;
+    if (!dateValue || dateValue === null || dateValue === undefined || dateValue === '') {
+      errors.push({
+        row: index + 2,
+        column: 'Date',
+        message: 'Date is required and cannot be empty',
+        value: dateValue
+      });
+    } else {
+      // Check if the date can be parsed
+      const parsed = parseDate(dateValue);
+      if (!parsed) {
+        errors.push({
+          row: index + 2,
+          column: 'Date',
+          message: 'Invalid date format. Please use a valid date.',
+          value: dateValue
+        });
+      }
+    }
+    
+    // Validate hours if present
+    if (row['Hrs.'] !== null && row['Hrs.'] !== undefined && row['Hrs.'] !== '') {
+      const hours = parseNumeric(row['Hrs.']);
+      if (hours === null) {
+        errors.push({
+          row: index + 2,
+          column: 'Hrs.',
+          message: 'Hours must be a valid number',
+          value: row['Hrs.']
+        });
+      }
+    }
+  });
+  
+  return errors;
+}
+
+/**
  * Helper function to parse numeric values that might have % or other characters
  */
 function parseNumeric(value: any): number | null {

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, FileSpreadsheet, Download, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { parseExcelFile, mapExcelToDbFields } from "@/lib/excelParser";
+import { parseExcelFile, mapExcelToDbFields, validateBillingNptData, validateRevenueData, validateWorkOrdersData } from "@/lib/excelParser";
 import { downloadTemplate } from "@/lib/excelTemplates";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useBulkSaveReportData } from "@/hooks/useReportData";
@@ -75,25 +75,51 @@ export const ExcelUploadZone = ({
     try {
       const result = await parseExcelFile(file);
       
-      if (result.errors.length > 0) {
+      // Collect data from ALL sheets
+      const sheetNames = Object.keys(result.data);
+      const allRows = sheetNames.reduce((acc: any[], name) => acc.concat(result.data[name] || []), [] as any[]);
+
+      // Validate data based on report type
+      let validationErrors: any[] = [];
+      if (reportType === 'billing_npt') {
+        validationErrors = validateBillingNptData(allRows);
+      } else if (reportType === 'revenue') {
+        validationErrors = validateRevenueData(allRows);
+      } else if (reportType === 'work_orders') {
+        validationErrors = validateWorkOrdersData(allRows);
+      }
+
+      if (result.errors.length > 0 || validationErrors.length > 0) {
         setUploadStatus("error");
-        setErrorMessage(`Found ${result.errors.length} errors in the file.`);
-        toast.error(`Validation failed: ${result.errors.length} errors found`);
+        const totalErrors = result.errors.length + validationErrors.length;
+        const errorDetails = validationErrors.slice(0, 3).map(e => 
+          `Row ${e.row}, ${e.column}: ${e.message}`
+        ).join('\n');
+        setErrorMessage(`Found ${totalErrors} validation error(s). First errors:\n${errorDetails}`);
+        toast.error(`Validation failed: ${totalErrors} errors found`);
       } else {
         setUploadStatus("success");
-        // Collect data from ALL sheets instead of only the first
-        const sheetNames = Object.keys(result.data);
-        const allRows = sheetNames.reduce((acc: any[], name) => acc.concat(result.data[name] || []), [] as any[]);
-
         // Map Excel data to database format
         const mappedDataRaw = allRows.map(row => mapExcelToDbFields(row, reportType));
+        
         // Debug first row mapping
         if (allRows.length > 0) {
           console.log('[ExcelUploadZone] First row original:', allRows[0]);
           console.log('[ExcelUploadZone] First row mapped:', mappedDataRaw[0]);
         }
-        // Filter out rows missing required fields (rig, month, year)
-        const mappedData = mappedDataRaw.filter((row: any) => row && row.rig && row.month && (row.year !== null && row.year !== undefined && row.year !== ''));
+        
+        // Filter out rows missing required fields or with null dates
+        let mappedData;
+        if (reportType === 'billing_npt') {
+          mappedData = mappedDataRaw.filter((row: any) => 
+            row && row.rig && row.date !== null && row.date !== undefined
+          );
+        } else {
+          mappedData = mappedDataRaw.filter((row: any) => 
+            row && row.rig && row.month && (row.year !== null && row.year !== undefined && row.year !== '')
+          );
+        }
+        
         console.log(`[ExcelUploadZone] Sheets: ${sheetNames.length}, Rows found: ${allRows.length}, Rows valid: ${mappedData.length}`);
         setParsedData(mappedData);
 
