@@ -5,8 +5,13 @@ import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
 import { Clock, AlertTriangle, TrendingDown } from "lucide-react";
+import { useKPIData } from "@/hooks/useKPIData";
+import { useChartData } from "@/hooks/useChartData";
 
 const BillingNPT = () => {
+  const { kpis, isLoading: kpisLoading } = useKPIData("billing_npt");
+  const { chartData, isLoading: chartLoading } = useChartData("billing_npt");
+
   const formFields = [
     { name: "rig", label: "Rig", type: "text" as const, required: true },
     { name: "date", label: "Date", type: "date" as const, required: true },
@@ -56,20 +61,30 @@ const BillingNPT = () => {
       viewContent={
         <div className="space-y-6">
           <div className="grid gap-6 md:grid-cols-3">
-            <KPICard title="Total NPT" value="344 hrs" change={25.4} trend="down" icon={Clock} />
-            <KPICard title="Allowable NPT" value="274 hrs" change={0} trend="neutral" icon={AlertTriangle} />
-            <KPICard title="NPT Cost Impact" value="$1.2M" change={-15.3} trend="up" icon={TrendingDown} />
+            <KPICard 
+              title="Total NPT Hours" 
+              value={kpisLoading ? "..." : `${kpis?.totalNPT || 0} hrs`}
+              icon={Clock} 
+            />
+            <KPICard 
+              title="Total Incidents" 
+              value={kpisLoading ? "..." : kpis?.recordCount || 0}
+              icon={AlertTriangle} 
+            />
+            <KPICard 
+              title="Billable Rate" 
+              value={kpisLoading ? "..." : `${kpis?.billableRate || 0}%`}
+              icon={TrendingDown} 
+            />
           </div>
 
           <HistoricalTrendChart
-            title="NPT by System"
-            description="Non-productive time breakdown by major system"
-            data={trendData}
+            title="NPT Trend"
+            description="Monthly NPT hours and incidents"
+            data={chartLoading ? [] : chartData}
             dataKeys={[
-              { key: "drawWorks", label: "Draw Works", color: "hsl(var(--destructive))" },
-              { key: "topDrive", label: "Top Drive", color: "hsl(var(--chart-2))" },
-              { key: "mudPumps", label: "Mud Pumps", color: "hsl(var(--chart-3))" },
-              { key: "bop", label: "BOP", color: "hsl(var(--chart-4))" }
+              { key: "nptHours", label: "NPT Hours", color: "hsl(var(--destructive))" },
+              { key: "incidents", label: "Incidents", color: "hsl(var(--chart-2))" }
             ]}
             xAxisKey="month"
           />

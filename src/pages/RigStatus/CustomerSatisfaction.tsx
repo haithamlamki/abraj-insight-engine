@@ -5,8 +5,13 @@ import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
 import { SmilePlus, Star, TrendingUp } from "lucide-react";
+import { useKPIData } from "@/hooks/useKPIData";
+import { useChartData } from "@/hooks/useChartData";
 
 const CustomerSatisfaction = () => {
+  const { kpis, isLoading: kpisLoading } = useKPIData("customer_satisfaction");
+  const { chartData, isLoading: chartLoading } = useChartData("customer_satisfaction");
+
   const formFields = [
     { name: "rig", label: "Rig", type: "text" as const, required: true },
     { name: "month", label: "Month", type: "select" as const, options: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], required: true },
@@ -52,18 +57,29 @@ const CustomerSatisfaction = () => {
       viewContent={
         <div className="space-y-6">
           <div className="grid gap-6 md:grid-cols-3">
-            <KPICard title="Avg Rating" value="4.7/5.0" change={6} trend="up" icon={Star} />
-            <KPICard title="Total Surveys" value="45" change={12.5} trend="up" icon={SmilePlus} />
-            <KPICard title="Satisfaction Rate" value="94%" change={3.2} trend="up" icon={TrendingUp} />
+            <KPICard 
+              title="Avg Score" 
+              value={kpisLoading ? "..." : `${kpis?.avgScore || 0}/5.0`}
+              icon={Star} 
+            />
+            <KPICard 
+              title="Total Surveys" 
+              value={kpisLoading ? "..." : kpis?.recordCount || 0}
+              icon={SmilePlus} 
+            />
+            <KPICard 
+              title="Satisfaction Rate" 
+              value={kpisLoading ? "..." : `${kpis?.satisfactionRate || 0}%`}
+              icon={TrendingUp} 
+            />
           </div>
 
           <HistoricalTrendChart
             title="Customer Satisfaction Metrics"
-            description="Satisfaction rate and response time trends"
-            data={trendData}
+            description="Satisfaction scores over time"
+            data={chartLoading ? [] : chartData}
             dataKeys={[
-              { key: "satisfaction", label: "Satisfaction Rate (%)", color: "hsl(var(--primary))" },
-              { key: "responseTime", label: "Avg Response Time (hrs)", color: "hsl(var(--chart-2))" }
+              { key: "score", label: "Satisfaction Score", color: "hsl(var(--primary))" }
             ]}
             xAxisKey="month"
           />

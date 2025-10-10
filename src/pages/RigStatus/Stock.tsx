@@ -5,8 +5,13 @@ import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
 import { Package2, AlertTriangle, TrendingUp } from "lucide-react";
+import { useKPIData } from "@/hooks/useKPIData";
+import { useChartData } from "@/hooks/useChartData";
 
 const Stock = () => {
+  const { kpis, isLoading: kpisLoading } = useKPIData("stock");
+  const { chartData, isLoading: chartLoading } = useChartData("stock");
+
   const formFields = [
     { name: "date", label: "Date", type: "date" as const, required: true },
     { name: "itemName", label: "Item Name", type: "text" as const, required: true },
@@ -50,9 +55,21 @@ const Stock = () => {
       viewContent={
         <div className="space-y-6">
           <div className="grid gap-6 md:grid-cols-3">
-            <KPICard title="Stock Level" value="92%" change={5} trend="up" icon={Package2} />
-            <KPICard title="Low Stock Items" value="8" change={-20} trend="up" icon={AlertTriangle} />
-            <KPICard title="Total Items" value="156" change={3.3} trend="up" icon={TrendingUp} />
+            <KPICard 
+              title="Stock Health" 
+              value={kpisLoading ? "..." : `${kpis?.stockHealth || 0}%`}
+              icon={Package2} 
+            />
+            <KPICard 
+              title="Low Stock Items" 
+              value={kpisLoading ? "..." : kpis?.lowStock || 0}
+              icon={AlertTriangle} 
+            />
+            <KPICard 
+              title="Total Items" 
+              value={kpisLoading ? "..." : kpis?.totalItems || 0}
+              icon={TrendingUp} 
+            />
           </div>
 
           <HistoricalTrendChart

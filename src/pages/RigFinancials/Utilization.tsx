@@ -5,8 +5,13 @@ import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
 import { Percent, TrendingUp, Calendar } from "lucide-react";
+import { useKPIData } from "@/hooks/useKPIData";
+import { useChartData } from "@/hooks/useChartData";
 
 const Utilization = () => {
+  const { kpis, isLoading: kpisLoading } = useKPIData("utilization");
+  const { chartData, isLoading: chartLoading } = useChartData("utilization");
+
   const formFields = [
     { name: "rig", label: "Rig", type: "text" as const, required: true },
     { name: "month", label: "Month", type: "select" as const, options: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], required: true },
@@ -55,16 +60,32 @@ const Utilization = () => {
       viewContent={
         <div className="space-y-6">
           <div className="grid gap-6 md:grid-cols-3">
-            <KPICard title="Current Utilization" value="87.5%" change={2.3} trend="up" icon={Percent} />
-            <KPICard title="Monthly Average" value="85.2%" change={1.5} trend="up" icon={TrendingUp} />
-            <KPICard title="Active Days" value="28/31" change={0} trend="neutral" icon={Calendar} />
+            <KPICard 
+              title="Fleet Utilization" 
+              value={kpisLoading ? "..." : `${kpis?.avgUtilization || 0}%`}
+              trend="up" 
+              icon={Percent} 
+            />
+            <KPICard 
+              title="Working Days" 
+              value={kpisLoading ? "..." : kpis?.totalWorkingDays || 0}
+              trend="up" 
+              icon={Calendar} 
+            />
+            <KPICard 
+              title="NPT Days" 
+              value={kpisLoading ? "..." : kpis?.totalNPT || 0}
+              icon={TrendingUp} 
+            />
           </div>
 
           <HistoricalTrendChart
-            title="6-Month Utilization Trend"
-            description="Historical utilization rates over the past 6 months"
-            data={trendData}
-            dataKeys={[{ key: "utilization", label: "Utilization %", color: "hsl(var(--primary))" }]}
+            title="Utilization Trend"
+            description="Fleet utilization rate over time"
+            data={chartLoading ? [] : chartData}
+            dataKeys={[
+              { key: "utilization", label: "Utilization Rate", color: "hsl(var(--chart-1))" }
+            ]}
             xAxisKey="month"
           />
 

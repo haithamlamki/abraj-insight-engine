@@ -5,8 +5,13 @@ import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
 import { DollarSign, TrendingUp, PieChart } from "lucide-react";
+import { useKPIData } from "@/hooks/useKPIData";
+import { useChartData } from "@/hooks/useChartData";
 
 const Revenue = () => {
+  const { kpis, isLoading: kpisLoading } = useKPIData("revenue");
+  const { chartData, isLoading: chartLoading } = useChartData("revenue");
+
   const formFields = [
     { name: "rig", label: "Rig", type: "text" as const, required: true },
     { name: "month", label: "Month", type: "select" as const, options: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], required: true },
@@ -57,20 +62,33 @@ const Revenue = () => {
       viewContent={
         <div className="space-y-6">
           <div className="grid gap-6 md:grid-cols-3">
-            <KPICard title="Monthly Revenue" value="$1.85M" change={8.7} trend="up" icon={DollarSign} />
-            <KPICard title="Average Daily Rate" value="$45,000" change={3.2} trend="up" icon={TrendingUp} />
-            <KPICard title="Revenue per Rig" value="$74K" change={5.5} trend="up" icon={PieChart} />
+            <KPICard 
+              title="Total Revenue" 
+              value={kpisLoading ? "..." : `$${Number(kpis?.totalRevenue || 0).toLocaleString()}`}
+              trend="up" 
+              icon={DollarSign} 
+            />
+            <KPICard 
+              title="Budget Variance" 
+              value={kpisLoading ? "..." : `${kpis?.variance || 0}%`}
+              change={Number(kpis?.variance || 0)}
+              trend={Number(kpis?.variance || 0) >= 0 ? "up" : "down"}
+              icon={TrendingUp} 
+            />
+            <KPICard 
+              title="Avg Dayrate" 
+              value={kpisLoading ? "..." : `$${Number(kpis?.avgDayrate || 0).toLocaleString()}`}
+              icon={PieChart} 
+            />
           </div>
 
           <HistoricalTrendChart
-            title="Revenue Breakdown"
-            description="Revenue components by month"
-            data={trendData}
+            title="Revenue Trend"
+            description="Actual vs Budget revenue over time"
+            data={chartLoading ? [] : chartData}
             dataKeys={[
-              { key: "revenue", label: "Total Revenue ($M)", color: "hsl(var(--primary))" },
-              { key: "fuel", label: "Fuel ($M)", color: "hsl(var(--chart-2))" },
-              { key: "nptRepair", label: "NPT Repair ($M)", color: "hsl(var(--chart-3))" },
-              { key: "nptZero", label: "NPT Zero ($M)", color: "hsl(var(--chart-4))" }
+              { key: "actual", label: "Actual Revenue", color: "hsl(var(--chart-1))" },
+              { key: "budget", label: "Budget Revenue", color: "hsl(var(--chart-2))" }
             ]}
             xAxisKey="month"
           />

@@ -5,8 +5,13 @@ import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
 import { Fuel as FuelIcon, TrendingDown, Gauge } from "lucide-react";
+import { useKPIData } from "@/hooks/useKPIData";
+import { useChartData } from "@/hooks/useChartData";
 
 const Fuel = () => {
+  const { kpis, isLoading: kpisLoading } = useKPIData("fuel_consumption");
+  const { chartData, isLoading: chartLoading } = useChartData("fuel_consumption");
+
   const formFields = [
     { name: "rig", label: "Rig", type: "text" as const, required: true },
     { name: "date", label: "Date", type: "date" as const, required: true },
@@ -54,19 +59,30 @@ const Fuel = () => {
       viewContent={
         <div className="space-y-6">
           <div className="grid gap-6 md:grid-cols-3">
-            <KPICard title="Total Consumption" value="45,230 L" change={-3.2} trend="up" icon={FuelIcon} />
-            <KPICard title="Avg Efficiency" value="82 L/hr" change={-2.1} trend="up" icon={Gauge} />
-            <KPICard title="Cost Savings" value="$8,500" change={15.2} trend="up" icon={TrendingDown} />
+            <KPICard 
+              title="Total Consumption" 
+              value={kpisLoading ? "..." : `${Number(kpis?.totalFuel || 0).toLocaleString()} L`}
+              icon={FuelIcon} 
+            />
+            <KPICard 
+              title="Total Cost" 
+              value={kpisLoading ? "..." : `$${Number(kpis?.totalCost || 0).toLocaleString()}`}
+              icon={TrendingDown} 
+            />
+            <KPICard 
+              title="Avg Price/L" 
+              value={kpisLoading ? "..." : `$${kpis?.avgPrice || 0}`}
+              icon={Gauge} 
+            />
           </div>
 
           <HistoricalTrendChart
             title="Fuel Consumption Analysis"
-            description="Consumption, cost, and efficiency metrics"
-            data={trendData}
+            description="Consumption and cost metrics over time"
+            data={chartLoading ? [] : chartData}
             dataKeys={[
-              { key: "consumption", label: "Consumption (K Liters)", color: "hsl(var(--chart-2))" },
-              { key: "cost", label: "Cost ($K)", color: "hsl(var(--chart-3))" },
-              { key: "efficiency", label: "Efficiency (L/hr)", color: "hsl(var(--primary))" }
+              { key: "consumed", label: "Fuel Consumed (L)", color: "hsl(var(--chart-1))" },
+              { key: "cost", label: "Cost ($)", color: "hsl(var(--chart-2))" }
             ]}
             xAxisKey="month"
           />

@@ -5,8 +5,13 @@ import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
 import { Truck, DollarSign, MapPin } from "lucide-react";
+import { useKPIData } from "@/hooks/useKPIData";
+import { useChartData } from "@/hooks/useChartData";
 
 const RigMoves = () => {
+  const { kpis, isLoading: kpisLoading } = useKPIData("rig_moves");
+  const { chartData, isLoading: chartLoading } = useChartData("rig_moves");
+
   const formFields = [
     { name: "rig", label: "Rig", type: "text" as const, required: true },
     { name: "date", label: "Date", type: "date" as const, required: true },
@@ -57,19 +62,31 @@ const RigMoves = () => {
       viewContent={
         <div className="space-y-6">
           <div className="grid gap-6 md:grid-cols-3">
-            <KPICard title="Total Moves" value="20" change={15} trend="up" icon={Truck} />
-            <KPICard title="Total Cost" value="$813K" change={138} trend="up" icon={DollarSign} />
-            <KPICard title="Avg Distance" value="135 km" change={8.2} trend="neutral" icon={MapPin} />
+            <KPICard 
+              title="Total Moves" 
+              value={kpisLoading ? "..." : kpis?.totalMoves || 0}
+              icon={Truck} 
+            />
+            <KPICard 
+              title="Total Distance" 
+              value={kpisLoading ? "..." : `${Number(kpis?.totalDistance || 0).toLocaleString()} km`}
+              icon={MapPin} 
+            />
+            <KPICard 
+              title="Total Cost" 
+              value={kpisLoading ? "..." : `$${Number(kpis?.totalCost || 0).toLocaleString()}`}
+              icon={DollarSign} 
+            />
           </div>
 
           <HistoricalTrendChart
             title="Rig Move Cost Analysis"
-            description="Budgeted vs actual costs and profitability"
-            data={trendData}
+            description="Monthly moves, distance, and costs"
+            data={chartLoading ? [] : chartData}
             dataKeys={[
-              { key: "budgetedCost", label: "Budgeted Cost ($K)", color: "hsl(var(--chart-2))" },
-              { key: "actualCost", label: "Actual Cost ($K)", color: "hsl(var(--primary))" },
-              { key: "profit", label: "Profit Margin ($K)", color: "hsl(var(--chart-3))" }
+              { key: "moves", label: "Number of Moves", color: "hsl(var(--chart-1))" },
+              { key: "distance", label: "Total Distance (km)", color: "hsl(var(--chart-2))" },
+              { key: "cost", label: "Total Cost ($)", color: "hsl(var(--chart-3))" }
             ]}
             xAxisKey="month"
           />

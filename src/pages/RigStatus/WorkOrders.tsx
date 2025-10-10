@@ -5,8 +5,13 @@ import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
 import { ClipboardList, CheckCircle2, Clock } from "lucide-react";
+import { useKPIData } from "@/hooks/useKPIData";
+import { useChartData } from "@/hooks/useChartData";
 
 const WorkOrders = () => {
+  const { kpis, isLoading: kpisLoading } = useKPIData("work_orders");
+  const { chartData, isLoading: chartLoading } = useChartData("work_orders");
+
   const formFields = [
     { name: "rig", label: "Rig", type: "text" as const, required: true },
     { name: "month", label: "Month", type: "select" as const, options: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], required: true },
@@ -55,20 +60,33 @@ const WorkOrders = () => {
       viewContent={
         <div className="space-y-6">
           <div className="grid gap-6 md:grid-cols-3">
-            <KPICard title="Active WOs" value="38" change={31.6} trend="up" icon={ClipboardList} />
-            <KPICard title="Completed (Month)" value="50" change={8.7} trend="up" icon={CheckCircle2} />
-            <KPICard title="Avg Completion" value="3.2 days" change={-12.5} trend="up" icon={Clock} />
+            <KPICard 
+              title="Open WOs" 
+              value={kpisLoading ? "..." : kpis?.totalOpen || 0}
+              trend="neutral" 
+              icon={Clock} 
+            />
+            <KPICard 
+              title="Closed WOs" 
+              value={kpisLoading ? "..." : kpis?.totalClosed || 0}
+              trend="up" 
+              icon={CheckCircle2} 
+            />
+            <KPICard 
+              title="Avg Compliance" 
+              value={kpisLoading ? "..." : `${kpis?.avgCompliance || 0}%`}
+              trend="up" 
+              icon={ClipboardList} 
+            />
           </div>
 
           <HistoricalTrendChart
-            title="Work Order Distribution by Category"
-            description="ELEC, MECH, and OPER work orders over time"
-            data={trendData}
+            title="Work Order Trends"
+            description="Open vs closed work orders over time"
+            data={chartLoading ? [] : chartData}
             dataKeys={[
-              { key: "elec", label: "Electrical", color: "hsl(var(--chart-1))" },
-              { key: "mech", label: "Mechanical", color: "hsl(var(--chart-2))" },
-              { key: "oper", label: "Operational", color: "hsl(var(--chart-3))" },
-              { key: "compliance", label: "Compliance %", color: "hsl(var(--primary))" }
+              { key: "open", label: "Open", color: "hsl(var(--warning))" },
+              { key: "closed", label: "Closed", color: "hsl(var(--success))" }
             ]}
             xAxisKey="month"
           />

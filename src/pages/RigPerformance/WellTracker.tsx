@@ -5,8 +5,13 @@ import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
 import { Target, Gauge, CheckCircle2 } from "lucide-react";
+import { useKPIData } from "@/hooks/useKPIData";
+import { useChartData } from "@/hooks/useChartData";
 
 const WellTracker = () => {
+  const { kpis, isLoading: kpisLoading } = useKPIData("well_tracker");
+  const { chartData, isLoading: chartLoading } = useChartData("well_tracker");
+
   const formFields = [
     { name: "rig", label: "Rig", type: "text" as const, required: true },
     { name: "wellName", label: "Well Name", type: "text" as const, required: true },
@@ -55,9 +60,21 @@ const WellTracker = () => {
       viewContent={
         <div className="space-y-6">
           <div className="grid gap-6 md:grid-cols-3">
-            <KPICard title="Completed Wells" value="14" change={8} trend="up" icon={CheckCircle2} />
-            <KPICard title="Active Wells" value="10" change={11.1} trend="up" icon={Target} />
-            <KPICard title="Avg Depth" value="2,850 m" change={5.2} trend="up" icon={Gauge} />
+            <KPICard 
+              title="Completed Wells" 
+              value={kpisLoading ? "..." : kpis?.completedWells || 0}
+              icon={CheckCircle2} 
+            />
+            <KPICard 
+              title="Active Wells" 
+              value={kpisLoading ? "..." : kpis?.activeWells || 0}
+              icon={Target} 
+            />
+            <KPICard 
+              title="Total Depth" 
+              value={kpisLoading ? "..." : `${Number(kpis?.totalDepth || 0).toLocaleString()} m`}
+              icon={Gauge} 
+            />
           </div>
 
           <HistoricalTrendChart
