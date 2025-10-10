@@ -2,15 +2,65 @@ import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
 import { DataEntryForm } from "@/components/Reports/DataEntryForm";
 import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
 import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
-import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
-import { KPICard } from "@/components/Dashboard/KPICard";
-import { Clock, AlertTriangle, TrendingDown } from "lucide-react";
-import { useKPIData } from "@/hooks/useKPIData";
-import { useChartData } from "@/hooks/useChartData";
+import { BillingNPTAnalytics } from "@/components/Reports/BillingNPTAnalytics";
+import { BillingNPTFilters, FilterState } from "@/components/Reports/BillingNPTFilters";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useState, useMemo } from "react";
 
 const BillingNPT = () => {
-  const { kpis, isLoading: kpisLoading } = useKPIData("billing_npt");
-  const { chartData, isLoading: chartLoading } = useChartData("billing_npt");
+  const [filters, setFilters] = useState<FilterState>({
+    year: "all",
+    month: "all",
+    rig: "all",
+    nptType: "all",
+    system: "all",
+    billable: "all",
+    searchTerm: "",
+  });
+
+  // Fetch billing NPT data
+  const { data: rawData = [], isLoading } = useQuery({
+    queryKey: ["billing_npt"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("billing_npt")
+        .select("*")
+        .order("date", { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Apply filters
+  const filteredData = useMemo(() => {
+    return rawData.filter((row: any) => {
+      if (filters.year !== "all" && row.year?.toString() !== filters.year) return false;
+      if (filters.month !== "all" && row.month?.toString() !== filters.month) return false;
+      if (filters.rig !== "all" && row.rig !== filters.rig) return false;
+      if (filters.nptType !== "all" && row.npt_type !== filters.nptType) return false;
+      if (filters.system !== "all" && row.system !== filters.system) return false;
+      if (filters.billable !== "all") {
+        const isBillable = row.billable === true;
+        if (filters.billable === "true" && !isBillable) return false;
+        if (filters.billable === "false" && isBillable) return false;
+      }
+      if (filters.searchTerm) {
+        const searchLower = filters.searchTerm.toLowerCase();
+        return (
+          row.system?.toLowerCase().includes(searchLower) ||
+          row.parent_equipment_failure?.toLowerCase().includes(searchLower) ||
+          row.part_equipment_failure?.toLowerCase().includes(searchLower) ||
+          row.root_cause?.toLowerCase().includes(searchLower) ||
+          row.immediate_cause?.toLowerCase().includes(searchLower) ||
+          row.department_responsibility?.toLowerCase().includes(searchLower)
+        );
+      }
+      return true;
+    });
+  }, [rawData, filters]);
 
   const formFields = [
     { name: "rig", label: "Rig Number", type: "text" as const, required: true },
@@ -80,59 +130,49 @@ const BillingNPT = () => {
       ]}
       viewContent={
         <div className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-3">
-            <KPICard 
-              title="Total NPT Hours" 
-              value={kpisLoading ? "..." : `${kpis?.totalNPT || 0} hrs`}
-              icon={Clock} 
-            />
-            <KPICard 
-              title="Total Incidents" 
-              value={kpisLoading ? "..." : kpis?.recordCount || 0}
-              icon={AlertTriangle} 
-            />
-            <KPICard 
-              title="Billable Rate" 
-              value={kpisLoading ? "..." : `${kpis?.billableRate || 0}%`}
-              icon={TrendingDown} 
-            />
-          </div>
+          <BillingNPTFilters data={rawData} onFilterChange={setFilters} />
+          
+          <Tabs defaultValue="analytics" className="space-y-6">
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="data">Data Table</TabsTrigger>
+            </TabsList>
 
-          <HistoricalTrendChart
-            title="NPT Trend"
-            description="Monthly NPT hours and incidents"
-            data={chartLoading ? [] : chartData}
-            dataKeys={[
-              { key: "nptHours", label: "NPT Hours", color: "hsl(var(--destructive))" },
-              { key: "incidents", label: "Incidents", color: "hsl(var(--chart-2))" }
-            ]}
-            xAxisKey="month"
-          />
+            <TabsContent value="analytics" className="space-y-6">
+              {isLoading ? (
+                <div className="text-center py-12 text-muted-foreground">Loading analytics...</div>
+              ) : (
+                <BillingNPTAnalytics data={filteredData} />
+              )}
+            </TabsContent>
 
-          <DataTableWithDB 
-            columns={tableColumns} 
-            reportType="billing_npt"
-            formatRow={(row) => ({
-              rig: row.rig || '-',
-              year: row.year || '-',
-              month: row.month || '-',
-              date: row.date ? new Date(row.date).toLocaleDateString() : '-',
-              hours: row.npt_hours || '-',
-              nptType: row.npt_type || '-',
-              system: row.system || '-',
-              parentEquipment: row.parent_equipment_failure || '-',
-              partEquipment: row.part_equipment_failure || '-',
-              contractualProcess: row.contractual_process || '-',
-              department: row.department_responsibility || '-',
-              immediateCause: row.immediate_cause || '-',
-              rootCause: row.root_cause || '-',
-              correctiveAction: row.corrective_action || '-',
-              futureAction: row.future_action || '-',
-              actionParty: row.action_party || '-',
-              notificationNumber: row.notification_number || '-',
-              failureReports: row.failure_investigation_reports || '-',
-            })}
-          />
+            <TabsContent value="data" className="space-y-6">
+              <DataTableWithDB 
+                columns={tableColumns} 
+                reportType="billing_npt"
+                formatRow={(row) => ({
+                  rig: row.rig || '-',
+                  year: row.year || '-',
+                  month: row.month || '-',
+                  date: row.date ? new Date(row.date).toLocaleDateString() : '-',
+                  hours: row.npt_hours || '-',
+                  nptType: row.npt_type || '-',
+                  system: row.system || '-',
+                  parentEquipment: row.parent_equipment_failure || '-',
+                  partEquipment: row.part_equipment_failure || '-',
+                  contractualProcess: row.contractual_process || '-',
+                  department: row.department_responsibility || '-',
+                  immediateCause: row.immediate_cause || '-',
+                  rootCause: row.root_cause || '-',
+                  correctiveAction: row.corrective_action || '-',
+                  futureAction: row.future_action || '-',
+                  actionParty: row.action_party || '-',
+                  notificationNumber: row.notification_number || '-',
+                  failureReports: row.failure_investigation_reports || '-',
+                })}
+              />
+            </TabsContent>
+          </Tabs>
         </div>
       }
       entryContent={
