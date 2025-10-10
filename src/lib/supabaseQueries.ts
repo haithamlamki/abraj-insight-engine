@@ -87,14 +87,24 @@ export async function saveRevenueData(data: any) {
 export async function saveBillingNPTData(data: any) {
   return insertData('billing_npt', {
     rig: data.rig,
+    year: data.year ? parseInt(data.year) : null,
+    month: data.month || null,
     date: data.date,
-    npt_hours: parseFloat(data.hours),
+    npt_hours: data.hours ? parseFloat(data.hours) : null,
+    npt_type: data.nptType || null,
     system: data.system,
-    equipment_failure: data.equipmentFailure,
+    parent_equipment_failure: data.parentEquipmentFailure || null,
+    part_equipment_failure: data.partEquipmentFailure || null,
+    contractual_process: data.contractualProcess || null,
+    department_responsibility: data.departmentResponsibility || null,
+    immediate_cause: data.immediateCause || null,
     root_cause: data.rootCause,
     corrective_action: data.correctiveAction,
+    future_action: data.futureAction || null,
+    action_party: data.actionParty || null,
     notification_number: data.notificationNo || null,
-    comments: data.workOrderNo || null,
+    failure_investigation_reports: data.failureInvestigationReports || null,
+    comments: data.comments || null,
   });
 }
 

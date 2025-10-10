@@ -13,25 +13,45 @@ const BillingNPT = () => {
   const { chartData, isLoading: chartLoading } = useChartData("billing_npt");
 
   const formFields = [
-    { name: "rig", label: "Rig", type: "text" as const, required: true },
+    { name: "rig", label: "Rig Number", type: "text" as const, required: true },
+    { name: "year", label: "Year", type: "number" as const, required: true },
+    { name: "month", label: "Month", type: "select" as const, options: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], required: true },
     { name: "date", label: "Date", type: "date" as const, required: true },
-    { name: "system", label: "System", type: "select" as const, options: ["Draw Works", "Top Drive", "Mud Pumps", "BOP", "Power Generation", "Hydraulics"], required: true },
-    { name: "subSystem", label: "Sub System", type: "text" as const, required: true },
-    { name: "equipmentFailure", label: "Equipment Failure", type: "text" as const, required: true },
-    { name: "rootCause", label: "Root Cause", type: "text" as const, required: true },
-    { name: "correctiveAction", label: "Corrective Action", type: "text" as const, required: true },
-    { name: "hours", label: "NPT Hours", type: "number" as const, required: true },
-    { name: "notificationNo", label: "Notification Number", type: "text" as const },
-    { name: "workOrderNo", label: "Work Order Number", type: "text" as const },
+    { name: "hours", label: "Hrs.", type: "number" as const, required: true },
+    { name: "nptType", label: "NPT Type", type: "select" as const, options: ["Contractual", "Abraj"], required: true },
+    { name: "system", label: "SYSTEM", type: "text" as const, required: true },
+    { name: "parentEquipmentFailure", label: "Parent Equipment Failure", type: "text" as const },
+    { name: "partEquipmentFailure", label: "Part Equipment Failure", type: "text" as const },
+    { name: "contractualProcess", label: "Contractual Process", type: "text" as const },
+    { name: "departmentResponsibility", label: "Department Responsibility", type: "text" as const },
+    { name: "immediateCause", label: "Immediate Cause of Failure", type: "text" as const },
+    { name: "rootCause", label: "Root Cause", type: "text" as const },
+    { name: "correctiveAction", label: "Immediate Corrective Action", type: "text" as const },
+    { name: "futureAction", label: "Future Action & Improvement", type: "text" as const },
+    { name: "actionParty", label: "Action Party", type: "text" as const },
+    { name: "notificationNo", label: "Notification Number (N2)", type: "text" as const },
+    { name: "failureInvestigationReports", label: "Failure Investigation Reports", type: "text" as const },
   ];
 
   const tableColumns = [
-    { key: "rig", label: "Rig", sortable: true },
+    { key: "rig", label: "Rig Number", sortable: true },
+    { key: "year", label: "Year", sortable: true },
+    { key: "month", label: "Month", sortable: true },
     { key: "date", label: "Date", sortable: true },
-    { key: "system", label: "System", sortable: true },
-    { key: "equipmentFailure", label: "Equipment", sortable: true },
+    { key: "hours", label: "Hrs.", sortable: true },
+    { key: "nptType", label: "NPT Type", sortable: true },
+    { key: "system", label: "SYSTEM", sortable: true },
+    { key: "parentEquipment", label: "Parent Equipment", sortable: true },
+    { key: "partEquipment", label: "Part Equipment", sortable: true },
+    { key: "contractualProcess", label: "Contractual Process", sortable: true },
+    { key: "department", label: "Department", sortable: true },
+    { key: "immediateCause", label: "Immediate Cause", sortable: true },
     { key: "rootCause", label: "Root Cause", sortable: true },
-    { key: "hours", label: "NPT Hours", sortable: true },
+    { key: "correctiveAction", label: "Corrective Action", sortable: true },
+    { key: "futureAction", label: "Future Action", sortable: true },
+    { key: "actionParty", label: "Action Party", sortable: true },
+    { key: "notificationNumber", label: "Notification (N2)", sortable: true },
+    { key: "failureReports", label: "Failure Reports", sortable: true },
   ];
 
   const sampleData = [
@@ -93,11 +113,24 @@ const BillingNPT = () => {
             columns={tableColumns} 
             reportType="billing_npt"
             formatRow={(row) => ({
-              ...row,
-              date: new Date(row.date).toLocaleDateString(),
-              equipmentFailure: row.equipment_failure,
-              rootCause: row.root_cause,
-              hours: row.npt_hours
+              rig: row.rig || '-',
+              year: row.year || '-',
+              month: row.month || '-',
+              date: row.date ? new Date(row.date).toLocaleDateString() : '-',
+              hours: row.npt_hours || '-',
+              nptType: row.npt_type || '-',
+              system: row.system || '-',
+              parentEquipment: row.parent_equipment_failure || '-',
+              partEquipment: row.part_equipment_failure || '-',
+              contractualProcess: row.contractual_process || '-',
+              department: row.department_responsibility || '-',
+              immediateCause: row.immediate_cause || '-',
+              rootCause: row.root_cause || '-',
+              correctiveAction: row.corrective_action || '-',
+              futureAction: row.future_action || '-',
+              actionParty: row.action_party || '-',
+              notificationNumber: row.notification_number || '-',
+              failureReports: row.failure_investigation_reports || '-',
             })}
           />
         </div>

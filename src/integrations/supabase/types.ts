@@ -16,49 +16,82 @@ export type Database = {
     Tables: {
       billing_npt: {
         Row: {
+          action_party: string | null
           billable: boolean | null
           comments: string | null
+          contractual_process: string | null
           corrective_action: string | null
           created_at: string | null
           date: string
+          department_responsibility: string | null
           equipment_failure: string | null
+          failure_investigation_reports: string | null
+          future_action: string | null
           id: string
+          immediate_cause: string | null
+          month: string | null
           notification_number: string | null
           npt_hours: number | null
+          npt_type: string | null
+          parent_equipment_failure: string | null
+          part_equipment_failure: string | null
           rig: string
           root_cause: string | null
           system: string | null
           updated_at: string | null
+          year: number | null
         }
         Insert: {
+          action_party?: string | null
           billable?: boolean | null
           comments?: string | null
+          contractual_process?: string | null
           corrective_action?: string | null
           created_at?: string | null
           date: string
+          department_responsibility?: string | null
           equipment_failure?: string | null
+          failure_investigation_reports?: string | null
+          future_action?: string | null
           id?: string
+          immediate_cause?: string | null
+          month?: string | null
           notification_number?: string | null
           npt_hours?: number | null
+          npt_type?: string | null
+          parent_equipment_failure?: string | null
+          part_equipment_failure?: string | null
           rig: string
           root_cause?: string | null
           system?: string | null
           updated_at?: string | null
+          year?: number | null
         }
         Update: {
+          action_party?: string | null
           billable?: boolean | null
           comments?: string | null
+          contractual_process?: string | null
           corrective_action?: string | null
           created_at?: string | null
           date?: string
+          department_responsibility?: string | null
           equipment_failure?: string | null
+          failure_investigation_reports?: string | null
+          future_action?: string | null
           id?: string
+          immediate_cause?: string | null
+          month?: string | null
           notification_number?: string | null
           npt_hours?: number | null
+          npt_type?: string | null
+          parent_equipment_failure?: string | null
+          part_equipment_failure?: string | null
           rig?: string
           root_cause?: string | null
           system?: string | null
           updated_at?: string | null
+          year?: number | null
         }
         Relationships: []
       }
