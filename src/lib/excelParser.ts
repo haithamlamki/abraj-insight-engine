@@ -9,18 +9,155 @@ export interface ValidationError {
   column: string;
   message: string;
   value: any;
+  autoFixable?: boolean;
+  suggestedFix?: string;
+  severity?: 'error' | 'warning' | 'info';
 }
 
 export interface ParseResult {
   data: ParsedData;
   errors: ValidationError[];
   warnings: ValidationError[];
+  autoCorrections?: string[];
+}
+
+export interface DateCompositionResult {
+  date: string | null;
+  autoConverted: boolean;
+  suggestions: string[];
+}
+
+/**
+ * Convert month name to number (1-12)
+ * Handles: Jan, January, jan, JANUARY, Sept, Sep, September, etc.
+ */
+export function convertMonthToNumber(monthInput: any): { month: number | null; converted: boolean } {
+  if (monthInput === null || monthInput === undefined) {
+    return { month: null, converted: false };
+  }
+  
+  const str = String(monthInput).trim().toLowerCase();
+  
+  // Month name map
+  const monthMap: { [key: string]: number } = {
+    jan: 1, january: 1,
+    feb: 2, february: 2,
+    mar: 3, march: 3,
+    apr: 4, april: 4,
+    may: 5,
+    jun: 6, june: 6,
+    jul: 7, july: 7,
+    aug: 8, august: 8,
+    sep: 9, sept: 9, september: 9,
+    oct: 10, october: 10,
+    nov: 11, november: 11,
+    dec: 12, december: 12
+  };
+  
+  // Check if it's a month name
+  if (monthMap[str]) {
+    return { month: monthMap[str], converted: true };
+  }
+  
+  // Try parsing as number
+  const num = parseInt(str);
+  if (!isNaN(num) && num >= 1 && num <= 12) {
+    return { month: num, converted: false };
+  }
+  
+  return { month: null, converted: false };
+}
+
+/**
+ * Compose date from Year, Month, Date columns
+ * Returns date string (YYYY-MM-DD) and metadata about conversions
+ */
+export function composeDateFromYMD(
+  yearVal: any,
+  monthVal: any,
+  dayVal: any
+): DateCompositionResult {
+  const suggestions: string[] = [];
+  let autoConverted = false;
+  
+  // Parse year
+  const year = yearVal ? parseInt(String(yearVal).trim()) : NaN;
+  if (isNaN(year) || year < 1900 || year > 2100) {
+    return { date: null, autoConverted: false, suggestions: ['Invalid year'] };
+  }
+  
+  // Parse month (with name conversion)
+  const monthResult = convertMonthToNumber(monthVal);
+  if (!monthResult.month) {
+    return { date: null, autoConverted: false, suggestions: ['Invalid month'] };
+  }
+  if (monthResult.converted) {
+    suggestions.push(`Month "${monthVal}" → ${monthResult.month}`);
+    autoConverted = true;
+  }
+  
+  // Parse day
+  const day = dayVal !== null && dayVal !== undefined && String(dayVal).trim() !== '' 
+    ? parseInt(String(dayVal).trim()) 
+    : NaN;
+  if (isNaN(day) || day < 1 || day > 31) {
+    return { date: null, autoConverted, suggestions: ['Invalid day'] };
+  }
+  
+  // Compose date
+  const dateObj = new Date(Date.UTC(year, monthResult.month - 1, day));
+  if (isNaN(dateObj.getTime())) {
+    return { date: null, autoConverted, suggestions: ['Invalid date combination'] };
+  }
+  
+  // Check if date is valid (e.g., not Feb 30)
+  if (dateObj.getUTCDate() !== day) {
+    return { date: null, autoConverted, suggestions: ['Invalid date (e.g., Feb 30)'] };
+  }
+  
+  const dateStr = dateObj.toISOString().split('T')[0];
+  if (suggestions.length === 0) {
+    suggestions.push(`Composed from Year(${year}) + Month(${monthResult.month}) + Day(${day})`);
+  }
+  
+  return { date: dateStr, autoConverted, suggestions };
+}
+
+/**
+ * Check if a row is completely blank
+ */
+export function isBlankRow(row: any): boolean {
+  if (!row || typeof row !== 'object') return true;
+  
+  const values = Object.values(row);
+  return values.every(val => 
+    val === null || 
+    val === undefined || 
+    String(val).trim() === ''
+  );
+}
+
+/**
+ * Check if a row looks like a title/header row (merged cell pattern)
+ */
+export function isTitleRow(row: any): boolean {
+  if (!row || typeof row !== 'object') return false;
+  
+  const values = Object.values(row);
+  const nonEmpty = values.filter(val => 
+    val !== null && 
+    val !== undefined && 
+    String(val).trim() !== ''
+  );
+  
+  // Title rows typically have 1-2 non-empty cells out of many
+  return nonEmpty.length > 0 && nonEmpty.length <= 2 && values.length > 5;
 }
 
 /**
  * Parse Excel file and return structured data
  */
-export async function parseExcelFile(file: File): Promise<ParseResult> {
+export async function parseExcelFile(file: File, autoCorrect: boolean = false): Promise<ParseResult> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     
@@ -32,6 +169,7 @@ export async function parseExcelFile(file: File): Promise<ParseResult> {
         const parsedData: ParsedData = {};
         const errors: ValidationError[] = [];
         const warnings: ValidationError[] = [];
+        const autoCorrections: string[] = [];
         
         // Parse all sheets
         workbook.SheetNames.forEach((sheetName) => {
@@ -41,10 +179,17 @@ export async function parseExcelFile(file: File): Promise<ParseResult> {
             defval: null 
           });
           
-          parsedData[sheetName] = jsonData;
+          // Filter out blank and title rows
+          const filteredData = jsonData.filter((row: any) => {
+            if (isBlankRow(row)) return false;
+            if (isTitleRow(row)) return false;
+            return true;
+          });
+          
+          parsedData[sheetName] = filteredData;
         });
         
-        resolve({ data: parsedData, errors, warnings });
+        resolve({ data: parsedData, errors, warnings, autoCorrections });
       } catch (error) {
         reject(error);
       }
@@ -62,32 +207,64 @@ export function validateRevenueData(data: any[]): ValidationError[] {
   const errors: ValidationError[] = [];
   
   data.forEach((row, index) => {
-    if (!row.Rig) {
+    // Skip blank rows
+    if (isBlankRow(row)) return;
+    
+    // Check for required Rig field
+    if (!row.Rig && !row.rig) {
       errors.push({
         row: index + 2,
         column: 'Rig',
-        message: 'Rig name is required',
-        value: row.Rig
+        message: 'Rig is required',
+        value: null,
+        severity: 'error'
       });
     }
     
-    if (row.DayrateActual && isNaN(parseFloat(row.DayrateActual))) {
-      errors.push({
-        row: index + 2,
-        column: 'DayrateActual',
-        message: 'Dayrate Actual must be a number',
-        value: row.DayrateActual
-      });
+    // Check month format
+    const monthVal = row.Month ?? row.month ?? row.Mont;
+    if (monthVal) {
+      const monthResult = convertMonthToNumber(monthVal);
+      if (!monthResult.month) {
+        errors.push({
+          row: index + 2,
+          column: 'Month',
+          message: 'Invalid month format',
+          value: monthVal,
+          severity: 'error'
+        });
+      } else if (monthResult.converted) {
+        errors.push({
+          row: index + 2,
+          column: 'Month',
+          message: `Month name detected: "${monthVal}" → ${monthResult.month}`,
+          value: monthVal,
+          autoFixable: true,
+          suggestedFix: `Auto-convert to ${monthResult.month}`,
+          severity: 'info'
+        });
+      }
     }
     
-    if (row.RevenueActual && row.RevenueActual < 0) {
-      errors.push({
-        row: index + 2,
-        column: 'RevenueActual',
-        message: 'Revenue Actual cannot be negative',
-        value: row.RevenueActual
-      });
-    }
+    // Validate numeric fields
+    const numericFields = ['Dayrate Actual', 'Dayrate Budget', 'Working Days', 
+                           'Revenue Actual', 'Revenue Budget', 'Variance'];
+    
+    numericFields.forEach(field => {
+      const value = row[field];
+      if (value !== null && value !== undefined && value !== '') {
+        const numValue = parseNumeric(value);
+        if (numValue === null) {
+          errors.push({
+            row: index + 2,
+            column: field,
+            message: 'Must be a valid number',
+            value,
+            severity: 'error'
+          });
+        }
+      }
+    });
   });
   
   return errors;
@@ -100,24 +277,59 @@ export function validateWorkOrdersData(data: any[]): ValidationError[] {
   const errors: ValidationError[] = [];
   
   data.forEach((row, index) => {
-    if (!row.Rig) {
+    // Skip blank rows
+    if (isBlankRow(row)) return;
+    
+    if (!row.Rig && !row.rig) {
       errors.push({
         row: index + 2,
         column: 'Rig',
-        message: 'Rig name is required',
-        value: row.Rig
+        message: 'Rig is required',
+        value: null,
+        severity: 'error'
       });
     }
     
-    const numberFields = ['ELECOpen', 'ELECClosed', 'MECHOpen', 'MECHClosed', 'OPEROpen', 'OPERClosed'];
-    numberFields.forEach(field => {
-      if (row[field] !== null && row[field] !== undefined && isNaN(parseInt(row[field]))) {
+    // Check month format
+    const monthVal = row.Month ?? row.month ?? row.Mont;
+    if (monthVal) {
+      const monthResult = convertMonthToNumber(monthVal);
+      if (!monthResult.month) {
         errors.push({
           row: index + 2,
-          column: field,
-          message: `${field} must be a number`,
-          value: row[field]
+          column: 'Month',
+          message: 'Invalid month format',
+          value: monthVal,
+          severity: 'error'
         });
+      } else if (monthResult.converted) {
+        errors.push({
+          row: index + 2,
+          column: 'Month',
+          message: `Month name detected: "${monthVal}" → ${monthResult.month}`,
+          value: monthVal,
+          autoFixable: true,
+          suggestedFix: `Auto-convert to ${monthResult.month}`,
+          severity: 'info'
+        });
+      }
+    }
+    
+    // Validate numeric fields
+    const numericFields = ['ELEC Open', 'ELEC Closed', 'MECH Open', 'MECH Closed'];
+    numericFields.forEach(field => {
+      const value = row[field];
+      if (value !== null && value !== undefined && value !== '') {
+        const numValue = parseNumeric(value);
+        if (numValue === null || numValue < 0) {
+          errors.push({
+            row: index + 2,
+            column: field,
+            message: 'Must be a non-negative number',
+            value,
+            severity: 'error'
+          });
+        }
       }
     });
   });
@@ -158,36 +370,36 @@ export function validateBillingNptData(data: any[]): ValidationError[] {
       });
     }
 
-    // Build a valid date either from the Date cell directly or by combining Year/Month/Date
-    const buildDateFromYMD = () => {
-      const yearVal = row.Year ?? row['year'];
-      const monthVal = row.Month ?? row['month'] ?? row.Mont;
-      const dayVal = row.Date;
-      const monthMap: { [k: string]: number } = {
-        jan: 1, january: 1, feb: 2, february: 2, mar: 3, march: 3, apr: 4, april: 4,
-        may: 5, jun: 6, june: 6, jul: 7, july: 7, aug: 8, august: 8, sep: 9, sept: 9,
-        september: 9, oct: 10, october: 10, nov: 11, november: 11, dec: 12, december: 12
-      };
-      const y = yearVal ? parseInt(String(yearVal).trim()) : NaN;
-      const mInput = String(monthVal ?? '').trim().toLowerCase();
-      const m = monthMap[mInput] ?? (mInput ? parseInt(mInput) : NaN);
-      const d = dayVal !== null && dayVal !== undefined && String(dayVal).trim() !== '' ? parseInt(String(dayVal).trim()) : NaN;
-      if (!isNaN(y) && !isNaN(m) && m >= 1 && m <= 12 && !isNaN(d) && d >= 1 && d <= 31) {
-        const dt = new Date(Date.UTC(y, m - 1, d));
-        if (!isNaN(dt.getTime())) return dt.toISOString().split('T')[0];
-      }
-      return null;
-    };
+    // Skip blank rows
+    if (isBlankRow(row)) return;
 
+    // Try parsing date directly
     const parsedDirect = parseDate(dateVal);
-    const finalDate = parsedDirect || buildDateFromYMD();
+    
+    // Try composing from Y+M+D columns
+    const yearVal = row.Year ?? row['year'];
+    const monthVal = row.Month ?? row['month'] ?? row.Mont;
+    const dayVal = row.Date;
+    const composed = composeDateFromYMD(yearVal, monthVal, dayVal);
 
-    if (!finalDate) {
+    if (!parsedDirect && !composed.date) {
       errors.push({
         row: index + 2,
         column: 'Date',
-        message: 'Invalid or missing date. Use YYYY-MM-DD or provide Year, Month, and Date.',
-        value: dateVal
+        message: 'Invalid or missing date. Use YYYY-MM-DD or provide Year, Month, and Date(day).',
+        value: dateVal,
+        severity: 'error'
+      });
+    } else if (!parsedDirect && composed.date) {
+      // Date was composed from Y+M+D
+      errors.push({
+        row: index + 2,
+        column: 'Date',
+        message: `Date composed: ${composed.suggestions.join(', ')}`,
+        value: dateVal,
+        autoFixable: true,
+        suggestedFix: composed.date,
+        severity: 'info'
       });
     }
 
@@ -482,34 +694,39 @@ export function mapExcelToDbFields(data: any, type: string): any {
     console.warn(`No columns matched for type "${type}". Available columns:`, Object.keys(data));
   }
   
-  // For Billing NPT, if date is missing, try constructing from Year + Month + Date (day)
+  // Universal date composition for all types that need it
   if (type === 'billing_npt' && (mapped.date === null || mapped.date === undefined || mapped.date === '')) {
     const yearVal = mapped.year ?? (data['Year'] ?? data['year']);
-    const monthInput = mapped.month ?? (data['Month'] ?? data['month'] ?? data['Mont']);
+    const monthVal = data['Month'] ?? data['month'] ?? data['Mont'];
     const dayVal = data['Date'];
-
-    const toMonthNumber = (m: any): number | null => {
-      if (m === null || m === undefined) return null;
-      const s = String(m).trim().toLowerCase();
-      const map: { [k: string]: number } = {
-        jan: 1, january: 1, feb: 2, february: 2, mar: 3, march: 3, apr: 4, april: 4,
-        may: 5, jun: 6, june: 6, jul: 7, july: 7, aug: 8, august: 8, sep: 9, sept: 9,
-        september: 9, oct: 10, october: 10, nov: 11, november: 11, dec: 12, december: 12
-      };
-      if (map[s]) return map[s];
-      const n = parseInt(s);
-      if (!isNaN(n) && n >= 1 && n <= 12) return n;
-      return null;
-    };
-
-    const y = yearVal ? parseInt(String(yearVal).trim()) : NaN;
-    const m = toMonthNumber(monthInput);
-    const d = dayVal !== null && dayVal !== undefined && String(dayVal).trim() !== '' ? parseInt(String(dayVal).trim()) : NaN;
-
-    if (!isNaN(y) && m && !isNaN(d)) {
-      const dt = new Date(Date.UTC(y, m - 1, d));
-      if (!isNaN(dt.getTime())) {
-        mapped.date = dt.toISOString().split('T')[0];
+    
+    const composed = composeDateFromYMD(yearVal, monthVal, dayVal);
+    if (composed.date) {
+      mapped.date = composed.date;
+    }
+  }
+  
+  // For types with separate month fields, convert month names to numbers
+  const typesWithMonthField = ['revenue', 'work_orders', 'customer_satisfaction', 'ytd', 'utilization'];
+  if (typesWithMonthField.includes(type) && mapped.month) {
+    const monthResult = convertMonthToNumber(mapped.month);
+    if (monthResult.month) {
+      mapped.month = String(monthResult.month);
+    }
+  }
+  
+  // For date-based types (fuel, rig_moves, well_tracker, stock), try composing if date is missing
+  const dateBasedTypes = ['fuel', 'rig_moves', 'well_tracker', 'stock'];
+  if (dateBasedTypes.includes(type)) {
+    const dateField = type === 'rig_moves' ? 'move_date' : type === 'well_tracker' ? 'start_date' : type === 'stock' ? 'last_reorder_date' : 'date';
+    if (!mapped[dateField] || mapped[dateField] === null || mapped[dateField] === '') {
+      const yearVal = data['Year'] ?? data['year'];
+      const monthVal = data['Month'] ?? data['month'] ?? data['Mont'];
+      const dayVal = data['Date'] ?? data['date'] ?? data['Day'];
+      
+      const composed = composeDateFromYMD(yearVal, monthVal, dayVal);
+      if (composed.date) {
+        mapped[dateField] = composed.date;
       }
     }
   }

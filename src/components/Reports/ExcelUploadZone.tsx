@@ -1,13 +1,16 @@
 import { useState, useCallback, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, FileSpreadsheet, Download, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, FileSpreadsheet, Download, CheckCircle2, AlertCircle, Info } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { parseExcelFile, mapExcelToDbFields, validateBillingNptData, validateRevenueData, validateWorkOrdersData } from "@/lib/excelParser";
+import { parseExcelFile, mapExcelToDbFields, validateBillingNptData, validateRevenueData, validateWorkOrdersData, ValidationError } from "@/lib/excelParser";
 import { downloadTemplate } from "@/lib/excelTemplates";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useBulkSaveReportData } from "@/hooks/useReportData";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface ExcelUploadZoneProps {
   title: string;
@@ -28,6 +31,9 @@ export const ExcelUploadZone = ({
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [uploading, setUploading] = useState(false);
   const [parsedData, setParsedData] = useState<any[]>([]);
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
+  const [autoCorrect, setAutoCorrect] = useState(true);
+  const [autoCorrections, setAutoCorrections] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bulkSave = useBulkSaveReportData(reportType);
 
@@ -71,16 +77,18 @@ export const ExcelUploadZone = ({
     setUploadStatus("idle");
     setErrorMessage('');
     setParsedData([]);
+    setValidationErrors([]);
+    setAutoCorrections([]);
 
     try {
-      const result = await parseExcelFile(file);
+      const result = await parseExcelFile(file, autoCorrect);
       
       // Collect data from ALL sheets
       const sheetNames = Object.keys(result.data);
       const allRows = sheetNames.reduce((acc: any[], name) => acc.concat(result.data[name] || []), [] as any[]);
 
       // Validate data based on report type
-      let validationErrors: any[] = [];
+      let validationErrors: ValidationError[] = [];
       if (reportType === 'billing_npt') {
         validationErrors = validateBillingNptData(allRows);
       } else if (reportType === 'revenue') {
@@ -89,14 +97,20 @@ export const ExcelUploadZone = ({
         validationErrors = validateWorkOrdersData(allRows);
       }
 
-      if (result.errors.length > 0 || validationErrors.length > 0) {
+      // Separate errors by severity
+      const actualErrors = validationErrors.filter(e => e.severity === 'error' || !e.severity);
+      const warnings = validationErrors.filter(e => e.severity === 'warning');
+      const infos = validationErrors.filter(e => e.severity === 'info');
+      
+      setValidationErrors(validationErrors);
+
+      if (actualErrors.length > 0) {
         setUploadStatus("error");
-        const totalErrors = result.errors.length + validationErrors.length;
-        const errorDetails = validationErrors.slice(0, 3).map(e => 
+        const errorDetails = actualErrors.slice(0, 3).map(e => 
           `Row ${e.row}, ${e.column}: ${e.message}`
         ).join('\n');
-        setErrorMessage(`Found ${totalErrors} validation error(s). First errors:\n${errorDetails}`);
-        toast.error(`Validation failed: ${totalErrors} errors found`);
+        setErrorMessage(`Found ${actualErrors.length} error(s). First errors:\n${errorDetails}`);
+        toast.error(`Validation failed: ${actualErrors.length} errors found`);
       } else {
         setUploadStatus("success");
         // Map Excel data to database format
@@ -123,11 +137,25 @@ export const ExcelUploadZone = ({
         console.log(`[ExcelUploadZone] Sheets: ${sheetNames.length}, Rows found: ${allRows.length}, Rows valid: ${mappedData.length}`);
         setParsedData(mappedData);
 
+        // Track auto-corrections
+        if (autoCorrect && (warnings.length > 0 || infos.length > 0)) {
+          const corrections: string[] = [];
+          infos.forEach(info => {
+            if (info.autoFixable && info.suggestedFix) {
+              corrections.push(`Row ${info.row}: ${info.suggestedFix}`);
+            }
+          });
+          setAutoCorrections(corrections);
+        }
+
         if (onDataParsed) {
           onDataParsed(allRows);
         }
 
-        toast.success(`Parsed ${mappedData.length} valid records from ${allRows.length} rows across ${sheetNames.length} sheet(s)`);
+        const correctionMsg = autoCorrect && infos.length > 0 
+          ? ` (${infos.length} auto-corrections applied)` 
+          : '';
+        toast.success(`Parsed ${mappedData.length} valid records from ${allRows.length} rows${correctionMsg}`);
       }
     } catch (error) {
       setUploadStatus("error");
@@ -170,11 +198,28 @@ export const ExcelUploadZone = ({
           <CardDescription>Upload Excel files or download the template to get started</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Auto-correction toggle */}
+          <div className="flex items-center space-x-2 p-4 bg-muted/50 rounded-lg border">
+            <Switch 
+              id="auto-correct" 
+              checked={autoCorrect}
+              onCheckedChange={setAutoCorrect}
+            />
+            <Label htmlFor="auto-correct" className="cursor-pointer">
+              Auto-correct month names and compose dates from Year/Month/Day columns
+            </Label>
+          </div>
+
           {uploadStatus === 'success' && (
             <Alert>
               <CheckCircle2 className="h-4 w-4" />
               <AlertDescription>
                 File uploaded and parsed successfully!
+                {autoCorrections.length > 0 && (
+                  <span className="block mt-1 text-sm text-muted-foreground">
+                    {autoCorrections.length} auto-corrections applied
+                  </span>
+                )}
               </AlertDescription>
             </Alert>
           )}
@@ -184,6 +229,77 @@ export const ExcelUploadZone = ({
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>{errorMessage}</AlertDescription>
             </Alert>
+          )}
+
+          {/* Enhanced error display */}
+          {validationErrors.length > 0 && (
+            <div className="space-y-4">
+              {validationErrors.filter(e => e.severity === 'error' || !e.severity).length > 0 && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <div className="font-semibold mb-2">
+                      {validationErrors.filter(e => e.severity === 'error' || !e.severity).length} Error(s) - Must Fix
+                    </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-16">Row</TableHead>
+                          <TableHead className="w-32">Column</TableHead>
+                          <TableHead>Issue</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {validationErrors
+                          .filter(e => e.severity === 'error' || !e.severity)
+                          .slice(0, 10)
+                          .map((err, idx) => (
+                            <TableRow key={idx}>
+                              <TableCell>{err.row}</TableCell>
+                              <TableCell className="font-mono text-xs">{err.column}</TableCell>
+                              <TableCell>{err.message}</TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {validationErrors.filter(e => e.severity === 'info').length > 0 && (
+                <Alert className="border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950">
+                  <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <AlertDescription>
+                    <div className="font-semibold mb-2 text-blue-900 dark:text-blue-100">
+                      {validationErrors.filter(e => e.severity === 'info').length} Auto-Correction(s) {autoCorrect ? 'Applied' : 'Available'}
+                    </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-16">Row</TableHead>
+                          <TableHead className="w-32">Column</TableHead>
+                          <TableHead>Correction</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {validationErrors
+                          .filter(e => e.severity === 'info')
+                          .slice(0, 10)
+                          .map((err, idx) => (
+                            <TableRow key={idx}>
+                              <TableCell>{err.row}</TableCell>
+                              <TableCell className="font-mono text-xs">{err.column}</TableCell>
+                              <TableCell className="text-sm">
+                                {err.suggestedFix || err.message}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
           )}
           <div
             onDragOver={handleDragOver}

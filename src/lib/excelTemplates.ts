@@ -13,7 +13,7 @@ export function generateTemplate(type: string): Blob {
   const templates: { [key: string]: TemplateColumn[] } = {
     revenue: [
       { header: 'Rig', width: 15, example: 'ADC-225' },
-      { header: 'Month', width: 12, example: '2024-01' },
+      { header: 'Month', width: 12, example: 'Jan OR 1' },
       { header: 'Year', width: 10, example: '2024' },
       { header: 'Dayrate Actual', width: 15, example: '25000' },
       { header: 'Dayrate Budget', width: 15, example: '24000' },
@@ -29,7 +29,9 @@ export function generateTemplate(type: string): Blob {
     ],
     billing_npt: [
       { header: 'Rig', width: 15, example: 'ADC-225' },
-      { header: 'Date', width: 15, example: '2024-01-15 (required)' },
+      { header: 'Date', width: 15, example: '2024-01-15 OR use Year+Month+Date' },
+      { header: 'Year', width: 10, example: '2024 (optional)' },
+      { header: 'Month', width: 12, example: 'Jan OR 1 (optional)' },
       { header: 'Hrs.', width: 12, example: '4.5' },
       { header: 'SYSTEM', width: 20, example: 'Hydraulic System' },
       { header: 'Equipment Failure', width: 25, example: 'Pump failure' },
