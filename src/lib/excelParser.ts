@@ -415,30 +415,27 @@ export function validateBillingNptData(data: any[]): ValidationError[] {
     // Skip blank rows
     if (isBlankRow(row)) return;
 
-    // Try parsing date directly
-    const parsedDirect = parseDate(dateVal);
-    
-    // Try composing from Y+M+D columns
+    // Always compose date from Year+Month+Date columns (don't parse Date field directly)
     const yearVal = row.Year ?? row['year'];
     const monthVal = row.Month ?? row['month'] ?? row.Mont;
     const dayVal = row.Date;
     const composed = composeDateFromYMD(yearVal, monthVal, dayVal);
 
-    if (!parsedDirect && !composed.date) {
+    if (!composed.date) {
       errors.push({
         row: index + 2,
         column: 'Date',
-        message: 'Invalid or missing date. Use YYYY-MM-DD or provide Year, Month, and Date(day).',
-        value: dateVal,
+        message: `Cannot compose date: ${composed.suggestions.join(', ')}`,
+        value: dayVal,
         severity: 'error'
       });
-    } else if (!parsedDirect && composed.date) {
-      // Date was composed from Y+M+D
+    } else if (composed.autoConverted) {
+      // Date was composed with auto-conversions
       errors.push({
         row: index + 2,
         column: 'Date',
         message: `Date composed: ${composed.suggestions.join(', ')}`,
-        value: dateVal,
+        value: dayVal,
         autoFixable: true,
         suggestedFix: composed.date,
         severity: 'info'
@@ -712,7 +709,8 @@ export function mapExcelToDbFields(data: any, type: string): any {
       } else if (dbField === 'year') {
         value = value !== null && value !== undefined && String(value).trim() !== '' ? parseInt(String(value).trim()) : null;
       } else if (dbField === 'date') {
-        value = parseDate(value);
+        // Don't parse Date field directly - it will be composed from Y+M+D later
+        value = null;
       } else if (dbField === 'billable') {
         const s = String(value || '').toLowerCase();
         value = s === 'yes' || s === 'y' || s === 'true' || s === '1' || s === 'billable';
@@ -736,11 +734,11 @@ export function mapExcelToDbFields(data: any, type: string): any {
     console.warn(`No columns matched for type "${type}". Available columns:`, Object.keys(data));
   }
   
-  // Universal date composition for all types that need it
-  if (type === 'billing_npt' && (mapped.date === null || mapped.date === undefined || mapped.date === '')) {
+  // Universal date composition for billing_npt (ALWAYS use Y+M+D composition)
+  if (type === 'billing_npt') {
     const yearVal = mapped.year ?? (data['Year'] ?? data['year']);
     const monthVal = data['Month'] ?? data['month'] ?? data['Mont'];
-    const dayVal = data['Date'];
+    const dayVal = data['Date'] ?? data['date'];
     
     const composed = composeDateFromYMD(yearVal, monthVal, dayVal);
     if (composed.date) {
