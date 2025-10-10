@@ -720,9 +720,9 @@ export function mapExcelToDbFields(data: any, type: string): any {
         value = value !== null && value !== undefined ? String(value).trim() : null;
       }
     } else if (type === 'fuel' || type === 'rig_moves' || type === 'well_tracker' || type === 'stock' || type === 'ytd') {
-      // Handle date fields for other types
+      // Don't parse date fields directly - they will be composed from Y+M+D later
       if (dbField === 'date' || dbField === 'move_date' || dbField === 'start_date' || dbField === 'end_date' || dbField === 'last_reorder_date') {
-        value = parseDate(value);
+        value = null;
       }
     }
 
@@ -734,40 +734,30 @@ export function mapExcelToDbFields(data: any, type: string): any {
     console.warn(`No columns matched for type "${type}". Available columns:`, Object.keys(data));
   }
   
-  // Universal date composition for billing_npt (ALWAYS use Y+M+D composition)
-  if (type === 'billing_npt') {
+  // Universal date composition for ALL types with Year+Month+Date columns
+  const dateCompositionTypes = ['billing_npt', 'fuel', 'rig_moves', 'well_tracker', 'stock', 'ytd'];
+  if (dateCompositionTypes.includes(type)) {
     const yearVal = mapped.year ?? (data['Year'] ?? data['year']);
     const monthVal = data['Month'] ?? data['month'] ?? data['Mont'];
-    const dayVal = data['Date'] ?? data['date'];
+    const dayVal = data['Date'] ?? data['date'] ?? data['Day'];
     
     const composed = composeDateFromYMD(yearVal, monthVal, dayVal);
     if (composed.date) {
-      mapped.date = composed.date;
+      // Determine the correct date field name based on type
+      const dateField = type === 'rig_moves' ? 'move_date' 
+                      : type === 'well_tracker' ? 'start_date'
+                      : type === 'stock' ? 'last_reorder_date'
+                      : 'date'; // billing_npt, fuel, ytd
+      mapped[dateField] = composed.date;
     }
   }
   
   // For types with separate month fields, convert month names to numbers
-  const typesWithMonthField = ['revenue', 'work_orders', 'customer_satisfaction', 'ytd', 'utilization'];
+  const typesWithMonthField = ['revenue', 'work_orders', 'customer_satisfaction', 'utilization', 'ytd'];
   if (typesWithMonthField.includes(type) && mapped.month) {
     const monthResult = convertMonthToNumber(mapped.month);
     if (monthResult.month) {
       mapped.month = String(monthResult.month);
-    }
-  }
-  
-  // For date-based types (fuel, rig_moves, well_tracker, stock), try composing if date is missing
-  const dateBasedTypes = ['fuel', 'rig_moves', 'well_tracker', 'stock'];
-  if (dateBasedTypes.includes(type)) {
-    const dateField = type === 'rig_moves' ? 'move_date' : type === 'well_tracker' ? 'start_date' : type === 'stock' ? 'last_reorder_date' : 'date';
-    if (!mapped[dateField] || mapped[dateField] === null || mapped[dateField] === '') {
-      const yearVal = data['Year'] ?? data['year'];
-      const monthVal = data['Month'] ?? data['month'] ?? data['Mont'];
-      const dayVal = data['Date'] ?? data['date'] ?? data['Day'];
-      
-      const composed = composeDateFromYMD(yearVal, monthVal, dayVal);
-      if (composed.date) {
-        mapped[dateField] = composed.date;
-      }
     }
   }
   
