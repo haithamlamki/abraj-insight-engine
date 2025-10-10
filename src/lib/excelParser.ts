@@ -125,60 +125,71 @@ export function validateWorkOrdersData(data: any[]): ValidationError[] {
   return errors;
 }
 
+
 /**
- * Validate billing NPT data
+ * Validate billing NPT data (skips blank/non-record rows)
  */
 export function validateBillingNptData(data: any[]): ValidationError[] {
   const errors: ValidationError[] = [];
-  
+
+  const isEmpty = (v: any) => v === null || v === undefined || String(v).trim() === '';
+
   data.forEach((row, index) => {
-    if (!row.Rig && !row['Rig Number'] && !row['Rig Numb']) {
+    // Normalize common fields used to determine if a row is a real record
+    const rigVal = row.Rig || row['Rig Number'] || row['Rig Numb'] || row['Rig number'] || row['Rig numb'];
+    const dateVal = row.Date;
+    const hrsVal = row['Hrs.'] ?? row['Hrs'] ?? row['NPT Hours'];
+    const systemVal = row.SYSTEM ?? row.System;
+    const nptTypeVal = row['NPT type'] ?? row['NPT Type'];
+
+    // If the row has none of the relevant fields filled, skip (treat as blank/summary row)
+    const hasRelevant = !(isEmpty(rigVal) && isEmpty(dateVal) && isEmpty(hrsVal) && isEmpty(systemVal) && isEmpty(nptTypeVal));
+    if (!hasRelevant) {
+      return; // skip validation for this row
+    }
+
+    // Now validate required fields for real records
+    if (isEmpty(rigVal)) {
       errors.push({
         row: index + 2,
         column: 'Rig',
         message: 'Rig number is required',
-        value: row.Rig || row['Rig Number'] || row['Rig Numb']
+        value: rigVal
       });
     }
-    
-    // Validate date - this is critical as the database requires it
-    const dateValue = row.Date;
-    if (!dateValue || dateValue === null || dateValue === undefined || dateValue === '') {
+
+    if (isEmpty(dateVal)) {
       errors.push({
         row: index + 2,
         column: 'Date',
         message: 'Date is required and cannot be empty',
-        value: dateValue
+        value: dateVal
       });
-    } else {
-      // Check if the date can be parsed
-      const parsed = parseDate(dateValue);
-      if (!parsed) {
-        errors.push({
-          row: index + 2,
-          column: 'Date',
-          message: 'Invalid date format. Please use a valid date.',
-          value: dateValue
-        });
-      }
+    } else if (!parseDate(dateVal)) {
+      errors.push({
+        row: index + 2,
+        column: 'Date',
+        message: 'Invalid date format. Please use a valid date.',
+        value: dateVal
+      });
     }
-    
-    // Validate hours if present
-    if (row['Hrs.'] !== null && row['Hrs.'] !== undefined && row['Hrs.'] !== '') {
-      const hours = parseNumeric(row['Hrs.']);
+
+    if (!isEmpty(hrsVal)) {
+      const hours = parseNumeric(hrsVal);
       if (hours === null) {
         errors.push({
           row: index + 2,
           column: 'Hrs.',
           message: 'Hours must be a valid number',
-          value: row['Hrs.']
+          value: hrsVal
         });
       }
     }
   });
-  
+
   return errors;
 }
+
 
 /**
  * Helper function to parse numeric values that might have % or other characters
