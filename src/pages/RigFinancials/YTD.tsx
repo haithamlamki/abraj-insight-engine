@@ -1,12 +1,58 @@
+import { useState, useMemo } from "react";
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
 import { DataEntryForm } from "@/components/Reports/DataEntryForm";
 import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
 import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
-import { DollarSign, TrendingUp, Target } from "lucide-react";
+import { DollarSign, AlertTriangle, Calendar, BarChart3 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useReportData } from "@/hooks/useReportData";
+import { YTDFilters } from "@/components/Reports/YTDFilters";
+import { YTDAnalytics } from "@/components/Reports/YTDAnalytics";
 
 const YTD = () => {
+  const [filters, setFilters] = useState({
+    year: "all",
+    month: "all",
+    rig: "all",
+    nptType: "all",
+  });
+
+  const { data: nptData, isLoading: nptLoading } = useReportData("billing_npt");
+  const { data: revenueData, isLoading: revenueLoading } = useReportData("revenue");
+
+  // Filter NPT data
+  const filteredNptData = useMemo(() => {
+    if (!nptData) return [];
+    
+    return nptData.filter((row: any) => {
+      if (filters.year !== "all" && row.year?.toString() !== filters.year) return false;
+      if (filters.month !== "all" && row.month !== filters.month) return false;
+      if (filters.rig !== "all" && row.rig !== filters.rig) return false;
+      if (filters.nptType !== "all") {
+        const isBillable = row.billable === true;
+        if (filters.nptType === "Billable" && !isBillable) return false;
+        if (filters.nptType === "Non-Billable" && isBillable) return false;
+      }
+      return true;
+    });
+  }, [nptData, filters]);
+
+  // Calculate KPIs
+  const kpis = useMemo(() => {
+    const totalNptHours = filteredNptData.reduce((sum, item) => sum + (parseFloat(item.npt_hours) || 0), 0);
+    const billableHours = filteredNptData.filter(i => i.billable === true).reduce((sum, item) => sum + (parseFloat(item.npt_hours) || 0), 0);
+    const ytdRevenue = revenueData?.reduce((sum: number, item: any) => sum + (parseFloat(item.revenue_actual) || 0), 0) || 0;
+    
+    return {
+      totalNptHours: totalNptHours.toFixed(1),
+      billableHours: billableHours.toFixed(1),
+      incidents: filteredNptData.length,
+      ytdRevenue: (ytdRevenue / 1000000).toFixed(1)
+    };
+  }, [filteredNptData, revenueData]);
+
   const formFields = [
     { name: "month", label: "Month", type: "select" as const, options: ["January", "February", "March"], required: true },
     { name: "revenue", label: "Revenue ($)", type: "number" as const, required: true },
@@ -45,34 +91,78 @@ const YTD = () => {
       ]}
       viewContent={
         <div className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-3">
-            <KPICard title="YTD Revenue" value="$12.5M" change={15.2} trend="up" icon={DollarSign} />
-            <KPICard title="YTD Profit" value="$3.3M" change={18.5} trend="up" icon={TrendingUp} />
-            <KPICard title="Profit Margin" value="26.4%" change={2.1} trend="up" icon={Target} />
-          </div>
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="grid w-full max-w-md grid-cols-3">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="analytics">NPT Analytics</TabsTrigger>
+              <TabsTrigger value="data">Data Table</TabsTrigger>
+            </TabsList>
 
-          <HistoricalTrendChart
-            title="Revenue vs Target"
-            description="Monthly revenue performance against targets"
-            data={trendData}
-            dataKeys={[
-              { key: "revenue", label: "Actual Revenue ($M)", color: "hsl(var(--primary))" },
-              { key: "target", label: "Target ($M)", color: "hsl(var(--chart-2))" }
-            ]}
-            xAxisKey="month"
-          />
+            <TabsContent value="overview" className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-4">
+                <KPICard 
+                  title="YTD Revenue" 
+                  value={revenueLoading ? "..." : `$${kpis.ytdRevenue}M`}
+                  trend="up" 
+                  icon={DollarSign} 
+                />
+                <KPICard 
+                  title="Total NPT Hours" 
+                  value={nptLoading ? "..." : kpis.totalNptHours}
+                  icon={AlertTriangle} 
+                />
+                <KPICard 
+                  title="Billable NPT Hours" 
+                  value={nptLoading ? "..." : kpis.billableHours}
+                  icon={Calendar} 
+                />
+                <KPICard 
+                  title="Total Incidents" 
+                  value={nptLoading ? "..." : kpis.incidents}
+                  icon={BarChart3} 
+                />
+              </div>
 
-          <DataTableWithDB 
-            columns={tableColumns} 
-            reportType="revenue"
-            formatRow={(row) => ({
-              ...row,
-              revenue: `$${(row.revenue_actual / 1000000).toFixed(1)}M`,
-              costs: '-',
-              profit: `$${(row.variance / 1000000).toFixed(1)}M`,
-              margin: '-'
-            })}
-          />
+              <HistoricalTrendChart
+                title="Revenue vs Target"
+                description="Monthly revenue performance against targets"
+                data={trendData}
+                dataKeys={[
+                  { key: "revenue", label: "Actual Revenue ($M)", color: "hsl(var(--primary))" },
+                  { key: "target", label: "Target ($M)", color: "hsl(var(--chart-2))" }
+                ]}
+                xAxisKey="month"
+              />
+            </TabsContent>
+
+            <TabsContent value="analytics" className="space-y-6">
+              <YTDFilters data={nptData || []} onFilterChange={setFilters} />
+              <YTDAnalytics data={filteredNptData} />
+            </TabsContent>
+
+            <TabsContent value="data" className="space-y-6">
+              <YTDFilters data={nptData || []} onFilterChange={setFilters} />
+              <DataTableWithDB 
+                columns={[
+                  { key: "rig", label: "Rig", sortable: true },
+                  { key: "date", label: "Date", sortable: true },
+                  { key: "npt_hours", label: "Hours", sortable: true },
+                  { key: "system", label: "System", sortable: true },
+                  { key: "billable", label: "Billable", sortable: true },
+                  { key: "root_cause", label: "Root Cause", sortable: true },
+                ]} 
+                reportType="billing_npt"
+                formatRow={(row) => ({
+                  rig: row.rig || '-',
+                  date: row.date || '-',
+                  npt_hours: row.npt_hours || '-',
+                  system: row.system || '-',
+                  billable: row.billable ? 'Yes' : 'No',
+                  root_cause: row.root_cause || '-',
+                })}
+              />
+            </TabsContent>
+          </Tabs>
         </div>
       }
       entryContent={
@@ -84,11 +174,18 @@ const YTD = () => {
         />
       }
       uploadContent={
-        <ExcelUploadZone
-          title="Upload YTD Report"
-          templateName="ytd_template.xlsx"
-          reportType="ytd"
-        />
+        <div className="space-y-6">
+          <ExcelUploadZone
+            title="Upload NPT Data"
+            templateName="billing_npt_template.xlsx"
+            reportType="billing_npt"
+          />
+          <ExcelUploadZone
+            title="Upload Revenue Data"
+            templateName="ytd_template.xlsx"
+            reportType="ytd"
+          />
+        </div>
       }
     />
   );
