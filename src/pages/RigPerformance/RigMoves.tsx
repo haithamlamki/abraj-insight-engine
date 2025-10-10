@@ -8,35 +8,41 @@ import { Truck, DollarSign, MapPin } from "lucide-react";
 
 const RigMoves = () => {
   const formFields = [
-    { name: "date", label: "Move Date", type: "date" as const, required: true },
-    { name: "rigNumber", label: "Rig Number", type: "text" as const, required: true },
+    { name: "rig", label: "Rig", type: "text" as const, required: true },
+    { name: "date", label: "Date", type: "date" as const, required: true },
     { name: "fromLocation", label: "From Location", type: "text" as const, required: true },
     { name: "toLocation", label: "To Location", type: "text" as const, required: true },
     { name: "distance", label: "Distance (km)", type: "number" as const, required: true },
-    { name: "cost", label: "Cost ($)", type: "number" as const, required: true },
+    { name: "budgetedTime", label: "Budgeted Time (hrs)", type: "number" as const, required: true },
+    { name: "actualTime", label: "Actual Time (hrs)", type: "number" as const, required: true },
+    { name: "budgetedCost", label: "Budgeted Cost ($)", type: "number" as const, required: true },
+    { name: "actualCost", label: "Actual Cost ($)", type: "number" as const, required: true },
+    { name: "profitLoss", label: "Profit/Loss ($)", type: "number" as const },
   ];
 
   const tableColumns = [
+    { key: "rig", label: "Rig", sortable: true },
     { key: "date", label: "Date", sortable: true },
-    { key: "rigNumber", label: "Rig", sortable: true },
-    { key: "route", label: "Route", sortable: false },
+    { key: "fromLocation", label: "From", sortable: true },
+    { key: "toLocation", label: "To", sortable: true },
     { key: "distance", label: "Distance", sortable: true },
-    { key: "cost", label: "Cost", sortable: true },
+    { key: "actualTime", label: "Time (hrs)", sortable: true },
+    { key: "profitLoss", label: "Profit/Loss", sortable: true },
   ];
 
   const sampleData = [
-    { date: "2024-03-15", rigNumber: "Rig-204", route: "Site A → Site B", distance: "176 km", cost: "$52,000" },
-    { date: "2024-03-12", rigNumber: "Rig-101", route: "Site C → Site D", distance: "142 km", cost: "$45,000" },
-    { date: "2024-03-10", rigNumber: "Rig-305", route: "Site E → Site F", distance: "98 km", cost: "$32,000" },
+    { rig: "ADC-225", date: "2024-01-10", fromLocation: "Al Dhafra", toLocation: "Ruwais", distance: "45", actualTime: "12.5", profitLoss: "+$15,000" },
+    { rig: "ADC-226", date: "2024-01-25", fromLocation: "Habshan", toLocation: "Bu Hasa", distance: "68", actualTime: "18.2", profitLoss: "-$8,500" },
+    { rig: "ADC-227", date: "2024-02-08", fromLocation: "Asab", toLocation: "Shah", distance: "32", actualTime: "10.8", profitLoss: "+$22,000" },
   ];
 
   const trendData = [
-    { month: "Oct", moves: 18, cost: 38 },
-    { month: "Nov", moves: 22, cost: 42 },
-    { month: "Dec", moves: 16, cost: 35 },
-    { month: "Jan", moves: 19, cost: 39 },
-    { month: "Feb", moves: 20, cost: 41 },
-    { month: "Mar", moves: 23, cost: 45 },
+    { month: "Oct", moves: 3, budgetedCost: 420, actualCost: 435, profit: 25 },
+    { month: "Nov", moves: 3, budgetedCost: 450, actualCost: 465, profit: 28 },
+    { month: "Dec", moves: 2, budgetedCost: 320, actualCost: 305, profit: 45 },
+    { month: "Jan", moves: 4, budgetedCost: 560, actualCost: 575, profit: 18 },
+    { month: "Feb", moves: 4, budgetedCost: 580, actualCost: 595, profit: 15 },
+    { month: "Mar", moves: 3, budgetedCost: 470, actualCost: 455, profit: 35 },
   ];
 
   return (
@@ -57,12 +63,13 @@ const RigMoves = () => {
           </div>
 
           <HistoricalTrendChart
-            title="Rig Moves & Cost Trend"
-            description="Number of moves and associated costs over time"
+            title="Rig Move Cost Analysis"
+            description="Budgeted vs actual costs and profitability"
             data={trendData}
             dataKeys={[
-              { key: "moves", label: "Number of Moves", color: "hsl(var(--primary))" },
-              { key: "cost", label: "Cost ($000)", color: "hsl(var(--chart-2))" }
+              { key: "budgetedCost", label: "Budgeted Cost ($K)", color: "hsl(var(--chart-2))" },
+              { key: "actualCost", label: "Actual Cost ($K)", color: "hsl(var(--primary))" },
+              { key: "profit", label: "Profit Margin ($K)", color: "hsl(var(--chart-3))" }
             ]}
             xAxisKey="month"
           />

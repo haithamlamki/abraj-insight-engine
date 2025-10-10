@@ -8,25 +8,30 @@ import { Percent, TrendingUp, Calendar } from "lucide-react";
 
 const Utilization = () => {
   const formFields = [
-    { name: "date", label: "Report Date", type: "date" as const, required: true },
-    { name: "rigNumber", label: "Rig Number", type: "text" as const, required: true, placeholder: "e.g., Rig-101" },
-    { name: "activeHours", label: "Active Hours", type: "number" as const, required: true },
-    { name: "totalHours", label: "Total Available Hours", type: "number" as const, required: true },
-    { name: "utilizationRate", label: "Utilization Rate (%)", type: "number" as const, required: true },
+    { name: "rig", label: "Rig", type: "text" as const, required: true },
+    { name: "month", label: "Month", type: "select" as const, options: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], required: true },
+    { name: "client", label: "Client", type: "text" as const, required: true },
+    { name: "calendarDays", label: "Calendar Days", type: "number" as const, required: true },
+    { name: "workingDays", label: "Working Days", type: "number" as const, required: true },
+    { name: "allowableNPT", label: "Allowable NPT (hrs)", type: "number" as const, required: true },
+    { name: "actualNPT", label: "Actual NPT (hrs)", type: "number" as const, required: true },
+    { name: "utilization", label: "Utilization (%)", type: "number" as const, required: true },
   ];
 
   const tableColumns = [
-    { key: "date", label: "Date", sortable: true },
-    { key: "rigNumber", label: "Rig", sortable: true },
-    { key: "activeHours", label: "Active Hours", sortable: true },
-    { key: "totalHours", label: "Total Hours", sortable: true },
-    { key: "utilizationRate", label: "Utilization %", sortable: true },
+    { key: "rig", label: "Rig", sortable: true },
+    { key: "month", label: "Month", sortable: true },
+    { key: "client", label: "Client", sortable: true },
+    { key: "workingDays", label: "Working Days", sortable: true },
+    { key: "allowableNPT", label: "Allowable NPT", sortable: true },
+    { key: "actualNPT", label: "Actual NPT", sortable: true },
+    { key: "utilization", label: "Utilization", sortable: true },
   ];
 
   const sampleData = [
-    { date: "2024-03-01", rigNumber: "Rig-101", activeHours: 21, totalHours: 24, utilizationRate: "87.5%" },
-    { date: "2024-03-01", rigNumber: "Rig-102", activeHours: 22, totalHours: 24, utilizationRate: "91.7%" },
-    { date: "2024-03-01", rigNumber: "Rig-103", activeHours: 19, totalHours: 24, utilizationRate: "79.2%" },
+    { rig: "ADC-225", month: "January", client: "ADNOC", workingDays: "31", allowableNPT: "74.4", actualNPT: "58.2", utilization: "92.2%" },
+    { rig: "ADC-226", month: "January", client: "ADNOC", workingDays: "31", allowableNPT: "74.4", actualNPT: "52.1", utilization: "93.8%" },
+    { rig: "ADC-227", month: "January", client: "ADNOC", workingDays: "31", allowableNPT: "74.4", actualNPT: "65.5", utilization: "90.5%" },
   ];
 
   const trendData = [

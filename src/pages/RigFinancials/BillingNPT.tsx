@@ -8,34 +8,40 @@ import { Clock, AlertTriangle, TrendingDown } from "lucide-react";
 
 const BillingNPT = () => {
   const formFields = [
+    { name: "rig", label: "Rig", type: "text" as const, required: true },
     { name: "date", label: "Date", type: "date" as const, required: true },
-    { name: "rigNumber", label: "Rig Number", type: "text" as const, required: true },
-    { name: "nptHours", label: "NPT Hours", type: "number" as const, required: true },
-    { name: "category", label: "NPT Category", type: "select" as const, options: ["Equipment Failure", "Weather", "Maintenance", "Other"], required: true },
-    { name: "cost", label: "Cost Impact ($)", type: "number" as const, required: true },
+    { name: "system", label: "System", type: "select" as const, options: ["Draw Works", "Top Drive", "Mud Pumps", "BOP", "Power Generation", "Hydraulics"], required: true },
+    { name: "subSystem", label: "Sub System", type: "text" as const, required: true },
+    { name: "equipmentFailure", label: "Equipment Failure", type: "text" as const, required: true },
+    { name: "rootCause", label: "Root Cause", type: "text" as const, required: true },
+    { name: "correctiveAction", label: "Corrective Action", type: "text" as const, required: true },
+    { name: "hours", label: "NPT Hours", type: "number" as const, required: true },
+    { name: "notificationNo", label: "Notification Number", type: "text" as const },
+    { name: "workOrderNo", label: "Work Order Number", type: "text" as const },
   ];
 
   const tableColumns = [
+    { key: "rig", label: "Rig", sortable: true },
     { key: "date", label: "Date", sortable: true },
-    { key: "rigNumber", label: "Rig", sortable: true },
-    { key: "nptHours", label: "NPT Hours", sortable: true },
-    { key: "category", label: "Category", sortable: true },
-    { key: "cost", label: "Cost Impact", sortable: true },
+    { key: "system", label: "System", sortable: true },
+    { key: "equipmentFailure", label: "Equipment", sortable: true },
+    { key: "rootCause", label: "Root Cause", sortable: true },
+    { key: "hours", label: "NPT Hours", sortable: true },
   ];
 
   const sampleData = [
-    { date: "2024-03-15", rigNumber: "Rig-301", nptHours: 8.5, category: "Equipment Failure", cost: "$12,500" },
-    { date: "2024-03-14", rigNumber: "Rig-102", nptHours: 4.0, category: "Weather", cost: "$5,800" },
-    { date: "2024-03-13", rigNumber: "Rig-205", nptHours: 12.0, category: "Maintenance", cost: "$18,000" },
+    { rig: "ADC-225", date: "2024-01-15", system: "Draw Works", equipmentFailure: "Main Brake", rootCause: "Bearing Failure", hours: "12.5" },
+    { rig: "ADC-226", date: "2024-01-18", system: "Top Drive", equipmentFailure: "Motor Assembly", rootCause: "Overheating", hours: "8.0" },
+    { rig: "ADC-227", date: "2024-01-22", system: "Mud Pumps", equipmentFailure: "Liner Failure", rootCause: "Wear & Tear", hours: "16.5" },
   ];
 
   const trendData = [
-    { month: "Oct", actual: 298, allowable: 274 },
-    { month: "Nov", actual: 312, allowable: 274 },
-    { month: "Dec", actual: 287, allowable: 274 },
-    { month: "Jan", actual: 322, allowable: 274 },
-    { month: "Feb", actual: 344, allowable: 274 },
-    { month: "Mar", actual: 289, allowable: 274 },
+    { month: "Oct", drawWorks: 42, topDrive: 35, mudPumps: 48, bop: 22, power: 28, hydraulics: 16 },
+    { month: "Nov", drawWorks: 45, topDrive: 38, mudPumps: 52, bop: 25, power: 30, hydraulics: 18 },
+    { month: "Dec", drawWorks: 38, topDrive: 42, mudPumps: 45, bop: 20, power: 28, hydraulics: 22 },
+    { month: "Jan", drawWorks: 48, topDrive: 40, mudPumps: 55, bop: 28, power: 32, hydraulics: 20 },
+    { month: "Feb", drawWorks: 52, topDrive: 35, mudPumps: 58, bop: 30, power: 35, hydraulics: 25 },
+    { month: "Mar", drawWorks: 45, topDrive: 38, mudPumps: 50, bop: 24, power: 30, hydraulics: 19 },
   ];
 
   return (
@@ -56,12 +62,14 @@ const BillingNPT = () => {
           </div>
 
           <HistoricalTrendChart
-            title="NPT Trend: Actual vs Allowable"
-            description="Monthly non-productive time hours comparison"
+            title="NPT by System"
+            description="Non-productive time breakdown by major system"
             data={trendData}
             dataKeys={[
-              { key: "actual", label: "Actual NPT", color: "hsl(var(--destructive))" },
-              { key: "allowable", label: "Allowable NPT", color: "hsl(var(--chart-2))" }
+              { key: "drawWorks", label: "Draw Works", color: "hsl(var(--destructive))" },
+              { key: "topDrive", label: "Top Drive", color: "hsl(var(--chart-2))" },
+              { key: "mudPumps", label: "Mud Pumps", color: "hsl(var(--chart-3))" },
+              { key: "bop", label: "BOP", color: "hsl(var(--chart-4))" }
             ]}
             xAxisKey="month"
           />

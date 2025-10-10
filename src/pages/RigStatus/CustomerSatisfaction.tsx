@@ -8,34 +8,36 @@ import { SmilePlus, Star, TrendingUp } from "lucide-react";
 
 const CustomerSatisfaction = () => {
   const formFields = [
-    { name: "date", label: "Survey Date", type: "date" as const, required: true },
-    { name: "clientName", label: "Client Name", type: "text" as const, required: true },
-    { name: "rigNumber", label: "Rig Number", type: "text" as const, required: true },
-    { name: "rating", label: "Rating (1-5)", type: "number" as const, required: true },
-    { name: "feedback", label: "Feedback", type: "text" as const },
+    { name: "rig", label: "Rig", type: "text" as const, required: true },
+    { name: "month", label: "Month", type: "select" as const, options: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], required: true },
+    { name: "year", label: "Year", type: "select" as const, options: ["2024", "2023", "2022"], required: true },
+    { name: "satisfactionRate", label: "Satisfaction Rate (%)", type: "number" as const, required: true },
+    { name: "responseTime", label: "Avg Response Time (hrs)", type: "number" as const },
+    { name: "issuesResolved", label: "Issues Resolved", type: "number" as const },
+    { name: "clientFeedback", label: "Client Feedback", type: "text" as const },
   ];
 
   const tableColumns = [
-    { key: "date", label: "Date", sortable: true },
-    { key: "clientName", label: "Client", sortable: true },
-    { key: "rigNumber", label: "Rig", sortable: true },
-    { key: "rating", label: "Rating", sortable: true },
-    { key: "feedback", label: "Feedback", sortable: false },
+    { key: "rig", label: "Rig", sortable: true },
+    { key: "month", label: "Month", sortable: true },
+    { key: "satisfactionRate", label: "Satisfaction", sortable: true },
+    { key: "responseTime", label: "Response Time", sortable: true },
+    { key: "issuesResolved", label: "Issues Resolved", sortable: true },
   ];
 
   const sampleData = [
-    { date: "2024-03-15", clientName: "Company A", rigNumber: "Rig-101", rating: "4.8/5", feedback: "Excellent service" },
-    { date: "2024-03-14", clientName: "Company B", rigNumber: "Rig-205", rating: "4.5/5", feedback: "Good performance" },
-    { date: "2024-03-12", clientName: "Company C", rigNumber: "Rig-102", rating: "4.9/5", feedback: "Outstanding work" },
+    { rig: "ADC-225", month: "January", satisfactionRate: "94.5%", responseTime: "2.3", issuesResolved: "45" },
+    { rig: "ADC-226", month: "January", satisfactionRate: "96.8%", responseTime: "1.8", issuesResolved: "38" },
+    { rig: "ADC-227", month: "January", satisfactionRate: "92.2%", responseTime: "2.8", issuesResolved: "52" },
   ];
 
   const trendData = [
-    { month: "Oct", rating: 4.4 },
-    { month: "Nov", rating: 4.5 },
-    { month: "Dec", rating: 4.6 },
-    { month: "Jan", rating: 4.5 },
-    { month: "Feb", rating: 4.7 },
-    { month: "Mar", rating: 4.7 },
+    { month: "Oct", satisfaction: 93.2, responseTime: 2.5 },
+    { month: "Nov", satisfaction: 94.5, responseTime: 2.3 },
+    { month: "Dec", satisfaction: 96.8, responseTime: 1.8 },
+    { month: "Jan", satisfaction: 92.8, responseTime: 2.6 },
+    { month: "Feb", satisfaction: 95.2, responseTime: 2.1 },
+    { month: "Mar", satisfaction: 94.5, responseTime: 2.3 },
   ];
 
   return (
@@ -56,10 +58,13 @@ const CustomerSatisfaction = () => {
           </div>
 
           <HistoricalTrendChart
-            title="Customer Satisfaction Trend"
-            description="Average satisfaction rating over time"
+            title="Customer Satisfaction Metrics"
+            description="Satisfaction rate and response time trends"
             data={trendData}
-            dataKeys={[{ key: "rating", label: "Rating", color: "hsl(var(--success))" }]}
+            dataKeys={[
+              { key: "satisfaction", label: "Satisfaction Rate (%)", color: "hsl(var(--primary))" },
+              { key: "responseTime", label: "Avg Response Time (hrs)", color: "hsl(var(--chart-2))" }
+            ]}
             xAxisKey="month"
           />
 

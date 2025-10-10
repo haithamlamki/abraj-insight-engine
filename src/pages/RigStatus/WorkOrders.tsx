@@ -8,34 +8,39 @@ import { ClipboardList, CheckCircle2, Clock } from "lucide-react";
 
 const WorkOrders = () => {
   const formFields = [
-    { name: "date", label: "Date", type: "date" as const, required: true },
-    { name: "woNumber", label: "WO Number", type: "text" as const, required: true },
-    { name: "rigNumber", label: "Rig Number", type: "text" as const, required: true },
-    { name: "priority", label: "Priority", type: "select" as const, options: ["High", "Medium", "Low"], required: true },
-    { name: "status", label: "Status", type: "select" as const, options: ["Open", "In Progress", "Completed"], required: true },
+    { name: "rig", label: "Rig", type: "text" as const, required: true },
+    { name: "month", label: "Month", type: "select" as const, options: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], required: true },
+    { name: "elecOpen", label: "ELEC Open", type: "number" as const, required: true },
+    { name: "elecClosed", label: "ELEC Closed", type: "number" as const, required: true },
+    { name: "mechOpen", label: "MECH Open", type: "number" as const, required: true },
+    { name: "mechClosed", label: "MECH Closed", type: "number" as const, required: true },
+    { name: "operOpen", label: "OPER Open", type: "number" as const, required: true },
+    { name: "operClosed", label: "OPER Closed", type: "number" as const, required: true },
+    { name: "complianceRate", label: "Compliance Rate (%)", type: "number" as const },
   ];
 
   const tableColumns = [
-    { key: "woNumber", label: "WO #", sortable: true },
-    { key: "rigNumber", label: "Rig", sortable: true },
-    { key: "description", label: "Description", sortable: false },
-    { key: "priority", label: "Priority", sortable: true },
-    { key: "status", label: "Status", sortable: true },
+    { key: "rig", label: "Rig", sortable: true },
+    { key: "month", label: "Month", sortable: true },
+    { key: "elecTotal", label: "ELEC Total", sortable: true },
+    { key: "mechTotal", label: "MECH Total", sortable: true },
+    { key: "operTotal", label: "OPER Total", sortable: true },
+    { key: "complianceRate", label: "Compliance", sortable: true },
   ];
 
   const sampleData = [
-    { woNumber: "WO-2024-157", rigNumber: "Rig-101", description: "Hydraulic system repair", priority: "High", status: "In Progress" },
-    { woNumber: "WO-2024-158", rigNumber: "Rig-205", description: "Routine inspection", priority: "Medium", status: "Open" },
-    { woNumber: "WO-2024-159", rigNumber: "Rig-102", description: "Electrical maintenance", priority: "High", status: "Completed" },
+    { rig: "ADC-225", month: "January", elecTotal: "45", mechTotal: "62", operTotal: "28", complianceRate: "94.2%" },
+    { rig: "ADC-226", month: "January", elecTotal: "38", mechTotal: "58", operTotal: "32", complianceRate: "96.1%" },
+    { rig: "ADC-227", month: "January", elecTotal: "52", mechTotal: "71", operTotal: "25", complianceRate: "92.8%" },
   ];
 
   const trendData = [
-    { month: "Oct", active: 32, completed: 45 },
-    { month: "Nov", active: 35, completed: 42 },
-    { month: "Dec", active: 30, completed: 48 },
-    { month: "Jan", active: 36, completed: 44 },
-    { month: "Feb", active: 34, completed: 46 },
-    { month: "Mar", active: 38, completed: 50 },
+    { month: "Oct", elec: 42, mech: 58, oper: 26, compliance: 93 },
+    { month: "Nov", elec: 45, mech: 62, oper: 28, compliance: 94 },
+    { month: "Dec", elec: 38, mech: 58, oper: 32, compliance: 96 },
+    { month: "Jan", elec: 48, mech: 65, oper: 25, compliance: 92 },
+    { month: "Feb", elec: 52, mech: 71, oper: 25, compliance: 93 },
+    { month: "Mar", elec: 45, mech: 62, oper: 30, compliance: 95 },
   ];
 
   return (
@@ -56,12 +61,14 @@ const WorkOrders = () => {
           </div>
 
           <HistoricalTrendChart
-            title="Work Orders Trend"
-            description="Active vs completed work orders over time"
+            title="Work Order Distribution by Category"
+            description="ELEC, MECH, and OPER work orders over time"
             data={trendData}
             dataKeys={[
-              { key: "active", label: "Active WOs", color: "hsl(var(--chart-1))" },
-              { key: "completed", label: "Completed WOs", color: "hsl(var(--success))" }
+              { key: "elec", label: "Electrical", color: "hsl(var(--chart-1))" },
+              { key: "mech", label: "Mechanical", color: "hsl(var(--chart-2))" },
+              { key: "oper", label: "Operational", color: "hsl(var(--chart-3))" },
+              { key: "compliance", label: "Compliance %", color: "hsl(var(--primary))" }
             ]}
             xAxisKey="month"
           />

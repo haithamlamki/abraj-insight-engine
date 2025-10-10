@@ -8,34 +8,38 @@ import { Fuel as FuelIcon, TrendingDown, Gauge } from "lucide-react";
 
 const Fuel = () => {
   const formFields = [
+    { name: "rig", label: "Rig", type: "text" as const, required: true },
     { name: "date", label: "Date", type: "date" as const, required: true },
-    { name: "rigNumber", label: "Rig Number", type: "text" as const, required: true },
-    { name: "fuelConsumed", label: "Fuel Consumed (L)", type: "number" as const, required: true },
-    { name: "operatingHours", label: "Operating Hours", type: "number" as const, required: true },
-    { name: "efficiency", label: "L/Hour", type: "number" as const, required: true },
+    { name: "fuelType", label: "Fuel Type", type: "select" as const, options: ["Diesel", "Gas", "Biodiesel"], required: true },
+    { name: "quantity", label: "Quantity (L)", type: "number" as const, required: true },
+    { name: "cost", label: "Cost ($)", type: "number" as const, required: true },
+    { name: "supplier", label: "Supplier", type: "text" as const },
+    { name: "hoursOperated", label: "Hours Operated", type: "number" as const },
+    { name: "efficiency", label: "Efficiency (L/hr)", type: "number" as const },
   ];
 
   const tableColumns = [
+    { key: "rig", label: "Rig", sortable: true },
     { key: "date", label: "Date", sortable: true },
-    { key: "rigNumber", label: "Rig", sortable: true },
-    { key: "fuelConsumed", label: "Fuel (L)", sortable: true },
-    { key: "operatingHours", label: "Hours", sortable: true },
+    { key: "fuelType", label: "Type", sortable: true },
+    { key: "quantity", label: "Quantity (L)", sortable: true },
+    { key: "cost", label: "Cost", sortable: true },
     { key: "efficiency", label: "Efficiency", sortable: true },
   ];
 
   const sampleData = [
-    { date: "2024-03-15", rigNumber: "Rig-101", fuelConsumed: "1,850 L", operatingHours: 22, efficiency: "84 L/hr" },
-    { date: "2024-03-15", rigNumber: "Rig-102", fuelConsumed: "1,920 L", operatingHours: 24, efficiency: "80 L/hr" },
-    { date: "2024-03-15", rigNumber: "Rig-103", fuelConsumed: "1,680 L", operatingHours: 20, efficiency: "84 L/hr" },
+    { rig: "ADC-225", date: "2024-01-15", fuelType: "Diesel", quantity: "12,500", cost: "$15,000", efficiency: "520 L/hr" },
+    { rig: "ADC-226", date: "2024-01-16", fuelType: "Diesel", quantity: "11,800", cost: "$14,160", efficiency: "492 L/hr" },
+    { rig: "ADC-227", date: "2024-01-17", fuelType: "Diesel", quantity: "13,200", cost: "$15,840", efficiency: "550 L/hr" },
   ];
 
   const trendData = [
-    { month: "Oct", consumption: 46.8 },
-    { month: "Nov", consumption: 45.2 },
-    { month: "Dec", consumption: 47.1 },
-    { month: "Jan", consumption: 44.9 },
-    { month: "Feb", consumption: 46.3 },
-    { month: "Mar", consumption: 45.2 },
+    { month: "Oct", consumption: 375, cost: 450, efficiency: 505 },
+    { month: "Nov", consumption: 385, cost: 462, efficiency: 520 },
+    { month: "Dec", consumption: 352, cost: 422, efficiency: 492 },
+    { month: "Jan", consumption: 398, cost: 478, efficiency: 550 },
+    { month: "Feb", consumption: 380, cost: 456, efficiency: 515 },
+    { month: "Mar", consumption: 365, cost: 438, efficiency: 495 },
   ];
 
   return (
@@ -56,10 +60,14 @@ const Fuel = () => {
           </div>
 
           <HistoricalTrendChart
-            title="Monthly Fuel Consumption"
-            description="Fuel usage trends over the past 6 months"
+            title="Fuel Consumption Analysis"
+            description="Consumption, cost, and efficiency metrics"
             data={trendData}
-            dataKeys={[{ key: "consumption", label: "Consumption (000L)", color: "hsl(var(--chart-3))" }]}
+            dataKeys={[
+              { key: "consumption", label: "Consumption (K Liters)", color: "hsl(var(--chart-2))" },
+              { key: "cost", label: "Cost ($K)", color: "hsl(var(--chart-3))" },
+              { key: "efficiency", label: "Efficiency (L/hr)", color: "hsl(var(--primary))" }
+            ]}
             xAxisKey="month"
           />
 

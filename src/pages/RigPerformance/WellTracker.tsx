@@ -8,34 +8,39 @@ import { Target, Gauge, CheckCircle2 } from "lucide-react";
 
 const WellTracker = () => {
   const formFields = [
-    { name: "date", label: "Date", type: "date" as const, required: true },
+    { name: "rig", label: "Rig", type: "text" as const, required: true },
     { name: "wellName", label: "Well Name", type: "text" as const, required: true },
-    { name: "rigNumber", label: "Rig Number", type: "text" as const, required: true },
-    { name: "depth", label: "Depth (m)", type: "number" as const, required: true },
-    { name: "status", label: "Status", type: "select" as const, options: ["Drilling", "Completed", "Suspended"], required: true },
+    { name: "startDate", label: "Start Date", type: "date" as const, required: true },
+    { name: "endDate", label: "End Date", type: "date" as const },
+    { name: "targetDepth", label: "Target Depth (m)", type: "number" as const, required: true },
+    { name: "actualDepth", label: "Actual Depth (m)", type: "number" as const, required: true },
+    { name: "status", label: "Status", type: "select" as const, options: ["Drilling", "Completed", "Suspended", "P&A"], required: true },
+    { name: "operator", label: "Operator", type: "text" as const, required: true },
+    { name: "location", label: "Location", type: "text" as const },
   ];
 
   const tableColumns = [
+    { key: "rig", label: "Rig", sortable: true },
     { key: "wellName", label: "Well", sortable: true },
-    { key: "rigNumber", label: "Rig", sortable: true },
-    { key: "depth", label: "Depth", sortable: true },
-    { key: "progress", label: "Progress", sortable: true },
+    { key: "startDate", label: "Start Date", sortable: true },
+    { key: "actualDepth", label: "Depth (m)", sortable: true },
     { key: "status", label: "Status", sortable: true },
+    { key: "operator", label: "Operator", sortable: true },
   ];
 
   const sampleData = [
-    { wellName: "Well-A-45", rigNumber: "Rig-101", depth: "3,240 m", progress: "85%", status: "Drilling" },
-    { wellName: "Well-B-12", rigNumber: "Rig-102", depth: "2,890 m", progress: "100%", status: "Completed" },
-    { wellName: "Well-C-78", rigNumber: "Rig-205", depth: "1,560 m", progress: "45%", status: "Drilling" },
+    { rig: "ADC-225", wellName: "BHD-2024-001", startDate: "2024-01-05", actualDepth: "3,245", status: "Drilling", operator: "ADNOC" },
+    { rig: "ADC-226", wellName: "RWS-2024-012", startDate: "2023-12-28", actualDepth: "4,120", status: "Completed", operator: "ADNOC" },
+    { rig: "ADC-227", wellName: "HAB-2024-003", startDate: "2024-01-15", actualDepth: "2,890", status: "Drilling", operator: "ADNOC" },
   ];
 
   const trendData = [
-    { month: "Oct", completed: 12, active: 8 },
-    { month: "Nov", completed: 11, active: 9 },
-    { month: "Dec", completed: 13, active: 7 },
-    { month: "Jan", completed: 14, active: 8 },
-    { month: "Feb", completed: 12, active: 9 },
-    { month: "Mar", completed: 14, active: 10 },
+    { month: "Oct", drilling: 5, completed: 2, suspended: 1 },
+    { month: "Nov", drilling: 6, completed: 3, suspended: 0 },
+    { month: "Dec", drilling: 4, completed: 4, suspended: 2 },
+    { month: "Jan", drilling: 5, completed: 2, suspended: 1 },
+    { month: "Feb", drilling: 6, completed: 3, suspended: 1 },
+    { month: "Mar", drilling: 5, completed: 3, suspended: 1 },
   ];
 
   return (
@@ -56,12 +61,13 @@ const WellTracker = () => {
           </div>
 
           <HistoricalTrendChart
-            title="Well Completion Trend"
-            description="Completed vs active wells over time"
+            title="Well Status Distribution"
+            description="Drilling, completed, and suspended wells over time"
             data={trendData}
             dataKeys={[
-              { key: "completed", label: "Completed Wells", color: "hsl(var(--success))" },
-              { key: "active", label: "Active Wells", color: "hsl(var(--primary))" }
+              { key: "drilling", label: "Active Drilling", color: "hsl(var(--chart-1))" },
+              { key: "completed", label: "Completed", color: "hsl(var(--chart-2))" },
+              { key: "suspended", label: "Suspended", color: "hsl(var(--chart-3))" }
             ]}
             xAxisKey="month"
           />
