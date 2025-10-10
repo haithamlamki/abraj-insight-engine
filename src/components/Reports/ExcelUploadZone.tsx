@@ -86,6 +86,11 @@ export const ExcelUploadZone = ({
         
         // Map Excel data to database format
         const mappedDataRaw = data.map(row => mapExcelToDbFields(row, reportType));
+        // Debug first row mapping
+        if (data.length > 0) {
+          console.log('[ExcelUploadZone] First row original:', data[0]);
+          console.log('[ExcelUploadZone] First row mapped:', mappedDataRaw[0]);
+        }
         // Filter out rows missing required fields (rig, month, year)
         const mappedData = mappedDataRaw.filter((row: any) => row && row.rig && row.month && (row.year !== null && row.year !== undefined && row.year !== ''));
         setParsedData(mappedData);

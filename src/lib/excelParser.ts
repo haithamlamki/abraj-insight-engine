@@ -136,6 +136,18 @@ function parseNumeric(value: any): number | null {
 }
 
 /**
+ * Normalize header names to avoid mismatches due to spaces/case/punctuation
+ */
+function normalizeHeader(str: any): string {
+  return String(str || '')
+    .toLowerCase()
+    .replace(/[\u200B-\u200D\uFEFF]/g, '') // zero-width chars
+    .replace(/[()%.,]/g, '') // common punctuation
+    .replace(/\s+/g, ' ') // collapse spaces
+    .trim();
+}
+
+/**
  * Map Excel column names to database field names
  */
 export function mapExcelToDbFields(data: any, type: string): any {
@@ -262,31 +274,41 @@ export function mapExcelToDbFields(data: any, type: string): any {
     },
   };
   
-  const mapping = mappings[type] || {};
+  const sourceMapping = mappings[type] || {};
+  // Build a normalized mapping for robust matching
+  const mappingNormalized: { [key: string]: string } = Object.keys(sourceMapping).reduce((acc, key) => {
+    acc[normalizeHeader(key)] = sourceMapping[key];
+    return acc;
+  }, {} as { [key: string]: string });
+
   const mapped: any = {};
   
-  // Only map columns that are explicitly defined in the mapping
-  Object.keys(data).forEach(key => {
-    if (mapping[key]) {
-      const dbField = mapping[key];
-      let value = data[key];
-      
-      // Parse numeric fields for utilization type
-      if (type === 'utilization') {
-        if (dbField === 'utilization_rate' || 
-            dbField === 'allowable_npt' || 
-            dbField === 'working_days' || 
-            dbField === 'monthly_total_days') {
-          value = parseNumeric(value);
-        } else if (dbField === 'year') {
-          value = value !== null && value !== undefined && String(value).trim() !== '' ? parseInt(String(value).trim()) : null;
-        } else if (dbField === 'rig') {
-          value = value !== null && value !== undefined ? String(value).trim() : '';
-        }
+  // Only map columns that are explicitly defined in the mapping (normalized)
+  Object.keys(data).forEach((key) => {
+    const dbField = mappingNormalized[normalizeHeader(key)];
+    if (!dbField) return;
+
+    let value = data[key];
+
+    // Parse numeric/typed fields for utilization type
+    if (type === 'utilization') {
+      if (
+        dbField === 'utilization_rate' ||
+        dbField === 'allowable_npt' ||
+        dbField === 'working_days' ||
+        dbField === 'monthly_total_days'
+      ) {
+        value = parseNumeric(value);
+      } else if (dbField === 'year') {
+        value = value !== null && value !== undefined && String(value).trim() !== '' ? parseInt(String(value).trim()) : null;
+      } else if (dbField === 'rig') {
+        value = value !== null && value !== undefined ? String(value).trim() : '';
+      } else if (dbField === 'npt_type' || dbField === 'comment' || dbField === 'month') {
+        value = value !== null && value !== undefined ? String(value).trim() : null;
       }
-      
-      mapped[dbField] = value;
     }
+
+    mapped[dbField] = value;
   });
   
   // If no columns were mapped, log warning
