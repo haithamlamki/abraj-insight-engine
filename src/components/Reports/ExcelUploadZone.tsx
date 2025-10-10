@@ -81,25 +81,27 @@ export const ExcelUploadZone = ({
         toast.error(`Validation failed: ${result.errors.length} errors found`);
       } else {
         setUploadStatus("success");
-        const firstSheet = Object.keys(result.data)[0];
-        const data = result.data[firstSheet];
-        
+        // Collect data from ALL sheets instead of only the first
+        const sheetNames = Object.keys(result.data);
+        const allRows = sheetNames.reduce((acc: any[], name) => acc.concat(result.data[name] || []), [] as any[]);
+
         // Map Excel data to database format
-        const mappedDataRaw = data.map(row => mapExcelToDbFields(row, reportType));
+        const mappedDataRaw = allRows.map(row => mapExcelToDbFields(row, reportType));
         // Debug first row mapping
-        if (data.length > 0) {
-          console.log('[ExcelUploadZone] First row original:', data[0]);
+        if (allRows.length > 0) {
+          console.log('[ExcelUploadZone] First row original:', allRows[0]);
           console.log('[ExcelUploadZone] First row mapped:', mappedDataRaw[0]);
         }
         // Filter out rows missing required fields (rig, month, year)
         const mappedData = mappedDataRaw.filter((row: any) => row && row.rig && row.month && (row.year !== null && row.year !== undefined && row.year !== ''));
+        console.log(`[ExcelUploadZone] Sheets: ${sheetNames.length}, Rows found: ${allRows.length}, Rows valid: ${mappedData.length}`);
         setParsedData(mappedData);
-        
+
         if (onDataParsed) {
-          onDataParsed(data);
+          onDataParsed(allRows);
         }
-        
-        toast.success(`File "${file.name}" parsed successfully - ${mappedData.length} rows ready`);
+
+        toast.success(`Parsed ${mappedData.length} valid records from ${allRows.length} rows across ${sheetNames.length} sheet(s)`);
       }
     } catch (error) {
       setUploadStatus("error");

@@ -18,13 +18,18 @@ export async function insertData(table: string, data: any) {
  * Generic bulk insert function for any table
  */
 export async function bulkInsertData(table: string, dataArray: any[]) {
-  const { data: result, error } = await (supabase as any)
-    .from(table)
-    .insert(dataArray)
-    .select();
-  
-  if (error) throw error;
-  return result;
+  const chunkSize = 500;
+  const results: any[] = [];
+  for (let i = 0; i < dataArray.length; i += chunkSize) {
+    const chunk = dataArray.slice(i, i + chunkSize);
+    const { data, error } = await (supabase as any)
+      .from(table)
+      .insert(chunk)
+      .select();
+    if (error) throw error;
+    if (data) results.push(...data);
+  }
+  return results;
 }
 
 /**
