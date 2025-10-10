@@ -1,7 +1,7 @@
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
 import { DataEntryForm } from "@/components/Reports/DataEntryForm";
 import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
-import { DataTable } from "@/components/Reports/DataTable";
+import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
 import { ClipboardList, CheckCircle2, Clock } from "lucide-react";
@@ -73,7 +73,17 @@ const WorkOrders = () => {
             xAxisKey="month"
           />
 
-          <DataTable columns={tableColumns} data={sampleData} />
+          <DataTableWithDB 
+            columns={tableColumns} 
+            reportType="work_orders"
+            formatRow={(row) => ({
+              ...row,
+              elecTotal: (row.elec_open || 0) + (row.elec_closed || 0),
+              mechTotal: (row.mech_open || 0) + (row.mech_closed || 0),
+              operTotal: (row.oper_open || 0) + (row.oper_closed || 0),
+              complianceRate: row.compliance_rate ? `${row.compliance_rate}%` : '-'
+            })}
+          />
         </div>
       }
       entryContent={
@@ -81,6 +91,7 @@ const WorkOrders = () => {
           title="Create Work Order"
           fields={formFields}
           frequency="daily"
+          reportType="work_orders"
         />
       }
       uploadContent={

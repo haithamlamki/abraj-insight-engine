@@ -1,7 +1,7 @@
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
 import { DataEntryForm } from "@/components/Reports/DataEntryForm";
 import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
-import { DataTable } from "@/components/Reports/DataTable";
+import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
 import { DollarSign, TrendingUp, PieChart } from "lucide-react";
@@ -75,7 +75,21 @@ const Revenue = () => {
             xAxisKey="month"
           />
 
-          <DataTable columns={tableColumns} data={sampleData} />
+          <DataTableWithDB 
+            columns={tableColumns} 
+            reportType="revenue"
+            formatRow={(row) => ({
+              ...row,
+              rig: row.rig,
+              month: row.month,
+              days: row.working_days,
+              fuel: `$${row.fuel_charge?.toLocaleString() || 0}`,
+              nptRepair: `$${row.npt_repair?.toLocaleString() || 0}`,
+              nptZero: `$${row.npt_zero?.toLocaleString() || 0}`,
+              client: row.client || '-',
+              revTotal: `$${(row.revenue_actual / 1000000).toFixed(1)}M`
+            })}
+          />
         </div>
       }
       entryContent={
@@ -83,6 +97,7 @@ const Revenue = () => {
           title="Enter Revenue Data"
           fields={formFields}
           frequency="daily"
+          reportType="revenue"
         />
       }
       uploadContent={

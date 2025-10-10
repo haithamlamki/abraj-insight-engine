@@ -10,6 +10,7 @@ import { CalendarIcon, Save } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useSaveReportData } from "@/hooks/useReportData";
 
 interface FormField {
   name: string;
@@ -24,14 +25,16 @@ interface DataEntryFormProps {
   title: string;
   fields: FormField[];
   frequency: "daily" | "monthly";
+  reportType?: string;
   onSubmit?: (data: Record<string, any>) => void;
 }
 
-export const DataEntryForm = ({ title, fields, frequency, onSubmit }: DataEntryFormProps) => {
+export const DataEntryForm = ({ title, fields, frequency, reportType, onSubmit }: DataEntryFormProps) => {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [selectedFrequency, setSelectedFrequency] = useState<"daily" | "monthly">(frequency);
+  const saveData = useSaveReportData(reportType || 'default');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Basic validation
@@ -44,11 +47,23 @@ export const DataEntryForm = ({ title, fields, frequency, onSubmit }: DataEntryF
       return;
     }
 
-    toast.success("Data saved successfully");
-    if (onSubmit) {
-      onSubmit(formData);
+    try {
+      // Convert dates to strings if needed
+      const processedData = { ...formData };
+      Object.keys(processedData).forEach(key => {
+        if (processedData[key] instanceof Date) {
+          processedData[key] = format(processedData[key], 'yyyy-MM-dd');
+        }
+      });
+
+      await saveData.mutateAsync(processedData);
+      setFormData({});
+      if (onSubmit) {
+        onSubmit(processedData);
+      }
+    } catch (error) {
+      console.error('Form submission error:', error);
     }
-    setFormData({});
   };
 
   const handleFieldChange = (name: string, value: any) => {
@@ -148,9 +163,9 @@ export const DataEntryForm = ({ title, fields, frequency, onSubmit }: DataEntryF
           </div>
 
           <div className="flex gap-4">
-            <Button type="submit" className="flex items-center gap-2">
+            <Button type="submit" className="flex items-center gap-2" disabled={saveData.isPending}>
               <Save className="h-4 w-4" />
-              Save Data
+              {saveData.isPending ? 'Saving...' : 'Save Data'}
             </Button>
             <Button type="button" variant="outline" onClick={() => setFormData({})}>
               Clear Form

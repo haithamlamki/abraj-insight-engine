@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Upload, FileSpreadsheet, Download, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { parseExcelFile } from "@/lib/excelParser";
+import { parseExcelFile, mapExcelToDbFields } from "@/lib/excelParser";
 import { downloadTemplate } from "@/lib/excelTemplates";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useBulkSaveReportData } from "@/hooks/useReportData";
 
 interface ExcelUploadZoneProps {
   title: string;
@@ -26,7 +27,9 @@ export const ExcelUploadZone = ({
   const [uploadStatus, setUploadStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [uploading, setUploading] = useState(false);
+  const [parsedData, setParsedData] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bulkSave = useBulkSaveReportData(reportType);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -67,6 +70,7 @@ export const ExcelUploadZone = ({
     setUploading(true);
     setUploadStatus("idle");
     setErrorMessage('');
+    setParsedData([]);
 
     try {
       const result = await parseExcelFile(file);
@@ -80,11 +84,15 @@ export const ExcelUploadZone = ({
         const firstSheet = Object.keys(result.data)[0];
         const data = result.data[firstSheet];
         
+        // Map Excel data to database format
+        const mappedData = data.map(row => mapExcelToDbFields(row, reportType));
+        setParsedData(mappedData);
+        
         if (onDataParsed) {
           onDataParsed(data);
         }
         
-        toast.success(`File "${file.name}" uploaded successfully - ${data.length} rows parsed`);
+        toast.success(`File "${file.name}" parsed successfully - ${data.length} rows ready`);
       }
     } catch (error) {
       setUploadStatus("error");
@@ -92,9 +100,25 @@ export const ExcelUploadZone = ({
       toast.error("Failed to parse the Excel file");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleImportData = async () => {
+    if (parsedData.length === 0) {
+      toast.error("No data to import");
+      return;
+    }
+
+    try {
+      await bulkSave.mutateAsync(parsedData);
+      setParsedData([]);
+      setUploadedFile(null);
+      setUploadStatus("idle");
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
+    } catch (error) {
+      console.error('Import error:', error);
     }
   };
 
@@ -186,16 +210,20 @@ export const ExcelUploadZone = ({
             </Button>
           </div>
 
-          {uploadedFile && uploadStatus === "success" && (
+          {uploadedFile && uploadStatus === "success" && parsedData.length > 0 && (
             <div className="space-y-4">
               <div className="p-4 bg-success/10 border border-success rounded-lg">
                 <p className="font-medium text-success">File validated successfully</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  The uploaded file format is correct and ready to be processed.
+                  {parsedData.length} records ready to import to database
                 </p>
               </div>
-              <Button className="w-full" onClick={() => toast.success("Data imported successfully")}>
-                Process & Import Data
+              <Button 
+                className="w-full" 
+                onClick={handleImportData}
+                disabled={bulkSave.isPending}
+              >
+                {bulkSave.isPending ? 'Importing...' : 'Process & Import Data'}
               </Button>
             </div>
           )}
