@@ -182,23 +182,43 @@ export function mapExcelToDbFields(data: any, type: string): any {
     },
     billing_npt: {
       'Rig Number': 'rig',
+      'Rig Numb': 'rig',
+      'Rig': 'rig',
       'Year': 'year',
       'Month': 'month',
+      'Mont': 'month',
       'Date': 'date',
       'Hrs.': 'npt_hours',
+      'Hrs': 'npt_hours',
+      'NPT Hours': 'npt_hours',
       'NPT type': 'npt_type',
+      'NPT typ': 'npt_type',
       'SYSTEM': 'system',
+      'System': 'system',
       'Parent Equipment Failure': 'parent_equipment_failure',
+      'Parent Equipment Fail': 'parent_equipment_failure',
       'Part Equipment Failure': 'part_equipment_failure',
+      'Part Equipment Fail': 'part_equipment_failure',
       'Contractual Process': 'contractual_process',
+      'Contractual Proces': 'contractual_process',
       'Department Responsibility': 'department_responsibility',
+      'Department Responsibil': 'department_responsibility',
       'Immediate Cause of Failure': 'immediate_cause',
       'Root Cause': 'root_cause',
       'Immediate Corrective action': 'corrective_action',
+      'Immediate Corrective Action': 'corrective_action',
+      'Immediate Corrective act': 'corrective_action',
+      'Corrective Action': 'corrective_action',
       'Future Action & Improvement': 'future_action',
+      'Future Action and Improvement': 'future_action',
       'Action Party': 'action_party',
       'Notification Number (N2)': 'notification_number',
+      'Notification Number': 'notification_number',
       'Failure investigation reports': 'failure_investigation_reports',
+      'Failure investigation report': 'failure_investigation_reports',
+      'Equipment Failure': 'equipment_failure',
+      'Billable': 'billable',
+      'Comments': 'comments',
     },
     fuel: {
       'Rig': 'rig',
@@ -298,7 +318,7 @@ export function mapExcelToDbFields(data: any, type: string): any {
 
     let value = data[key];
 
-    // Parse numeric/typed fields for utilization type
+    // Parse numeric/typed fields based on type
     if (type === 'utilization') {
       if (
         dbField === 'utilization_rate' ||
@@ -312,6 +332,19 @@ export function mapExcelToDbFields(data: any, type: string): any {
       } else if (dbField === 'rig') {
         value = value !== null && value !== undefined ? String(value).trim() : '';
       } else if (dbField === 'npt_type' || dbField === 'comment' || dbField === 'month') {
+        value = value !== null && value !== undefined ? String(value).trim() : null;
+      }
+    } else if (type === 'billing_npt') {
+      if (dbField === 'npt_hours') {
+        value = parseNumeric(value);
+      } else if (dbField === 'year') {
+        value = value !== null && value !== undefined && String(value).trim() !== '' ? parseInt(String(value).trim()) : null;
+      } else if (dbField === 'billable') {
+        const s = String(value || '').toLowerCase();
+        value = s === 'yes' || s === 'y' || s === 'true' || s === '1' || s === 'billable';
+      } else if ([
+        'rig','month','npt_type','system','parent_equipment_failure','part_equipment_failure','contractual_process','department_responsibility','immediate_cause','root_cause','corrective_action','future_action','action_party','notification_number','failure_investigation_reports','comments','equipment_failure'
+      ].includes(dbField)) {
         value = value !== null && value !== undefined ? String(value).trim() : null;
       }
     }
