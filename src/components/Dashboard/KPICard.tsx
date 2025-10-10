@@ -9,6 +9,8 @@ interface KPICardProps {
   trend?: "up" | "down" | "neutral";
   trendValue?: string;
   status?: "success" | "warning" | "error" | "neutral";
+  change?: number;
+  icon?: any;
 }
 
 export const KPICard = ({ 
