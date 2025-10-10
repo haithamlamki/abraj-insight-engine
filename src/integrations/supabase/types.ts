@@ -300,10 +300,13 @@ export type Database = {
         Row: {
           allowable_npt: number | null
           client: string | null
+          comment: string | null
           created_at: string | null
           id: string
           month: string
+          monthly_total_days: number | null
           npt_days: number | null
+          npt_type: string | null
           operating_days: number | null
           rig: string
           updated_at: string | null
@@ -314,10 +317,13 @@ export type Database = {
         Insert: {
           allowable_npt?: number | null
           client?: string | null
+          comment?: string | null
           created_at?: string | null
           id?: string
           month: string
+          monthly_total_days?: number | null
           npt_days?: number | null
+          npt_type?: string | null
           operating_days?: number | null
           rig: string
           updated_at?: string | null
@@ -328,10 +334,13 @@ export type Database = {
         Update: {
           allowable_npt?: number | null
           client?: string | null
+          comment?: string | null
           created_at?: string | null
           id?: string
           month?: string
+          monthly_total_days?: number | null
           npt_days?: number | null
+          npt_type?: string | null
           operating_days?: number | null
           rig?: string
           updated_at?: string | null

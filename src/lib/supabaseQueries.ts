@@ -202,12 +202,12 @@ export async function saveUtilizationData(data: any) {
     rig: data.rig,
     month: data.month,
     year: parseInt(data.year || new Date().getFullYear()),
-    operating_days: parseFloat(data.operatingDays),
-    npt_days: parseFloat(data.nptDays),
-    allowable_npt: data.allowableNpt ? parseFloat(data.allowableNpt) : null,
-    working_days: parseFloat(data.workingDays),
-    utilization_rate: data.utilizationRate ? parseFloat(data.utilizationRate) : null,
-    client: data.client || null,
+    comment: data.comment || null,
+    utilization_rate: data.utilization || data.utilizationRate ? parseFloat(data.utilization || data.utilizationRate) : null,
+    allowable_npt: data.allowableNpt || data.allowableNPT ? parseFloat(data.allowableNpt || data.allowableNPT) : null,
+    npt_type: data.nptType || null,
+    working_days: data.workingDays || data.totalWorkingDays ? parseFloat(data.workingDays || data.totalWorkingDays) : null,
+    monthly_total_days: data.monthlyTotalDays ? parseFloat(data.monthlyTotalDays) : null,
   });
 }
 

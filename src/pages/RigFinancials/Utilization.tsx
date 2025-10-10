@@ -13,24 +13,27 @@ const Utilization = () => {
   const { chartData, isLoading: chartLoading } = useChartData("utilization");
 
   const formFields = [
-    { name: "rig", label: "Rig", type: "text" as const, required: true },
+    { name: "year", label: "Year", type: "number" as const, required: true },
     { name: "month", label: "Month", type: "select" as const, options: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], required: true },
-    { name: "client", label: "Client", type: "text" as const, required: true },
-    { name: "calendarDays", label: "Calendar Days", type: "number" as const, required: true },
-    { name: "workingDays", label: "Working Days", type: "number" as const, required: true },
-    { name: "allowableNPT", label: "Allowable NPT (hrs)", type: "number" as const, required: true },
-    { name: "actualNPT", label: "Actual NPT (hrs)", type: "number" as const, required: true },
-    { name: "utilization", label: "Utilization (%)", type: "number" as const, required: true },
+    { name: "rig", label: "Rig", type: "text" as const, required: true },
+    { name: "comment", label: "Comment", type: "text" as const, required: false },
+    { name: "utilization", label: "% Utilization", type: "number" as const, required: true },
+    { name: "allowableNPT", label: "Allowable NPT", type: "number" as const, required: true },
+    { name: "nptType", label: "NPT Type", type: "text" as const, required: false },
+    { name: "workingDays", label: "Total Working Days", type: "number" as const, required: true },
+    { name: "monthlyTotalDays", label: "Monthly Total Days", type: "number" as const, required: true },
   ];
 
   const tableColumns = [
-    { key: "rig", label: "Rig", sortable: true },
+    { key: "year", label: "Year", sortable: true },
     { key: "month", label: "Month", sortable: true },
-    { key: "client", label: "Client", sortable: true },
-    { key: "workingDays", label: "Working Days", sortable: true },
+    { key: "rig", label: "Rig", sortable: true },
+    { key: "comment", label: "Comment", sortable: true },
+    { key: "utilization", label: "% Utilization", sortable: true },
     { key: "allowableNPT", label: "Allowable NPT", sortable: true },
-    { key: "actualNPT", label: "Actual NPT", sortable: true },
-    { key: "utilization", label: "Utilization", sortable: true },
+    { key: "nptType", label: "NPT Type", sortable: true },
+    { key: "workingDays", label: "Total Working Days", sortable: true },
+    { key: "monthlyTotalDays", label: "Monthly Total Days", sortable: true },
   ];
 
   const sampleData = [
@@ -93,11 +96,15 @@ const Utilization = () => {
             columns={tableColumns} 
             reportType="utilization"
             formatRow={(row) => ({
-              ...row,
-              workingDays: row.working_days,
-              allowableNPT: row.allowable_npt,
-              actualNPT: row.npt_days,
-              utilization: `${row.utilization_rate}%`
+              year: row.year,
+              month: row.month,
+              rig: row.rig,
+              comment: row.comment || '-',
+              utilization: row.utilization_rate ? `${row.utilization_rate}%` : '-',
+              allowableNPT: row.allowable_npt || '-',
+              nptType: row.npt_type || '-',
+              workingDays: row.working_days || '-',
+              monthlyTotalDays: row.monthly_total_days || '-',
             })}
           />
         </div>
