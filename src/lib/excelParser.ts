@@ -158,6 +158,18 @@ export function mapExcelToDbFields(data: any, type: string): any {
       'OPER Closed': 'oper_closed',
       'Compliance Rate': 'compliance_rate',
     },
+    billing_npt: {
+      'Rig': 'rig',
+      'Date': 'date',
+      'System': 'system',
+      'Equipment Failure': 'equipment_failure',
+      'Root Cause': 'root_cause',
+      'NPT Hours': 'npt_hours',
+      'Billable': 'billable',
+      'Corrective Action': 'corrective_action',
+      'Comments': 'comments',
+      'Notification Number': 'notification_number',
+    },
     fuel: {
       'Rig': 'rig',
       'Date': 'date',
@@ -192,15 +204,69 @@ export function mapExcelToDbFields(data: any, type: string): any {
       'Profit/Loss': 'profit_loss',
       'Remarks': 'remarks',
     },
+    utilization: {
+      'Rig': 'rig',
+      'Month': 'month',
+      'Year': 'year',
+      'Client': 'client',
+      'Working Days': 'working_days',
+      'Operating Days': 'operating_days',
+      'NPT Days': 'npt_days',
+      'Allowable NPT': 'allowable_npt',
+      'Utilization Rate': 'utilization_rate',
+    },
+    customer_satisfaction: {
+      'Rig': 'rig',
+      'Month': 'month',
+      'Year': 'year',
+      'Client': 'client',
+      'Satisfaction Score': 'satisfaction_score',
+      'Feedback': 'feedback',
+    },
+    well_tracker: {
+      'Rig': 'rig',
+      'Well Name': 'well_name',
+      'Start Date': 'start_date',
+      'End Date': 'end_date',
+      'Target Depth': 'target_depth',
+      'Actual Depth': 'actual_depth',
+      'Status': 'status',
+      'Operator': 'operator',
+      'Location': 'location',
+    },
+    ytd: {
+      'Rig': 'rig',
+      'Month': 'month',
+      'Year': 'year',
+      'Dayrate Actual': 'dayrate_actual',
+      'Dayrate Budget': 'dayrate_budget',
+      'Working Days': 'working_days',
+      'Revenue Actual': 'revenue_actual',
+      'Revenue Budget': 'revenue_budget',
+      'Variance': 'variance',
+      'Fuel': 'fuel_charge',
+      'NPT Repair': 'npt_repair',
+      'NPT Zero': 'npt_zero',
+      'Comments': 'comments',
+      'Client': 'client',
+    },
   };
   
   const mapping = mappings[type] || {};
   const mapped: any = {};
   
+  // Only map columns that are explicitly defined in the mapping
   Object.keys(data).forEach(key => {
-    const dbField = mapping[key] || key.toLowerCase().replace(/\s+/g, '_');
-    mapped[dbField] = data[key];
+    if (mapping[key]) {
+      // Only include mapped columns
+      mapped[mapping[key]] = data[key];
+    }
   });
+  
+  // If no columns were mapped, log warning
+  if (Object.keys(mapped).length === 0) {
+    console.warn(`No columns matched for type "${type}". Available columns:`, Object.keys(data));
+  }
   
   return mapped;
 }
