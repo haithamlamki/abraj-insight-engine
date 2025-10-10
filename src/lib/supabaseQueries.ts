@@ -198,16 +198,24 @@ export async function saveWellTrackerData(data: any) {
  * Save utilization data
  */
 export async function saveUtilizationData(data: any) {
+  // Helper function to parse numeric values that might have % or other characters
+  const parseNumeric = (value: any) => {
+    if (!value) return null;
+    const stringValue = String(value).replace(/[%,]/g, '').trim();
+    const parsed = parseFloat(stringValue);
+    return isNaN(parsed) ? null : parsed;
+  };
+
   return insertData('utilization', {
     rig: data.rig,
     month: data.month,
     year: parseInt(data.year || new Date().getFullYear()),
     comment: data.comment || null,
-    utilization_rate: data.utilization || data.utilizationRate ? parseFloat(data.utilization || data.utilizationRate) : null,
-    allowable_npt: data.allowableNpt || data.allowableNPT ? parseFloat(data.allowableNpt || data.allowableNPT) : null,
+    utilization_rate: parseNumeric(data.utilization || data.utilizationRate),
+    allowable_npt: parseNumeric(data.allowableNpt || data.allowableNPT),
     npt_type: data.nptType || null,
-    working_days: data.workingDays || data.totalWorkingDays ? parseFloat(data.workingDays || data.totalWorkingDays) : null,
-    monthly_total_days: data.monthlyTotalDays ? parseFloat(data.monthlyTotalDays) : null,
+    working_days: parseNumeric(data.workingDays || data.totalWorkingDays),
+    monthly_total_days: parseNumeric(data.monthlyTotalDays),
   });
 }
 
