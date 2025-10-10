@@ -69,6 +69,44 @@ export function convertMonthToNumber(monthInput: any): { month: number | null; c
 }
 
 /**
+ * Extract day number from various formats
+ * Handles: 24, "24", "1/24/1900" (Excel date format), etc.
+ */
+function extractDayNumber(dayVal: any): number | null {
+  if (dayVal === null || dayVal === undefined || String(dayVal).trim() === '') {
+    return null;
+  }
+  
+  const str = String(dayVal).trim();
+  
+  // If it looks like a date string (contains /), extract the day portion
+  // Excel might format day "24" as "1/24/1900" when the cell is formatted as date
+  if (str.includes('/')) {
+    const parts = str.split('/');
+    // Format could be M/D/YYYY or D/M/YYYY
+    // Since we're composing with Year and Month separately, we just need the day
+    // Try the second part first (most common: M/D/YYYY)
+    const dayCandidate = parseInt(parts[1]);
+    if (!isNaN(dayCandidate) && dayCandidate >= 1 && dayCandidate <= 31) {
+      return dayCandidate;
+    }
+    // Try first part as fallback
+    const dayCandidate2 = parseInt(parts[0]);
+    if (!isNaN(dayCandidate2) && dayCandidate2 >= 1 && dayCandidate2 <= 31) {
+      return dayCandidate2;
+    }
+  }
+  
+  // Otherwise try parsing as number directly
+  const num = parseInt(str);
+  if (!isNaN(num) && num >= 1 && num <= 31) {
+    return num;
+  }
+  
+  return null;
+}
+
+/**
  * Compose date from Year, Month, Date columns
  * Returns date string (YYYY-MM-DD) and metadata about conversions
  */
@@ -96,12 +134,16 @@ export function composeDateFromYMD(
     autoConverted = true;
   }
   
-  // Parse day
-  const day = dayVal !== null && dayVal !== undefined && String(dayVal).trim() !== '' 
-    ? parseInt(String(dayVal).trim()) 
-    : NaN;
-  if (isNaN(day) || day < 1 || day > 31) {
-    return { date: null, autoConverted, suggestions: ['Invalid day'] };
+  // Parse day using enhanced extraction
+  const day = extractDayNumber(dayVal);
+  if (!day) {
+    return { date: null, autoConverted, suggestions: [`Invalid day: "${dayVal}"`] };
+  }
+  
+  // If day was extracted from Excel date format, note it
+  if (String(dayVal).includes('/')) {
+    suggestions.push(`Day extracted from Excel date format: "${dayVal}" → ${day}`);
+    autoConverted = true;
   }
   
   // Compose date
