@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { LayoutDashboard, Upload, BarChart3, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, TrendingUp, Activity, BarChart3, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -10,9 +10,10 @@ interface DashboardLayoutProps {
 export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const navigation = [
     { name: "Dashboard", icon: LayoutDashboard, href: "/" },
-    { name: "Upload Data", icon: Upload, href: "/upload" },
-    { name: "Reports", icon: BarChart3, href: "/reports" },
-    { name: "Settings", icon: Settings, href: "/settings" },
+    { name: "Rig Financials", icon: TrendingUp, href: "/rig-financials" },
+    { name: "Rig Consumption", icon: Activity, href: "/rig-consumption" },
+    { name: "Rig Performance", icon: BarChart3, href: "/rig-performance" },
+    { name: "Rig Status", icon: Settings, href: "/rig-status" },
   ];
 
   return (
@@ -27,14 +28,15 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         <ScrollArea className="flex-1 px-3 py-4">
           <nav className="space-y-1">
             {navigation.map((item) => (
-              <Button
-                key={item.name}
-                variant="ghost"
-                className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              >
-                <item.icon className="mr-3 h-5 w-5" />
-                {item.name}
-              </Button>
+              <a key={item.name} href={item.href}>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                >
+                  <item.icon className="mr-3 h-5 w-5" />
+                  {item.name}
+                </Button>
+              </a>
             ))}
           </nav>
         </ScrollArea>
