@@ -1,16 +1,42 @@
+import { useState, useMemo } from "react";
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
 import { DataEntryForm } from "@/components/Reports/DataEntryForm";
 import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
 import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
-import { Percent, TrendingUp, Calendar } from "lucide-react";
+import { UtilizationFilters, FilterState } from "@/components/Reports/UtilizationFilters";
+import { UtilizationAnalytics } from "@/components/Reports/UtilizationAnalytics";
+import { Percent, TrendingUp, Calendar, BarChart3 } from "lucide-react";
 import { useKPIData } from "@/hooks/useKPIData";
 import { useChartData } from "@/hooks/useChartData";
+import { useReportData } from "@/hooks/useReportData";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Utilization = () => {
+  const [filters, setFilters] = useState<FilterState>({
+    year: "all",
+    month: "all",
+    rig: "all",
+    nptType: "all",
+  });
+
+  const { data: rawData, isLoading: dataLoading } = useReportData("utilization");
   const { kpis, isLoading: kpisLoading } = useKPIData("utilization");
   const { chartData, isLoading: chartLoading } = useChartData("utilization");
+
+  // Filter data based on active filters
+  const filteredData = useMemo(() => {
+    if (!rawData) return [];
+    
+    return rawData.filter((row: any) => {
+      if (filters.year !== "all" && row.year?.toString() !== filters.year) return false;
+      if (filters.month !== "all" && row.month !== filters.month) return false;
+      if (filters.rig !== "all" && row.rig !== filters.rig) return false;
+      if (filters.nptType !== "all" && row.npt_type !== filters.nptType) return false;
+      return true;
+    });
+  }, [rawData, filters]);
 
   const formFields = [
     { name: "year", label: "Year", type: "number" as const, required: true },
@@ -62,51 +88,80 @@ const Utilization = () => {
       ]}
       viewContent={
         <div className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-3">
-            <KPICard 
-              title="Fleet Utilization" 
-              value={kpisLoading ? "..." : `${kpis?.avgUtilization || 0}%`}
-              trend="up" 
-              icon={Percent} 
-            />
-            <KPICard 
-              title="Working Days" 
-              value={kpisLoading ? "..." : kpis?.totalWorkingDays || 0}
-              trend="up" 
-              icon={Calendar} 
-            />
-            <KPICard 
-              title="NPT Days" 
-              value={kpisLoading ? "..." : kpis?.totalNPT || 0}
-              icon={TrendingUp} 
-            />
-          </div>
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="grid w-full max-w-md grid-cols-3">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="data">Data Table</TabsTrigger>
+            </TabsList>
 
-          <HistoricalTrendChart
-            title="Utilization Trend"
-            description="Fleet utilization rate over time"
-            data={chartLoading ? [] : chartData}
-            dataKeys={[
-              { key: "utilization", label: "Utilization Rate", color: "hsl(var(--chart-1))" }
-            ]}
-            xAxisKey="month"
-          />
+            <TabsContent value="overview" className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-3">
+                <KPICard 
+                  title="Fleet Utilization" 
+                  value={kpisLoading ? "..." : `${kpis?.avgUtilization || 0}%`}
+                  trend="up" 
+                  icon={Percent} 
+                />
+                <KPICard 
+                  title="Working Days" 
+                  value={kpisLoading ? "..." : kpis?.totalWorkingDays || 0}
+                  trend="up" 
+                  icon={Calendar} 
+                />
+                <KPICard 
+                  title="Total Records" 
+                  value={dataLoading ? "..." : rawData?.length || 0}
+                  icon={BarChart3} 
+                />
+              </div>
 
-          <DataTableWithDB 
-            columns={tableColumns} 
-            reportType="utilization"
-            formatRow={(row) => ({
-              year: row.year,
-              month: row.month,
-              rig: row.rig,
-              comment: row.comment || '-',
-              utilization: row.utilization_rate ? `${row.utilization_rate}%` : '-',
-              allowableNPT: row.allowable_npt || '-',
-              nptType: row.npt_type || '-',
-              workingDays: row.working_days || '-',
-              monthlyTotalDays: row.monthly_total_days || '-',
-            })}
-          />
+              <UtilizationFilters 
+                data={rawData || []} 
+                onFilterChange={setFilters} 
+              />
+
+              <HistoricalTrendChart
+                title="Utilization Trend"
+                description="Fleet utilization rate over time"
+                data={chartLoading ? [] : chartData}
+                dataKeys={[
+                  { key: "utilization", label: "Utilization Rate", color: "hsl(var(--chart-1))" }
+                ]}
+                xAxisKey="month"
+              />
+            </TabsContent>
+
+            <TabsContent value="analytics" className="space-y-6">
+              <UtilizationFilters 
+                data={rawData || []} 
+                onFilterChange={setFilters} 
+              />
+              <UtilizationAnalytics data={filteredData} />
+            </TabsContent>
+
+            <TabsContent value="data" className="space-y-6">
+              <UtilizationFilters 
+                data={rawData || []} 
+                onFilterChange={setFilters} 
+              />
+              <DataTableWithDB 
+                columns={tableColumns} 
+                reportType="utilization"
+                formatRow={(row) => ({
+                  year: row.year,
+                  month: row.month,
+                  rig: row.rig,
+                  comment: row.comment || '-',
+                  utilization: row.utilization_rate ? `${row.utilization_rate}%` : '-',
+                  allowableNPT: row.allowable_npt || '-',
+                  nptType: row.npt_type || '-',
+                  workingDays: row.working_days || '-',
+                  monthlyTotalDays: row.monthly_total_days || '-',
+                })}
+              />
+            </TabsContent>
+          </Tabs>
         </div>
       }
       entryContent={
