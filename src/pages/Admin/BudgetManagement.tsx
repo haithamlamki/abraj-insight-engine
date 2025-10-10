@@ -1,18 +1,45 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { DashboardLayout } from '@/components/Layout/DashboardLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Lock, Archive, Copy, FileSpreadsheet } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { DashboardLayout } from "@/components/Layout/DashboardLayout";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { 
+  FileText, 
+  Lock, 
+  Archive, 
+  Edit,
+  Copy,
+  Download,
+  Upload
+} from "lucide-react";
+import { toast } from "sonner";
+import { generateBudgetTemplate, parseBudgetExcel, exportBudgetToExcel } from "@/lib/budgetExcel";
+import { BudgetEditor } from "@/components/Budget/BudgetEditor";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-export default function BudgetManagement() {
-  const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+const BudgetManagement = () => {
+  const queryClient = useQueryClient();
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
+  const [selectedReport, setSelectedReport] = useState<string>('utilization');
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   const { data: versions, isLoading } = useQuery({
     queryKey: ['budget-versions'],
@@ -25,151 +52,348 @@ export default function BudgetManagement() {
       if (error) throw error;
       return data;
     },
-    enabled: isAdmin,
+  });
+
+  const { data: rigs } = useQuery({
+    queryKey: ['dim-rig'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('dim_rig')
+        .select('*')
+        .eq('active', true);
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: reports } = useQuery({
+    queryKey: ['dim-report'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('dim_report')
+        .select('*')
+        .eq('active', true)
+        .order('sort_order');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: metrics } = useQuery({
+    queryKey: ['dim-metric', selectedReport],
+    queryFn: async () => {
+      const { data: report } = await supabase
+        .from('dim_report')
+        .select('id')
+        .eq('report_key', selectedReport)
+        .single();
+
+      if (!report) return [];
+
+      const { data, error } = await supabase
+        .from('dim_metric')
+        .select('*')
+        .eq('report_id', report.id)
+        .eq('active', true);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedReport,
+  });
+
+  const importMutation = useMutation({
+    mutationFn: async ({ file, versionId }: { file: File; versionId: string }) => {
+      if (!rigs || !metrics) throw new Error('Missing reference data');
+
+      const importData = await parseBudgetExcel(file, rigs, metrics);
+      const user = (await supabase.auth.getUser()).data.user;
+      if (!user) throw new Error('Not authenticated');
+
+      const { data: report } = await supabase
+        .from('dim_report')
+        .select('id')
+        .eq('report_key', selectedReport)
+        .single();
+
+      if (!report) throw new Error('Report not found');
+
+      const budgetRecords = importData.map(row => {
+        const rig = rigs.find(r => r.rig_code === row.rig_code);
+        const metric = metrics.find(m => m.metric_key === row.metric_key);
+
+        return {
+          version_id: versionId,
+          report_id: report.id,
+          rig_id: rig!.id,
+          metric_id: metric!.id,
+          year: row.year,
+          month: row.month,
+          budget_value: row.budget_value,
+          currency: row.currency || 'OMR',
+          notes: row.notes,
+          created_by: user.id,
+        };
+      });
+
+      const { error } = await supabase
+        .from('fact_budget')
+        .upsert(budgetRecords);
+
+      if (error) throw error;
+      return budgetRecords.length;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['budget-editor'] });
+      toast.success(`Successfully imported ${count} budget entries`);
+      setUploadDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast.error(`Import failed: ${error.message}`);
+    },
   });
 
   const getStatusColor = (status: string) => {
-    const colors = {
-      draft: 'bg-gray-500/10 text-gray-500 border-gray-500',
-      submitted: 'bg-blue-500/10 text-blue-500 border-blue-500',
-      approved: 'bg-success/10 text-success border-success',
-      locked: 'bg-purple-500/10 text-purple-500 border-purple-500',
-      archived: 'bg-muted text-muted-foreground border-muted',
-    };
-    return colors[status as keyof typeof colors] || colors.draft;
+    switch (status) {
+      case 'draft': return 'secondary';
+      case 'submitted': return 'default';
+      case 'approved': return 'success';
+      case 'locked': return 'outline';
+      case 'archived': return 'destructive';
+      default: return 'default';
+    }
   };
 
-  if (!isAdmin) {
-    return (
-      <DashboardLayout>
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-muted-foreground">You do not have permission to access this page.</p>
-          </CardContent>
-        </Card>
-      </DashboardLayout>
-    );
-  }
+  const handleDownloadTemplate = () => {
+    if (!rigs || !metrics) {
+      toast.error('Missing data for template generation');
+      return;
+    }
+    generateBudgetTemplate(rigs, metrics, selectedYear);
+    toast.success('Template downloaded');
+  };
+
+  const handleExport = async (versionId: string) => {
+    try {
+      const { data: report } = await supabase
+        .from('dim_report')
+        .select('id')
+        .eq('report_key', selectedReport)
+        .single();
+
+      if (!report) throw new Error('Report not found');
+
+      const { data: budgets, error } = await supabase
+        .from('fact_budget')
+        .select(`
+          *,
+          rig:dim_rig(rig_code),
+          metric:dim_metric(metric_key)
+        `)
+        .eq('version_id', versionId)
+        .eq('report_id', report.id)
+        .eq('year', selectedYear);
+
+      if (error) throw error;
+
+      const exportData = (budgets || []).map((b: any) => ({
+        rig_code: b.rig.rig_code,
+        metric_key: b.metric.metric_key,
+        year: b.year,
+        month: b.month,
+        budget_value: b.budget_value,
+        currency: b.currency,
+      }));
+
+      exportBudgetToExcel(exportData, selectedYear);
+      toast.success('Budget exported successfully');
+    } catch (error: any) {
+      toast.error(`Export failed: ${error.message}`);
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedVersion) return;
+
+    importMutation.mutate({ file, versionId: selectedVersion });
+  };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+    <>
+      <DashboardLayout>
+        <div className="space-y-6">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold">Budget Versions</h2>
-            <p className="text-muted-foreground">Manage budget versions and approvals</p>
+            <h1 className="text-3xl font-bold">Budget Management</h1>
+            <p className="text-muted-foreground mt-1">
+              Manage budget versions and approval workflow
+            </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => toast.info('Excel import coming soon')}>
-              <FileSpreadsheet className="w-4 h-4 mr-2" />
-              Import Excel
-            </Button>
-            <Button onClick={() => toast.info('Create version coming soon')}>
-              <Plus className="w-4 h-4 mr-2" />
-              New Version
+            <Select value={selectedReport} onValueChange={setSelectedReport}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {reports?.map(r => (
+                  <SelectItem key={r.id} value={r.report_key}>
+                    {r.display_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() + i).map(y => (
+                  <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={handleDownloadTemplate} variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              Template
             </Button>
           </div>
         </div>
 
         {isLoading ? (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <p className="text-muted-foreground">Loading budget versions...</p>
-            </CardContent>
+          <Card className="p-12 text-center">
+            <p className="text-muted-foreground">Loading budget versions...</p>
           </Card>
         ) : !versions || versions.length === 0 ? (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <p className="text-muted-foreground mb-4">No budget versions yet</p>
-              <Button onClick={() => toast.info('Create version coming soon')}>
-                <Plus className="w-4 h-4 mr-2" />
-                Create First Version
-              </Button>
-            </CardContent>
+          <Card className="p-12 text-center">
+            <p className="text-muted-foreground">No budget versions yet</p>
           </Card>
         ) : (
           <div className="grid gap-4">
             {versions.map((version) => (
-              <Card key={version.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <CardTitle className="flex items-center gap-2">
-                        {version.version_name}
-                        <Badge variant="outline" className={getStatusColor(version.status)}>
-                          {version.status}
+              <Card key={version.id} className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-xl font-semibold">{version.version_name}</h3>
+                      <Badge variant={getStatusColor(version.status) as any}>
+                        {version.status}
+                      </Badge>
+                      {version.is_baseline && (
+                        <Badge variant="outline" className="bg-primary/10 text-primary">
+                          Baseline
                         </Badge>
-                        {version.is_baseline && (
-                          <Badge variant="outline" className="bg-primary/10 text-primary border-primary">
-                            Baseline
-                          </Badge>
-                        )}
-                      </CardTitle>
-                      <CardDescription>
-                        FY {version.fiscal_year} • {version.version_code}
-                      </CardDescription>
-                    </div>
-                    <div className="flex gap-2">
-                      {version.status === 'draft' && (
-                        <>
-                          <Button size="sm" variant="outline" onClick={() => toast.info('Edit coming soon')}>
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => toast.info('Clone coming soon')}>
-                            <Copy className="w-4 h-4" />
-                          </Button>
-                        </>
-                      )}
-                      {version.status === 'approved' && (
-                        <Button size="sm" variant="outline" onClick={() => toast.info('Lock coming soon')}>
-                          <Lock className="w-4 h-4" />
-                        </Button>
-                      )}
-                      {version.status === 'locked' && (
-                        <Button size="sm" variant="outline" onClick={() => toast.info('Archive coming soon')}>
-                          <Archive className="w-4 h-4" />
-                        </Button>
                       )}
                     </div>
+                    <p className="text-sm text-muted-foreground">
+                      FY {version.fiscal_year} • {version.version_code}
+                    </p>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Effective Period</p>
-                      <p className="font-medium">
-                        {new Date(version.effective_start).toLocaleDateString()} - {new Date(version.effective_end).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Created</p>
-                      <p className="font-medium">{new Date(version.created_at).toLocaleDateString()}</p>
-                    </div>
-                    {version.approved_at && (
-                      <div>
-                        <p className="text-muted-foreground">Approved</p>
-                        <p className="font-medium">{new Date(version.approved_at).toLocaleDateString()}</p>
-                      </div>
-                    )}
-                    {version.frozen_at && (
-                      <div>
-                        <p className="text-muted-foreground">Locked</p>
-                        <p className="font-medium">{new Date(version.frozen_at).toLocaleDateString()}</p>
-                      </div>
-                    )}
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setSelectedVersion(version.id);
+                        setEditorOpen(true);
+                      }}
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setSelectedVersion(version.id);
+                        setUploadDialogOpen(true);
+                      }}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Import
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleExport(version.id)}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Export
+                    </Button>
                   </div>
-                  {version.approval_notes && (
-                    <div className="mt-4 p-3 bg-muted rounded-md">
-                      <p className="text-sm text-muted-foreground">Notes:</p>
-                      <p className="text-sm">{version.approval_notes}</p>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Effective Period</p>
+                    <p className="font-medium">
+                      {new Date(version.effective_start).toLocaleDateString()} - {new Date(version.effective_end).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Created</p>
+                    <p className="font-medium">{new Date(version.created_at).toLocaleDateString()}</p>
+                  </div>
+                  {version.approved_at && (
+                    <div>
+                      <p className="text-muted-foreground">Approved</p>
+                      <p className="font-medium">{new Date(version.approved_at).toLocaleDateString()}</p>
                     </div>
                   )}
-                </CardContent>
+                  {version.frozen_at && (
+                    <div>
+                      <p className="text-muted-foreground">Locked</p>
+                      <p className="font-medium">{new Date(version.frozen_at).toLocaleDateString()}</p>
+                    </div>
+                  )}
+                </div>
               </Card>
             ))}
           </div>
         )}
-      </div>
-    </DashboardLayout>
+
+        <Dialog open={editorOpen} onOpenChange={setEditorOpen}>
+          <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Budget Editor</DialogTitle>
+              <DialogDescription>
+                Edit budget values for {selectedReport} - {selectedYear}
+              </DialogDescription>
+            </DialogHeader>
+            {selectedVersion && (
+              <BudgetEditor
+                versionId={selectedVersion}
+                reportKey={selectedReport}
+                year={selectedYear}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Import Budget from Excel</DialogTitle>
+              <DialogDescription>
+                Upload an Excel file with budget data. Use the template for correct format.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <Input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileUpload}
+                disabled={importMutation.isPending}
+              />
+              {importMutation.isPending && (
+                <p className="text-sm text-muted-foreground">Importing...</p>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+        </div>
+      </DashboardLayout>
+    </>
   );
-}
+};
+
+export default BudgetManagement;

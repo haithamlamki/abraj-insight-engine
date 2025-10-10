@@ -5,6 +5,7 @@ import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
 import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
+import { KPICardWithBudget } from "@/components/Dashboard/KPICardWithBudget";
 import { UtilizationFilters, FilterState } from "@/components/Reports/UtilizationFilters";
 import { UtilizationAnalytics } from "@/components/Reports/UtilizationAnalytics";
 import { Percent, TrendingUp, Calendar, BarChart3 } from "lucide-react";
@@ -97,11 +98,14 @@ const Utilization = () => {
 
             <TabsContent value="overview" className="space-y-6">
               <div className="grid gap-6 md:grid-cols-3">
-                <KPICard 
+                <KPICardWithBudget 
                   title="Fleet Utilization" 
                   value={kpisLoading ? "..." : `${kpis?.avgUtilization || 0}%`}
-                  trend="up" 
-                  icon={Percent} 
+                  icon={Percent}
+                  reportKey="utilization"
+                  year={new Date().getFullYear()}
+                  month={new Date().getMonth() + 1}
+                  metricKey="utilization_rate"
                 />
                 <KPICard 
                   title="Working Days" 

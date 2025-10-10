@@ -1,5 +1,6 @@
 import { DashboardLayout } from "@/components/Layout/DashboardLayout";
 import { KPICard } from "@/components/Dashboard/KPICard";
+import { KPICardWithBudget } from "@/components/Dashboard/KPICardWithBudget";
 import { ChartCard } from "@/components/Dashboard/ChartCard";
 import { NPTChart } from "@/components/Dashboard/NPTChart";
 import { RigPerformanceChart } from "@/components/Dashboard/RigPerformanceChart";
@@ -44,13 +45,14 @@ const Index = () => {
               status={dashboardData && dashboardData.avgUtilization >= 85 ? "success" : "warning"}
               icon={TrendingUp}
             />
-            <KPICard
+            <KPICardWithBudget
               title="Total Revenue"
               value={isLoading ? "..." : `$${(dashboardData?.totalRevenue || 0).toLocaleString()}`}
-              subtitle="Recent period"
-              trend="up"
-              status="success"
               icon={DollarSign}
+              reportKey="revenue"
+              year={new Date().getFullYear()}
+              month={new Date().getMonth() + 1}
+              metricKey="revenue_omr"
             />
             <KPICard
               title="Open Work Orders"

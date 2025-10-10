@@ -5,6 +5,7 @@ import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
 import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
+import { KPICardWithBudget } from "@/components/Dashboard/KPICardWithBudget";
 import { DollarSign, AlertTriangle, Calendar, BarChart3 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useReportData } from "@/hooks/useReportData";
@@ -100,16 +101,21 @@ const YTD = () => {
 
             <TabsContent value="overview" className="space-y-6">
               <div className="grid gap-6 md:grid-cols-4">
-                <KPICard 
+                <KPICardWithBudget 
                   title="YTD Revenue" 
                   value={revenueLoading ? "..." : `$${kpis.ytdRevenue}M`}
-                  trend="up" 
-                  icon={DollarSign} 
+                  icon={DollarSign}
+                  reportKey="revenue"
+                  year={new Date().getFullYear()}
+                  metricKey="revenue_omr"
                 />
-                <KPICard 
+                <KPICardWithBudget 
                   title="Total NPT Hours" 
                   value={nptLoading ? "..." : kpis.totalNptHours}
-                  icon={AlertTriangle} 
+                  icon={AlertTriangle}
+                  reportKey="billing_npt"
+                  year={new Date().getFullYear()}
+                  metricKey="npt_hours"
                 />
                 <KPICard 
                   title="Billable NPT Hours" 
