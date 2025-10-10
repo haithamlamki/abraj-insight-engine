@@ -126,6 +126,16 @@ export function validateWorkOrdersData(data: any[]): ValidationError[] {
 }
 
 /**
+ * Helper function to parse numeric values that might have % or other characters
+ */
+function parseNumeric(value: any): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const stringValue = String(value).replace(/[%,]/g, '').trim();
+  const parsed = parseFloat(stringValue);
+  return isNaN(parsed) ? null : parsed;
+}
+
+/**
  * Map Excel column names to database field names
  */
 export function mapExcelToDbFields(data: any, type: string): any {
@@ -258,8 +268,22 @@ export function mapExcelToDbFields(data: any, type: string): any {
   // Only map columns that are explicitly defined in the mapping
   Object.keys(data).forEach(key => {
     if (mapping[key]) {
-      // Only include mapped columns
-      mapped[mapping[key]] = data[key];
+      const dbField = mapping[key];
+      let value = data[key];
+      
+      // Parse numeric fields for utilization type
+      if (type === 'utilization') {
+        if (dbField === 'utilization_rate' || 
+            dbField === 'allowable_npt' || 
+            dbField === 'working_days' || 
+            dbField === 'monthly_total_days') {
+          value = parseNumeric(value);
+        } else if (dbField === 'year') {
+          value = parseInt(value);
+        }
+      }
+      
+      mapped[dbField] = value;
     }
   });
   
