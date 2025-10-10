@@ -4,6 +4,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import Auth from "./pages/Auth";
 import Index from "./pages/Index";
 import RigFinancials from "./pages/RigFinancials";
 import RigConsumption from "./pages/RigConsumption";
@@ -37,43 +40,46 @@ const queryClient = new QueryClient();
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             
-            {/* Rig Financials */}
-            <Route path="/rig-financials" element={<RigFinancials />} />
-            <Route path="/rig-financials/utilization" element={<Utilization />} />
-            <Route path="/rig-financials/ytd" element={<YTD />} />
-            <Route path="/rig-financials/billing-npt" element={<BillingNPT />} />
-            <Route path="/rig-financials/revenue" element={<Revenue />} />
+              {/* Rig Financials */}
+              <Route path="/rig-financials" element={<ProtectedRoute><RigFinancials /></ProtectedRoute>} />
+              <Route path="/rig-financials/utilization" element={<ProtectedRoute><Utilization /></ProtectedRoute>} />
+              <Route path="/rig-financials/ytd" element={<ProtectedRoute><YTD /></ProtectedRoute>} />
+              <Route path="/rig-financials/billing-npt" element={<ProtectedRoute><BillingNPT /></ProtectedRoute>} />
+              <Route path="/rig-financials/revenue" element={<ProtectedRoute><Revenue /></ProtectedRoute>} />
             
-            {/* Rig Consumption */}
-            <Route path="/rig-consumption" element={<RigConsumption />} />
-            <Route path="/rig-consumption/fuel" element={<Fuel />} />
-            <Route path="/rig-consumption/material" element={<Material />} />
-            <Route path="/rig-consumption/maintenance" element={<Maintenance />} />
+              {/* Rig Consumption */}
+              <Route path="/rig-consumption" element={<ProtectedRoute><RigConsumption /></ProtectedRoute>} />
+              <Route path="/rig-consumption/fuel" element={<ProtectedRoute><Fuel /></ProtectedRoute>} />
+              <Route path="/rig-consumption/material" element={<ProtectedRoute><Material /></ProtectedRoute>} />
+              <Route path="/rig-consumption/maintenance" element={<ProtectedRoute><Maintenance /></ProtectedRoute>} />
             
-            {/* Rig Performance */}
-            <Route path="/rig-performance" element={<RigPerformance />} />
-            <Route path="/rig-performance/rig-moves" element={<RigMoves />} />
-            <Route path="/rig-performance/well-tracker" element={<WellTracker />} />
+              {/* Rig Performance */}
+              <Route path="/rig-performance" element={<ProtectedRoute><RigPerformance /></ProtectedRoute>} />
+              <Route path="/rig-performance/rig-moves" element={<ProtectedRoute><RigMoves /></ProtectedRoute>} />
+              <Route path="/rig-performance/well-tracker" element={<ProtectedRoute><WellTracker /></ProtectedRoute>} />
             
-            {/* Rig Status */}
-            <Route path="/rig-status" element={<RigStatus />} />
-            <Route path="/rig-status/customer-satisfaction" element={<CustomerSatisfaction />} />
-            <Route path="/rig-status/stock" element={<Stock />} />
-            <Route path="/rig-status/work-orders" element={<WorkOrders />} />
-            <Route path="/rig-status/dr-line" element={<DRLine />} />
+              {/* Rig Status */}
+              <Route path="/rig-status" element={<ProtectedRoute><RigStatus /></ProtectedRoute>} />
+              <Route path="/rig-status/customer-satisfaction" element={<ProtectedRoute><CustomerSatisfaction /></ProtectedRoute>} />
+              <Route path="/rig-status/stock" element={<ProtectedRoute><Stock /></ProtectedRoute>} />
+              <Route path="/rig-status/work-orders" element={<ProtectedRoute><WorkOrders /></ProtectedRoute>} />
+              <Route path="/rig-status/dr-line" element={<ProtectedRoute><DRLine /></ProtectedRoute>} />
             
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   </ErrorBoundary>
 );
