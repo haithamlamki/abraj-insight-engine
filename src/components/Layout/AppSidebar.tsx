@@ -20,6 +20,8 @@ import {
   LogOut,
   User,
   Settings,
+  Shield,
+  Wallet,
 } from "lucide-react";
 import {
   Sidebar,
@@ -98,6 +100,17 @@ const menuItems = [
   },
 ];
 
+const adminMenuItems = [
+  {
+    title: "Admin",
+    icon: Shield,
+    items: [
+      { title: "Budget Management", url: "/admin/budgets", icon: Wallet },
+      { title: "User Management", url: "/admin/users", icon: Users },
+    ],
+  },
+];
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
@@ -117,16 +130,18 @@ export function AppSidebar() {
     return user.email.substring(0, 2).toUpperCase();
   };
 
+  const allMenuItems = isAdmin ? [...menuItems, ...adminMenuItems] : menuItems;
+
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
-        {menuItems.map((item) => (
+        {allMenuItems.map((item) => (
           <SidebarGroup key={item.title}>
             {!item.items ? (
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={isActive(item.url!)}>
-                    <NavLink to={item.url!} className="flex items-center gap-2">
+                  <SidebarMenuButton asChild isActive={isActive((item as any).url)}>
+                    <NavLink to={(item as any).url} className="flex items-center gap-2">
                       <item.icon className="h-4 w-4" />
                       {!isCollapsed && <span>{item.title}</span>}
                     </NavLink>
@@ -198,10 +213,16 @@ export function AppSidebar() {
                   <span>Profile</span>
                 </DropdownMenuItem>
                 {isAdmin && (
-                  <DropdownMenuItem>
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Admin Settings</span>
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem onClick={() => window.location.href = '/admin/budgets'}>
+                      <Wallet className="mr-2 h-4 w-4" />
+                      <span>Budget Management</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => window.location.href = '/admin/users'}>
+                      <Shield className="mr-2 h-4 w-4" />
+                      <span>User Management</span>
+                    </DropdownMenuItem>
+                  </>
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-destructive">

@@ -35,6 +35,10 @@ import Stock from "./pages/RigStatus/Stock";
 import WorkOrders from "./pages/RigStatus/WorkOrders";
 import DRLine from "./pages/RigStatus/DRLine";
 
+// Admin pages
+import BudgetManagement from "./pages/Admin/BudgetManagement";
+import UserManagement from "./pages/Admin/UserManagement";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -73,7 +77,11 @@ const App = () => (
               <Route path="/rig-status/stock" element={<ProtectedRoute><Stock /></ProtectedRoute>} />
               <Route path="/rig-status/work-orders" element={<ProtectedRoute><WorkOrders /></ProtectedRoute>} />
               <Route path="/rig-status/dr-line" element={<ProtectedRoute><DRLine /></ProtectedRoute>} />
-            
+              
+              {/* Admin routes */}
+              <Route path="/admin/budgets" element={<ProtectedRoute role="admin"><BudgetManagement /></ProtectedRoute>} />
+              <Route path="/admin/users" element={<ProtectedRoute role="admin"><UserManagement /></ProtectedRoute>} />
+              
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
