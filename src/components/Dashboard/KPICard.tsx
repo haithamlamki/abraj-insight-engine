@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface KPICardProps {
@@ -10,7 +10,7 @@ interface KPICardProps {
   trendValue?: string;
   status?: "success" | "warning" | "error" | "neutral";
   change?: number;
-  icon?: any;
+  icon?: LucideIcon;
 }
 
 export const KPICard = ({ 
@@ -19,7 +19,8 @@ export const KPICard = ({
   subtitle, 
   trend, 
   trendValue,
-  status = "neutral" 
+  status = "neutral",
+  icon: Icon
 }: KPICardProps) => {
   const getTrendIcon = () => {
     switch (trend) {
@@ -40,9 +41,12 @@ export const KPICard = ({
   };
 
   return (
-    <Card className="p-6 hover:shadow-lg transition-all duration-300 border-border bg-card">
+    <Card className="p-6 hover:shadow-lg transition-all duration-300 border-border bg-card hover-scale">
       <div className="space-y-2">
-        <p className="text-sm font-medium text-muted-foreground">{title}</p>
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          {Icon && <Icon className="w-5 h-5 text-muted-foreground" />}
+        </div>
         <div className="flex items-baseline justify-between">
           <h3 className="text-3xl font-bold text-foreground">{value}</h3>
           {trend && (

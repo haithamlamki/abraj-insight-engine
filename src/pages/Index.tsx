@@ -3,57 +3,64 @@ import { KPICard } from "@/components/Dashboard/KPICard";
 import { ChartCard } from "@/components/Dashboard/ChartCard";
 import { NPTChart } from "@/components/Dashboard/NPTChart";
 import { RigPerformanceChart } from "@/components/Dashboard/RigPerformanceChart";
-import { AlertCircle, TrendingUp } from "lucide-react";
+import { AlertCircle, TrendingUp, Activity, Clock, DollarSign } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useDashboardData } from "@/hooks/useDashboardData";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const Index = () => {
-  return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        {/* Alert Section */}
-        <Alert className="border-warning bg-warning/10">
-          <AlertCircle className="h-4 w-4 text-warning" />
-          <AlertTitle className="text-warning">NPT Exceeded Allowable Limit</AlertTitle>
-          <AlertDescription className="text-warning/90">
-            February total NPT: 344 hours exceeded allowable 274.32 hours. Rig 301 contributed 177.75 hours due to major failure.
-          </AlertDescription>
-        </Alert>
+  const { data: dashboardData, isLoading } = useDashboardData();
 
-        {/* KPI Cards Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <KPICard
-            title="Active Rigs"
-            value="25"
-            subtitle="Out of 28 total rigs"
-            trend="up"
-            trendValue="+2"
-            status="success"
-          />
-          <KPICard
-            title="Total NPT (Feb)"
-            value="344 hrs"
-            subtitle="Allowable: 274.32 hrs"
-            trend="down"
-            trendValue="25% over"
-            status="error"
-          />
-          <KPICard
-            title="Rig Move Profit"
-            value="$813K"
-            subtitle="Budget: $341K"
-            trend="up"
-            trendValue="+138%"
-            status="success"
-          />
-          <KPICard
-            title="Rig Moves (Feb)"
-            value="20"
-            subtitle="15 invoiced"
-            trend="up"
-            trendValue="+5"
-            status="neutral"
-          />
-        </div>
+  return (
+    <ErrorBoundary>
+      <DashboardLayout>
+        <div className="space-y-6 animate-fade-in">
+          {/* Alert Section */}
+          {dashboardData && dashboardData.totalNPT > 250 && (
+            <Alert className="border-warning bg-warning/10">
+              <AlertCircle className="h-4 w-4 text-warning" />
+              <AlertTitle className="text-warning">NPT Tracking Alert</AlertTitle>
+              <AlertDescription className="text-warning/90">
+                Total NPT hours: {dashboardData.totalNPT.toFixed(1)} hours. Monitor rig performance closely.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* KPI Cards Grid */}
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <KPICard
+              title="Active Rigs"
+              value={isLoading ? "..." : dashboardData?.activeRigs || 0}
+              subtitle="Operational rigs"
+              trend="up"
+              status="success"
+              icon={Activity}
+            />
+            <KPICard
+              title="Fleet Utilization"
+              value={isLoading ? "..." : `${dashboardData?.avgUtilization.toFixed(1) || 0}%`}
+              subtitle="Average across fleet"
+              trend={dashboardData && dashboardData.avgUtilization >= 85 ? "up" : "down"}
+              status={dashboardData && dashboardData.avgUtilization >= 85 ? "success" : "warning"}
+              icon={TrendingUp}
+            />
+            <KPICard
+              title="Total Revenue"
+              value={isLoading ? "..." : `$${(dashboardData?.totalRevenue || 0).toLocaleString()}`}
+              subtitle="Recent period"
+              trend="up"
+              status="success"
+              icon={DollarSign}
+            />
+            <KPICard
+              title="Open Work Orders"
+              value={isLoading ? "..." : dashboardData?.totalOpenWOs || 0}
+              subtitle="Pending completion"
+              trend="neutral"
+              status="neutral"
+              icon={Clock}
+            />
+          </div>
 
         {/* Charts Grid */}
         <div className="grid gap-6 lg:grid-cols-2">
@@ -72,31 +79,38 @@ const Index = () => {
           </ChartCard>
         </div>
 
-        {/* Summary Statistics */}
-        <div className="grid gap-6 md:grid-cols-3">
-          <div className="bg-gradient-primary p-6 rounded-lg text-primary-foreground">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium opacity-90">Monthly Efficiency</h3>
-              <TrendingUp className="w-5 h-5 opacity-80" />
+          {/* Summary Statistics */}
+          <div className="grid gap-6 md:grid-cols-3">
+            <div className="bg-gradient-primary p-6 rounded-lg text-primary-foreground hover-scale transition-all duration-300">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium opacity-90">Fleet Efficiency</h3>
+                <TrendingUp className="w-5 h-5 opacity-80" />
+              </div>
+              <p className="text-3xl font-bold">
+                {isLoading ? "..." : `${dashboardData?.avgUtilization.toFixed(1) || 0}%`}
+              </p>
+              <p className="text-sm opacity-80 mt-1">Current utilization rate</p>
             </div>
-            <p className="text-3xl font-bold">96%</p>
-            <p className="text-sm opacity-80 mt-1">+4% from last month</p>
-          </div>
 
-          <div className="bg-card border border-border p-6 rounded-lg">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Avg Rig Move Distance</h3>
-            <p className="text-3xl font-bold text-foreground">88 km</p>
-            <p className="text-sm text-muted-foreground mt-1">Longest: 176 km (Rig 204)</p>
-          </div>
+            <div className="bg-card border border-border p-6 rounded-lg hover-scale transition-all duration-300">
+              <h3 className="text-sm font-medium text-muted-foreground mb-2">Total Revenue</h3>
+              <p className="text-3xl font-bold text-foreground">
+                {isLoading ? "..." : `$${((dashboardData?.totalRevenue || 0) / 1000).toFixed(0)}K`}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">Recent period revenue</p>
+            </div>
 
-          <div className="bg-card border border-border p-6 rounded-lg">
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Data Freshness</h3>
-            <p className="text-3xl font-bold text-foreground">Live</p>
-            <p className="text-sm text-muted-foreground mt-1">Last update: 2 mins ago</p>
+            <div className="bg-card border border-border p-6 rounded-lg hover-scale transition-all duration-300">
+              <h3 className="text-sm font-medium text-muted-foreground mb-2">Stock Status</h3>
+              <p className="text-3xl font-bold text-foreground">
+                {isLoading ? "..." : dashboardData?.lowStockItems || 0}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">Low stock items</p>
+            </div>
           </div>
         </div>
-      </div>
-    </DashboardLayout>
+      </DashboardLayout>
+    </ErrorBoundary>
   );
 };
 
