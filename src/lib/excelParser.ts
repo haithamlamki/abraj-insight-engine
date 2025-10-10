@@ -136,6 +136,41 @@ function parseNumeric(value: any): number | null {
 }
 
 /**
+ * Helper function to parse date values safely
+ */
+function parseDate(value: any): string | null {
+  if (value === null || value === undefined || value === '') return null;
+  
+  const stringValue = String(value).trim();
+  
+  // If it's just a single letter or clearly not a date, return null
+  if (stringValue.length <= 2 && /^[a-z]+$/i.test(stringValue)) return null;
+  
+  try {
+    // Try to parse as Excel serial date
+    if (!isNaN(parseFloat(stringValue))) {
+      const excelDate = parseFloat(stringValue);
+      // Excel dates are days since 1900-01-01
+      const date = new Date((excelDate - 25569) * 86400 * 1000);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString().split('T')[0];
+      }
+    }
+    
+    // Try to parse as regular date string
+    const date = new Date(stringValue);
+    if (!isNaN(date.getTime())) {
+      return date.toISOString().split('T')[0];
+    }
+    
+    return null;
+  } catch (error) {
+    console.warn(`Could not parse date: ${stringValue}`);
+    return null;
+  }
+}
+
+/**
  * Normalize header names to avoid mismatches due to spaces/case/punctuation
  */
 function normalizeHeader(str: any): string {
@@ -339,6 +374,8 @@ export function mapExcelToDbFields(data: any, type: string): any {
         value = parseNumeric(value);
       } else if (dbField === 'year') {
         value = value !== null && value !== undefined && String(value).trim() !== '' ? parseInt(String(value).trim()) : null;
+      } else if (dbField === 'date') {
+        value = parseDate(value);
       } else if (dbField === 'billable') {
         const s = String(value || '').toLowerCase();
         value = s === 'yes' || s === 'y' || s === 'true' || s === '1' || s === 'billable';
@@ -346,6 +383,11 @@ export function mapExcelToDbFields(data: any, type: string): any {
         'rig','month','npt_type','system','parent_equipment_failure','part_equipment_failure','contractual_process','department_responsibility','immediate_cause','root_cause','corrective_action','future_action','action_party','notification_number','failure_investigation_reports','comments','equipment_failure'
       ].includes(dbField)) {
         value = value !== null && value !== undefined ? String(value).trim() : null;
+      }
+    } else if (type === 'fuel' || type === 'rig_moves' || type === 'well_tracker' || type === 'stock' || type === 'ytd') {
+      // Handle date fields for other types
+      if (dbField === 'date' || dbField === 'move_date' || dbField === 'start_date' || dbField === 'end_date' || dbField === 'last_reorder_date') {
+        value = parseDate(value);
       }
     }
 
