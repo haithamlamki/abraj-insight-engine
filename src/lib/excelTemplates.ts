@@ -13,7 +13,7 @@ export function generateTemplate(type: string): Blob {
   const templates: { [key: string]: TemplateColumn[] } = {
     revenue: [
       { header: 'Rig', width: 15, example: 'ADC-225' },
-      { header: 'Month', width: 12, example: 'January' },
+      { header: 'Month', width: 12, example: '2024-01' },
       { header: 'Year', width: 10, example: '2024' },
       { header: 'Dayrate Actual', width: 15, example: '25000' },
       { header: 'Dayrate Budget', width: 15, example: '24000' },
@@ -29,9 +29,9 @@ export function generateTemplate(type: string): Blob {
     ],
     billing_npt: [
       { header: 'Rig', width: 15, example: 'ADC-225' },
-      { header: 'Date', width: 12, example: '2024-01-15' },
-      { header: 'NPT Hours', width: 12, example: '4.5' },
-      { header: 'System', width: 20, example: 'Hydraulic System' },
+      { header: 'Date', width: 15, example: '2024-01-15 (required)' },
+      { header: 'Hrs.', width: 12, example: '4.5' },
+      { header: 'SYSTEM', width: 20, example: 'Hydraulic System' },
       { header: 'Equipment Failure', width: 25, example: 'Pump failure' },
       { header: 'Root Cause', width: 30, example: 'Seal degradation' },
       { header: 'Corrective Action', width: 35, example: 'Replace seals' },
@@ -41,7 +41,7 @@ export function generateTemplate(type: string): Blob {
     ],
     utilization: [
       { header: 'Year', width: 10, example: '2024' },
-      { header: 'month', width: 12, example: 'January' },
+      { header: 'month', width: 12, example: '2024-01' },
       { header: 'Rig', width: 15, example: 'ADC-225' },
       { header: 'Coment', width: 30, example: 'Regular operations' },
       { header: '% Utilization', width: 15, example: '92.86' },
@@ -72,7 +72,7 @@ export function generateTemplate(type: string): Blob {
     ],
     work_orders: [
       { header: 'Rig', width: 15, example: 'ADC-225' },
-      { header: 'Month', width: 12, example: 'January' },
+      { header: 'Month', width: 12, example: '2024-01' },
       { header: 'Year', width: 10, example: '2024' },
       { header: 'ELEC Open', width: 12, example: '5' },
       { header: 'ELEC Closed', width: 12, example: '4' },
@@ -84,7 +84,7 @@ export function generateTemplate(type: string): Blob {
     ],
     customer_satisfaction: [
       { header: 'Rig', width: 15, example: 'ADC-225' },
-      { header: 'Month', width: 12, example: 'January' },
+      { header: 'Month', width: 12, example: '2024-01' },
       { header: 'Year', width: 10, example: '2024' },
       { header: 'Satisfaction Score', width: 18, example: '92.5' },
       { header: 'Feedback', width: 40, example: 'Excellent service' },
@@ -117,7 +117,7 @@ export function generateTemplate(type: string): Blob {
     ],
     ytd: [
       { header: 'Rig', width: 15, example: 'ADC-225' },
-      { header: 'Month', width: 12, example: 'January' },
+      { header: 'Month', width: 12, example: '2024-01' },
       { header: 'Year', width: 10, example: '2024' },
       { header: 'Dayrate Actual', width: 15, example: '25000' },
       { header: 'Dayrate Budget', width: 15, example: '24000' },
