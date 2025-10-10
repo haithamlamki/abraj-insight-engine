@@ -279,7 +279,9 @@ export function mapExcelToDbFields(data: any, type: string): any {
             dbField === 'monthly_total_days') {
           value = parseNumeric(value);
         } else if (dbField === 'year') {
-          value = parseInt(value);
+          value = value !== null && value !== undefined && String(value).trim() !== '' ? parseInt(String(value).trim()) : null;
+        } else if (dbField === 'rig') {
+          value = value !== null && value !== undefined ? String(value).trim() : '';
         }
       }
       

@@ -85,14 +85,16 @@ export const ExcelUploadZone = ({
         const data = result.data[firstSheet];
         
         // Map Excel data to database format
-        const mappedData = data.map(row => mapExcelToDbFields(row, reportType));
+        const mappedDataRaw = data.map(row => mapExcelToDbFields(row, reportType));
+        // Filter out rows missing required fields (rig, month, year)
+        const mappedData = mappedDataRaw.filter((row: any) => row && row.rig && row.month && (row.year !== null && row.year !== undefined && row.year !== ''));
         setParsedData(mappedData);
         
         if (onDataParsed) {
           onDataParsed(data);
         }
         
-        toast.success(`File "${file.name}" parsed successfully - ${data.length} rows ready`);
+        toast.success(`File "${file.name}" parsed successfully - ${mappedData.length} rows ready`);
       }
     } catch (error) {
       setUploadStatus("error");
