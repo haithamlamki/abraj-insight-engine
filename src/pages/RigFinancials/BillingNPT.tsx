@@ -132,11 +132,49 @@ const BillingNPT = () => {
         <div className="space-y-6">
           <BillingNPTFilters data={rawData} onFilterChange={setFilters} />
           
-          <Tabs defaultValue="analytics" className="space-y-6">
+          <Tabs defaultValue="data" className="space-y-6">
             <TabsList className="grid w-full max-w-md grid-cols-2">
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
               <TabsTrigger value="data">Data Table</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="data" className="space-y-6">
+              {isLoading ? (
+                <div className="text-center py-12 text-muted-foreground">Loading data...</div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">
+                      Showing {filteredData.length} of {rawData.length} records
+                    </p>
+                  </div>
+                  <DataTableWithDB 
+                    columns={tableColumns} 
+                    reportType="billing_npt"
+                    formatRow={(row) => ({
+                      rig: row.rig || '-',
+                      year: row.year || '-',
+                      month: row.month || '-',
+                      date: row.date ? new Date(row.date).toLocaleDateString() : '-',
+                      hours: row.npt_hours || '-',
+                      nptType: row.npt_type || '-',
+                      system: row.system || '-',
+                      parentEquipment: row.parent_equipment_failure || '-',
+                      partEquipment: row.part_equipment_failure || '-',
+                      contractualProcess: row.contractual_process || '-',
+                      department: row.department_responsibility || '-',
+                      immediateCause: row.immediate_cause || '-',
+                      rootCause: row.root_cause || '-',
+                      correctiveAction: row.corrective_action || '-',
+                      futureAction: row.future_action || '-',
+                      actionParty: row.action_party || '-',
+                      notificationNumber: row.notification_number || '-',
+                      failureReports: row.failure_investigation_reports || '-',
+                    })}
+                  />
+                </>
+              )}
+            </TabsContent>
 
             <TabsContent value="analytics" className="space-y-6">
               {isLoading ? (
@@ -144,33 +182,6 @@ const BillingNPT = () => {
               ) : (
                 <BillingNPTAnalytics data={filteredData} />
               )}
-            </TabsContent>
-
-            <TabsContent value="data" className="space-y-6">
-              <DataTableWithDB 
-                columns={tableColumns} 
-                reportType="billing_npt"
-                formatRow={(row) => ({
-                  rig: row.rig || '-',
-                  year: row.year || '-',
-                  month: row.month || '-',
-                  date: row.date ? new Date(row.date).toLocaleDateString() : '-',
-                  hours: row.npt_hours || '-',
-                  nptType: row.npt_type || '-',
-                  system: row.system || '-',
-                  parentEquipment: row.parent_equipment_failure || '-',
-                  partEquipment: row.part_equipment_failure || '-',
-                  contractualProcess: row.contractual_process || '-',
-                  department: row.department_responsibility || '-',
-                  immediateCause: row.immediate_cause || '-',
-                  rootCause: row.root_cause || '-',
-                  correctiveAction: row.corrective_action || '-',
-                  futureAction: row.future_action || '-',
-                  actionParty: row.action_party || '-',
-                  notificationNumber: row.notification_number || '-',
-                  failureReports: row.failure_investigation_reports || '-',
-                })}
-              />
             </TabsContent>
           </Tabs>
         </div>

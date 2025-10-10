@@ -70,9 +70,8 @@ export const BillingNPTAnalytics = ({ data }: BillingNPTAnalyticsProps) => {
     return acc;
   }, {});
 
-  const topRigs = Object.values(rigPerformance)
-    .sort((a: any, b: any) => b.hours - a.hours)
-    .slice(0, 10);
+  const allRigs = Object.values(rigPerformance)
+    .sort((a: any, b: any) => b.hours - a.hours);
 
   // Monthly trend
   const monthlyData = data.reduce((acc: any, row) => {
@@ -267,19 +266,19 @@ export const BillingNPTAnalytics = ({ data }: BillingNPTAnalyticsProps) => {
         </CardContent>
       </Card>
 
-      {/* Bottom Row: Rigs & Departments */}
+      {/* Bottom Row: All Rigs & Departments */}
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Top 10 Rigs by NPT Hours</CardTitle>
-            <CardDescription>Rigs with highest total NPT</CardDescription>
+            <CardTitle>All Rigs by NPT Hours</CardTitle>
+            <CardDescription>Complete rig rankings sorted by total NPT</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {topRigs.map((rig: any, index) => (
-                <div key={rig.rig} className="flex items-center justify-between p-3 border rounded-lg">
+            <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+              {allRigs.map((rig: any, index) => (
+                <div key={rig.rig} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors">
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-destructive/10">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-destructive/10">
                       <span className="text-sm font-bold">#{index + 1}</span>
                     </div>
                     <div>
@@ -287,9 +286,14 @@ export const BillingNPTAnalytics = ({ data }: BillingNPTAnalyticsProps) => {
                       <p className="text-sm text-muted-foreground">{rig.incidents} incidents</p>
                     </div>
                   </div>
-                  <Badge variant="destructive">
-                    {rig.hours.toFixed(1)} hrs
-                  </Badge>
+                  <div className="flex flex-col items-end gap-1">
+                    <Badge variant={index < 5 ? "destructive" : "secondary"}>
+                      {Number(rig.hours).toFixed(1)} hrs
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {(Number(rig.hours) / rig.incidents).toFixed(1)} hrs/incident
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -302,15 +306,117 @@ export const BillingNPTAnalytics = ({ data }: BillingNPTAnalyticsProps) => {
             <CardDescription>NPT hours by responsible department</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={topDepts}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="department" angle={-45} textAnchor="end" height={100} />
-                <YAxis />
-                <Tooltip formatter={(value: any) => `${Number(value).toFixed(1)} hrs`} />
-                <Bar dataKey="hours" fill="hsl(var(--chart-3))" radius={[8, 8, 0, 0]} name="NPT Hours" />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+              {Object.values(deptData)
+                .sort((a: any, b: any) => b.hours - a.hours)
+                .map((dept: any, index) => (
+                  <div key={dept.department} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors">
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-chart-3/10">
+                        <span className="text-sm font-bold">#{index + 1}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{dept.department}</p>
+                        <p className="text-sm text-muted-foreground">{dept.incidents} incidents</p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="ml-2">
+                      {Number(dept.hours).toFixed(1)} hrs
+                    </Badge>
+                  </div>
+                ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Additional Analysis */}
+      <div className="grid gap-6 md:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>Root Cause Analysis</CardTitle>
+            <CardDescription>Most common root causes</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {(() => {
+                const rootCauses = data.reduce((acc: any, row) => {
+                  const cause = row.root_cause || 'Not Specified';
+                  if (!acc[cause]) acc[cause] = 0;
+                  acc[cause]++;
+                  return acc;
+                }, {});
+                return Object.entries(rootCauses)
+                  .sort((a: any, b: any) => b[1] - a[1])
+                  .slice(0, 8)
+                  .map(([cause, count]: [string, any]) => (
+                    <div key={cause} className="flex items-center justify-between text-sm">
+                      <span className="truncate flex-1 mr-2">{cause}</span>
+                      <Badge variant="secondary">{count}</Badge>
+                    </div>
+                  ));
+              })()}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Equipment Failures</CardTitle>
+            <CardDescription>Top parent equipment issues</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {(() => {
+                const equipment = data.reduce((acc: any, row) => {
+                  const eq = row.parent_equipment_failure || 'Not Specified';
+                  if (!acc[eq]) acc[eq] = 0;
+                  acc[eq]++;
+                  return acc;
+                }, {});
+                return Object.entries(equipment)
+                  .sort((a: any, b: any) => b[1] - a[1])
+                  .slice(0, 8)
+                  .map(([eq, count]: [string, any]) => (
+                    <div key={eq} className="flex items-center justify-between text-sm">
+                      <span className="truncate flex-1 mr-2">{eq}</span>
+                      <Badge variant="secondary">{count}</Badge>
+                    </div>
+                  ));
+              })()}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Contractual Process</CardTitle>
+            <CardDescription>NPT by contractual process</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {(() => {
+                const processes = data.reduce((acc: any, row) => {
+                  const proc = row.contractual_process || 'Not Specified';
+                  if (!acc[proc]) acc[proc] = { count: 0, hours: 0 };
+                  acc[proc].count++;
+                  acc[proc].hours += Number(row.npt_hours) || 0;
+                  return acc;
+                }, {});
+                return Object.entries(processes)
+                  .sort((a: any, b: any) => b[1].hours - a[1].hours)
+                  .slice(0, 8)
+                  .map(([proc, data]: [string, any]) => (
+                    <div key={proc} className="flex items-center justify-between text-sm">
+                      <span className="truncate flex-1 mr-2">{proc}</span>
+                      <div className="flex items-center gap-1">
+                        <Badge variant="outline">{data.count}</Badge>
+                        <Badge variant="secondary">{data.hours.toFixed(0)}h</Badge>
+                      </div>
+                    </div>
+                  ));
+              })()}
+            </div>
           </CardContent>
         </Card>
       </div>
