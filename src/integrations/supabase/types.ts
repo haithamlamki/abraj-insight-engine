@@ -95,6 +95,140 @@ export type Database = {
         }
         Relationships: []
       }
+      budget_change_log: {
+        Row: {
+          budget_id: string | null
+          change_type: string
+          changed_at: string | null
+          changed_by: string
+          field_name: string | null
+          id: string
+          ip_address: unknown | null
+          metadata: Json | null
+          new_value: string | null
+          old_value: string | null
+          reason: string | null
+          source: string | null
+          user_agent: string | null
+          version_id: string
+        }
+        Insert: {
+          budget_id?: string | null
+          change_type: string
+          changed_at?: string | null
+          changed_by: string
+          field_name?: string | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          new_value?: string | null
+          old_value?: string | null
+          reason?: string | null
+          source?: string | null
+          user_agent?: string | null
+          version_id: string
+        }
+        Update: {
+          budget_id?: string | null
+          change_type?: string
+          changed_at?: string | null
+          changed_by?: string
+          field_name?: string | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          new_value?: string | null
+          old_value?: string | null
+          reason?: string | null
+          source?: string | null
+          user_agent?: string | null
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_change_log_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "fact_budget"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_change_log_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "budget_version"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_version: {
+        Row: {
+          approval_notes: string | null
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          created_by: string | null
+          effective_end: string
+          effective_start: string
+          fiscal_year: number
+          frozen_at: string | null
+          id: string
+          is_baseline: boolean | null
+          parent_version_id: string | null
+          status: Database["public"]["Enums"]["budget_status"] | null
+          updated_at: string | null
+          updated_by: string | null
+          version_code: string
+          version_name: string
+        }
+        Insert: {
+          approval_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          effective_end: string
+          effective_start: string
+          fiscal_year: number
+          frozen_at?: string | null
+          id?: string
+          is_baseline?: boolean | null
+          parent_version_id?: string | null
+          status?: Database["public"]["Enums"]["budget_status"] | null
+          updated_at?: string | null
+          updated_by?: string | null
+          version_code: string
+          version_name: string
+        }
+        Update: {
+          approval_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          effective_end?: string
+          effective_start?: string
+          fiscal_year?: number
+          frozen_at?: string | null
+          id?: string
+          is_baseline?: boolean | null
+          parent_version_id?: string | null
+          status?: Database["public"]["Enums"]["budget_status"] | null
+          updated_at?: string | null
+          updated_by?: string | null
+          version_code?: string
+          version_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_version_parent_version_id_fkey"
+            columns: ["parent_version_id"]
+            isOneToOne: false
+            referencedRelation: "budget_version"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_satisfaction: {
         Row: {
           client: string | null
@@ -130,6 +264,223 @@ export type Database = {
           year?: number
         }
         Relationships: []
+      }
+      dim_date: {
+        Row: {
+          date_id: string
+          fiscal_year: number | null
+          month: number
+          month_end: string
+          month_name: string
+          month_start: string
+          quarter: number
+          year: number
+        }
+        Insert: {
+          date_id: string
+          fiscal_year?: number | null
+          month: number
+          month_end: string
+          month_name: string
+          month_start: string
+          quarter: number
+          year: number
+        }
+        Update: {
+          date_id?: string
+          fiscal_year?: number | null
+          month?: number
+          month_end?: string
+          month_name?: string
+          month_start?: string
+          quarter?: number
+          year?: number
+        }
+        Relationships: []
+      }
+      dim_metric: {
+        Row: {
+          active: boolean | null
+          aggregation_type: string | null
+          created_at: string | null
+          display_name: string
+          format: string | null
+          id: string
+          metric_key: string
+          report_id: string | null
+          unit: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          aggregation_type?: string | null
+          created_at?: string | null
+          display_name: string
+          format?: string | null
+          id?: string
+          metric_key: string
+          report_id?: string | null
+          unit?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          aggregation_type?: string | null
+          created_at?: string | null
+          display_name?: string
+          format?: string | null
+          id?: string
+          metric_key?: string
+          report_id?: string | null
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dim_metric_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "dim_report"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dim_report: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          department: string
+          display_name: string
+          id: string
+          report_key: string
+          sort_order: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          department: string
+          display_name: string
+          id?: string
+          report_key: string
+          sort_order?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          department?: string
+          display_name?: string
+          id?: string
+          report_key?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      dim_rig: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          id: string
+          rig_code: string
+          rig_name: string
+          rig_type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          rig_code: string
+          rig_name: string
+          rig_type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          rig_code?: string
+          rig_name?: string
+          rig_type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      fact_budget: {
+        Row: {
+          budget_value: number
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          id: string
+          metric_id: string
+          month: number
+          notes: string | null
+          report_id: string
+          rig_id: string
+          updated_at: string | null
+          updated_by: string | null
+          version_id: string
+          year: number
+        }
+        Insert: {
+          budget_value: number
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          id?: string
+          metric_id: string
+          month: number
+          notes?: string | null
+          report_id: string
+          rig_id: string
+          updated_at?: string | null
+          updated_by?: string | null
+          version_id: string
+          year: number
+        }
+        Update: {
+          budget_value?: number
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          id?: string
+          metric_id?: string
+          month?: number
+          notes?: string | null
+          report_id?: string
+          rig_id?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          version_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fact_budget_metric_id_fkey"
+            columns: ["metric_id"]
+            isOneToOne: false
+            referencedRelation: "dim_metric"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fact_budget_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "dim_report"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fact_budget_rig_id_fkey"
+            columns: ["rig_id"]
+            isOneToOne: false
+            referencedRelation: "dim_rig"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fact_budget_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "budget_version"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fuel_consumption: {
         Row: {
@@ -559,6 +910,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "analyst" | "field_supervisor" | "viewer"
+      budget_status: "draft" | "submitted" | "approved" | "locked" | "archived"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -687,6 +1039,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "analyst", "field_supervisor", "viewer"],
+      budget_status: ["draft", "submitted", "approved", "locked", "archived"],
     },
   },
 } as const
