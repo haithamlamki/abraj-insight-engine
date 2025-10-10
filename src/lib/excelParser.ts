@@ -158,18 +158,35 @@ export function validateBillingNptData(data: any[]): ValidationError[] {
       });
     }
 
-    if (isEmpty(dateVal)) {
+    // Build a valid date either from the Date cell directly or by combining Year/Month/Date
+    const buildDateFromYMD = () => {
+      const yearVal = row.Year ?? row['year'];
+      const monthVal = row.Month ?? row['month'] ?? row.Mont;
+      const dayVal = row.Date;
+      const monthMap: { [k: string]: number } = {
+        jan: 1, january: 1, feb: 2, february: 2, mar: 3, march: 3, apr: 4, april: 4,
+        may: 5, jun: 6, june: 6, jul: 7, july: 7, aug: 8, august: 8, sep: 9, sept: 9,
+        september: 9, oct: 10, october: 10, nov: 11, november: 11, dec: 12, december: 12
+      };
+      const y = yearVal ? parseInt(String(yearVal).trim()) : NaN;
+      const mInput = String(monthVal ?? '').trim().toLowerCase();
+      const m = monthMap[mInput] ?? (mInput ? parseInt(mInput) : NaN);
+      const d = dayVal !== null && dayVal !== undefined && String(dayVal).trim() !== '' ? parseInt(String(dayVal).trim()) : NaN;
+      if (!isNaN(y) && !isNaN(m) && m >= 1 && m <= 12 && !isNaN(d) && d >= 1 && d <= 31) {
+        const dt = new Date(Date.UTC(y, m - 1, d));
+        if (!isNaN(dt.getTime())) return dt.toISOString().split('T')[0];
+      }
+      return null;
+    };
+
+    const parsedDirect = parseDate(dateVal);
+    const finalDate = parsedDirect || buildDateFromYMD();
+
+    if (!finalDate) {
       errors.push({
         row: index + 2,
         column: 'Date',
-        message: 'Date is required and cannot be empty',
-        value: dateVal
-      });
-    } else if (!parseDate(dateVal)) {
-      errors.push({
-        row: index + 2,
-        column: 'Date',
-        message: 'Invalid date format. Please use a valid date.',
+        message: 'Invalid or missing date. Use YYYY-MM-DD or provide Year, Month, and Date.',
         value: dateVal
       });
     }
@@ -463,6 +480,38 @@ export function mapExcelToDbFields(data: any, type: string): any {
   // If no columns were mapped, log warning
   if (Object.keys(mapped).length === 0) {
     console.warn(`No columns matched for type "${type}". Available columns:`, Object.keys(data));
+  }
+  
+  // For Billing NPT, if date is missing, try constructing from Year + Month + Date (day)
+  if (type === 'billing_npt' && (mapped.date === null || mapped.date === undefined || mapped.date === '')) {
+    const yearVal = mapped.year ?? (data['Year'] ?? data['year']);
+    const monthInput = mapped.month ?? (data['Month'] ?? data['month'] ?? data['Mont']);
+    const dayVal = data['Date'];
+
+    const toMonthNumber = (m: any): number | null => {
+      if (m === null || m === undefined) return null;
+      const s = String(m).trim().toLowerCase();
+      const map: { [k: string]: number } = {
+        jan: 1, january: 1, feb: 2, february: 2, mar: 3, march: 3, apr: 4, april: 4,
+        may: 5, jun: 6, june: 6, jul: 7, july: 7, aug: 8, august: 8, sep: 9, sept: 9,
+        september: 9, oct: 10, october: 10, nov: 11, november: 11, dec: 12, december: 12
+      };
+      if (map[s]) return map[s];
+      const n = parseInt(s);
+      if (!isNaN(n) && n >= 1 && n <= 12) return n;
+      return null;
+    };
+
+    const y = yearVal ? parseInt(String(yearVal).trim()) : NaN;
+    const m = toMonthNumber(monthInput);
+    const d = dayVal !== null && dayVal !== undefined && String(dayVal).trim() !== '' ? parseInt(String(dayVal).trim()) : NaN;
+
+    if (!isNaN(y) && m && !isNaN(d)) {
+      const dt = new Date(Date.UTC(y, m - 1, d));
+      if (!isNaN(dt.getTime())) {
+        mapped.date = dt.toISOString().split('T')[0];
+      }
+    }
   }
   
   return mapped;
