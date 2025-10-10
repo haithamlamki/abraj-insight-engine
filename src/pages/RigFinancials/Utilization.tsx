@@ -1,7 +1,7 @@
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
 import { DataEntryForm } from "@/components/Reports/DataEntryForm";
 import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
-import { DataTable } from "@/components/Reports/DataTable";
+import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
 import { Percent, TrendingUp, Calendar } from "lucide-react";
@@ -68,7 +68,17 @@ const Utilization = () => {
             xAxisKey="month"
           />
 
-          <DataTable columns={tableColumns} data={sampleData} />
+          <DataTableWithDB 
+            columns={tableColumns} 
+            reportType="utilization"
+            formatRow={(row) => ({
+              ...row,
+              workingDays: row.working_days,
+              allowableNPT: row.allowable_npt,
+              actualNPT: row.npt_days,
+              utilization: `${row.utilization_rate}%`
+            })}
+          />
         </div>
       }
       entryContent={
@@ -76,6 +86,7 @@ const Utilization = () => {
           title="Enter Utilization Data"
           fields={formFields}
           frequency="daily"
+          reportType="utilization"
         />
       }
       uploadContent={

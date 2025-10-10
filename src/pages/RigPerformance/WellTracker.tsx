@@ -1,7 +1,7 @@
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
 import { DataEntryForm } from "@/components/Reports/DataEntryForm";
 import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
-import { DataTable } from "@/components/Reports/DataTable";
+import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
 import { Target, Gauge, CheckCircle2 } from "lucide-react";
@@ -72,7 +72,16 @@ const WellTracker = () => {
             xAxisKey="month"
           />
 
-          <DataTable columns={tableColumns} data={sampleData} />
+          <DataTableWithDB 
+            columns={tableColumns} 
+            reportType="well_tracker"
+            formatRow={(row) => ({
+              ...row,
+              wellName: row.well_name,
+              startDate: new Date(row.start_date).toLocaleDateString(),
+              actualDepth: row.actual_depth.toLocaleString()
+            })}
+          />
         </div>
       }
       entryContent={
@@ -80,6 +89,7 @@ const WellTracker = () => {
           title="Enter Well Data"
           fields={formFields}
           frequency="daily"
+          reportType="well_tracker"
         />
       }
       uploadContent={

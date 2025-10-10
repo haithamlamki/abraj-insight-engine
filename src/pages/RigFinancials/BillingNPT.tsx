@@ -1,7 +1,7 @@
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
 import { DataEntryForm } from "@/components/Reports/DataEntryForm";
 import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
-import { DataTable } from "@/components/Reports/DataTable";
+import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
 import { Clock, AlertTriangle, TrendingDown } from "lucide-react";
@@ -74,7 +74,17 @@ const BillingNPT = () => {
             xAxisKey="month"
           />
 
-          <DataTable columns={tableColumns} data={sampleData} />
+          <DataTableWithDB 
+            columns={tableColumns} 
+            reportType="billing_npt"
+            formatRow={(row) => ({
+              ...row,
+              date: new Date(row.date).toLocaleDateString(),
+              equipmentFailure: row.equipment_failure,
+              rootCause: row.root_cause,
+              hours: row.npt_hours
+            })}
+          />
         </div>
       }
       entryContent={
@@ -82,6 +92,7 @@ const BillingNPT = () => {
           title="Enter NPT Data"
           fields={formFields}
           frequency="daily"
+          reportType="billing_npt"
         />
       }
       uploadContent={

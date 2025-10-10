@@ -1,7 +1,7 @@
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
 import { DataEntryForm } from "@/components/Reports/DataEntryForm";
 import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
-import { DataTable } from "@/components/Reports/DataTable";
+import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
 import { Package2, AlertTriangle, TrendingUp } from "lucide-react";
@@ -63,7 +63,17 @@ const Stock = () => {
             xAxisKey="month"
           />
 
-          <DataTable columns={tableColumns} data={sampleData} />
+          <DataTableWithDB 
+            columns={tableColumns} 
+            reportType="stock"
+            formatRow={(row) => ({
+              ...row,
+              itemName: row.item_name,
+              currentStock: row.current_qty,
+              minStock: row.target_qty,
+              status: row.status || 'OK'
+            })}
+          />
         </div>
       }
       entryContent={
@@ -71,6 +81,7 @@ const Stock = () => {
           title="Enter Stock Data"
           fields={formFields}
           frequency="daily"
+          reportType="stock"
         />
       }
       uploadContent={

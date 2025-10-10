@@ -1,7 +1,7 @@
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
 import { DataEntryForm } from "@/components/Reports/DataEntryForm";
 import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
-import { DataTable } from "@/components/Reports/DataTable";
+import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
 import { DollarSign, TrendingUp, Target } from "lucide-react";
@@ -62,7 +62,17 @@ const YTD = () => {
             xAxisKey="month"
           />
 
-          <DataTable columns={tableColumns} data={sampleData} />
+          <DataTableWithDB 
+            columns={tableColumns} 
+            reportType="revenue"
+            formatRow={(row) => ({
+              ...row,
+              revenue: `$${(row.revenue_actual / 1000000).toFixed(1)}M`,
+              costs: '-',
+              profit: `$${(row.variance / 1000000).toFixed(1)}M`,
+              margin: '-'
+            })}
+          />
         </div>
       }
       entryContent={
@@ -70,6 +80,7 @@ const YTD = () => {
           title="Enter YTD Data"
           fields={formFields}
           frequency="monthly"
+          reportType="revenue"
         />
       }
       uploadContent={

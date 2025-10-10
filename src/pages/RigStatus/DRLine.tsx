@@ -1,7 +1,7 @@
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
 import { DataEntryForm } from "@/components/Reports/DataEntryForm";
 import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
-import { DataTable } from "@/components/Reports/DataTable";
+import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
 import { Activity, CheckCircle2, AlertCircle } from "lucide-react";
@@ -65,7 +65,17 @@ const DRLine = () => {
             xAxisKey="month"
           />
 
-          <DataTable columns={tableColumns} data={sampleData} />
+          <DataTableWithDB 
+            columns={tableColumns} 
+            reportType="stock"
+            formatRow={(row) => ({
+              ...row,
+              date: new Date(row.last_reorder_date || row.created_at).toLocaleDateString(),
+              rigNumber: row.rig,
+              uptime: '-',
+              notes: '-'
+            })}
+          />
         </div>
       }
       entryContent={
@@ -73,6 +83,7 @@ const DRLine = () => {
           title="Enter DR Line Status"
           fields={formFields}
           frequency="daily"
+          reportType="stock"
         />
       }
       uploadContent={

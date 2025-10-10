@@ -1,7 +1,7 @@
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
 import { DataEntryForm } from "@/components/Reports/DataEntryForm";
 import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
-import { DataTable } from "@/components/Reports/DataTable";
+import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
 import { Fuel as FuelIcon, TrendingDown, Gauge } from "lucide-react";
@@ -71,7 +71,18 @@ const Fuel = () => {
             xAxisKey="month"
           />
 
-          <DataTable columns={tableColumns} data={sampleData} />
+          <DataTableWithDB 
+            columns={tableColumns} 
+            reportType="fuel"
+            formatRow={(row) => ({
+              ...row,
+              date: new Date(row.date).toLocaleDateString(),
+              fuelType: row.fuel_type,
+              quantity: row.fuel_consumed?.toLocaleString(),
+              cost: `$${row.total_cost?.toLocaleString()}`,
+              efficiency: '-'
+            })}
+          />
         </div>
       }
       entryContent={
@@ -79,6 +90,7 @@ const Fuel = () => {
           title="Enter Fuel Data"
           fields={formFields}
           frequency="daily"
+          reportType="fuel"
         />
       }
       uploadContent={

@@ -1,7 +1,7 @@
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
 import { DataEntryForm } from "@/components/Reports/DataEntryForm";
 import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
-import { DataTable } from "@/components/Reports/DataTable";
+import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
 import { Truck, DollarSign, MapPin } from "lucide-react";
@@ -74,7 +74,19 @@ const RigMoves = () => {
             xAxisKey="month"
           />
 
-          <DataTable columns={tableColumns} data={sampleData} />
+          <DataTableWithDB 
+            columns={tableColumns} 
+            reportType="rig_moves"
+            formatRow={(row) => ({
+              ...row,
+              date: new Date(row.move_date).toLocaleDateString(),
+              fromLocation: row.from_location,
+              toLocation: row.to_location,
+              distance: `${row.distance_km} km`,
+              actualTime: row.actual_time_hours,
+              profitLoss: row.profit_loss > 0 ? `+$${row.profit_loss.toLocaleString()}` : `-$${Math.abs(row.profit_loss).toLocaleString()}`
+            })}
+          />
         </div>
       }
       entryContent={
@@ -82,6 +94,7 @@ const RigMoves = () => {
           title="Enter Rig Move Data"
           fields={formFields}
           frequency="daily"
+          reportType="rig_moves"
         />
       }
       uploadContent={
