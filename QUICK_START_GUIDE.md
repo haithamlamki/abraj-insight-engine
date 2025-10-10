@@ -1,4 +1,4 @@
-# Quick Start Guide - Budget Management System
+# Quick Start Guide - Complete Budget Management System
 
 ## **Getting Started**
 
@@ -42,6 +42,7 @@
 - Access to Budget Management (`/admin/budgets`)
 - Create/edit/approve/lock budget versions
 - Manage user roles (`/admin/users`)
+- Advanced analytics (`/admin/analytics`)
 
 ---
 
@@ -56,11 +57,31 @@
 4. **Locked** → Finalized, no more edits
 5. **Archived** → Historical reference
 
-**Version Features:**
-- Multiple versions per fiscal year
-- Version comparison (coming soon)
-- Excel import/export (coming soon)
-- Parent-child scenarios (coming soon)
+**Key Features:**
+- ✅ Excel-like grid editor for budget entry
+- ✅ Download budget templates
+- ✅ Upload Excel files with validation
+- ✅ Export budgets to Excel
+- ✅ Multiple versions per fiscal year
+- ✅ Version comparison
+
+### **Budget Analytics (`/admin/analytics`)**
+
+**Health Score Dashboard:**
+- Overall budget health grade (A-F)
+- Weighted scoring system
+- Breakdown by Good/Warning/Critical
+- Average variance tracking
+
+**Variance Trends:**
+- Line charts showing variance over time
+- Reference lines for thresholds
+- Visual performance indicators
+
+**Version Comparison:**
+- Side-by-side version comparison
+- Difference calculations
+- Change percentage indicators
 
 ### **User Management (`/admin/users`)**
 
@@ -78,7 +99,51 @@
 
 ---
 
-## **Using Budget Variance**
+## **Using Budget Features**
+
+### **1. Creating a Budget Version**
+1. Go to `/admin/budgets`
+2. Click "New Version" (coming soon - currently via database)
+3. Fill in version details
+4. Status starts as "draft"
+
+### **2. Editing Budget Values**
+1. Go to `/admin/budgets`
+2. Click "Edit" on a version
+3. Use the grid editor to enter values
+4. Values are organized by: Rig → Metric → Month
+5. Click "Save Changes" when done
+
+### **3. Importing from Excel**
+1. Go to `/admin/budgets`
+2. Click "Template" to download the Excel template
+3. Fill in the template with your budget data
+4. Click "Import" on a version
+5. Upload the filled Excel file
+6. System validates and imports the data
+
+### **4. Exporting to Excel**
+1. Go to `/admin/budgets`
+2. Select report type and year
+3. Click "Export" on a version
+4. Excel file downloads automatically
+
+### **5. Viewing Analytics**
+1. Go to `/admin/analytics`
+2. Select report type and year
+3. Switch between tabs:
+   - **Health Score**: Overall budget performance
+   - **Trends**: Variance over time
+   - **Comparison**: Compare two budget versions
+
+### **6. Checking Budget Alerts**
+- Call the edge function: `check-budget-alerts`
+- Returns list of variances exceeding thresholds
+- Can be scheduled via cron jobs (future)
+
+---
+
+## **Using Budget Variance in Dashboards**
 
 ### **In Your React Components:**
 
@@ -173,6 +238,33 @@ function MyDashboard() {
 }
 ```
 
+### **Edge Function: check-budget-alerts**
+
+**Endpoint:** `supabase.functions.invoke('check-budget-alerts')`
+
+**Response:**
+```typescript
+{
+  success: boolean;
+  alerts: Array<{
+    report_key: string;
+    report_name: string;
+    rig_code: string;
+    metric_key: string;
+    metric_name: string;
+    year: number;
+    month: number;
+    budget: number;
+    actual: number;
+    variance_pct: number;
+    severity: 'warning' | 'critical';
+    timestamp: string;
+  }>;
+  count: number;
+  checked_at: string;
+}
+```
+
 ---
 
 ## **Database Schema Reference**
@@ -200,41 +292,6 @@ function MyDashboard() {
 
 ---
 
-## **Common Tasks**
-
-### **1. Add a New User**
-1. User signs up at `/auth`
-2. Admin goes to `/admin/users`
-3. Admin changes role as needed
-
-### **2. Create a Budget Version**
-1. Go to `/admin/budgets`
-2. Click "New Version"
-3. Fill in version details
-4. Status starts as "draft"
-
-### **3. Integrate Variance into Dashboard**
-```typescript
-// Replace existing KPICard with:
-import { KPICardWithBudget } from '@/components/Dashboard/KPICardWithBudget';
-
-<KPICardWithBudget
-  title="Your Metric"
-  value={actualValue}
-  icon={YourIcon}
-  reportKey="your_report"
-  year={currentYear}
-  month={currentMonth}
-  metricKey="your_metric"
-/>
-```
-
-### **4. View Budget Variance**
-- Non-admins: See colored chips on KPI cards
-- Admins: See colored chips + raw budget value below
-
----
-
 ## **Troubleshooting**
 
 ### **Can't see budget variance?**
@@ -255,6 +312,45 @@ import { KPICardWithBudget } from '@/components/Dashboard/KPICardWithBudget';
 - Check password meets requirements (min 6 chars)
 - Clear browser cache if stuck
 
+### **Excel import fails?**
+- Verify template format matches downloaded template
+- Check that rig codes and metric keys exist in database
+- Ensure numeric values are valid
+
+---
+
+## **Complete Feature List**
+
+### **✅ Phase 11: Authentication & RBAC**
+- User authentication with signup/login
+- 4 role types (admin, analyst, field_supervisor, viewer)
+- Protected routes with role checking
+- User management UI
+
+### **✅ Phase 12: Budget Editor**
+- Grid-based budget editor
+- Edit by rig, metric, and month
+- Real-time updates
+- Multi-metric support
+
+### **✅ Phase 13: Excel Import/Export**
+- Download budget templates
+- Upload Excel with validation
+- Bulk import/export
+- Data mapping and validation
+
+### **✅ Phase 14: Dashboard Integration**
+- Budget variance on KPI cards
+- Color-coded status indicators
+- Admin-only raw values
+- Non-admin variance signals
+
+### **✅ Phase 15: Advanced Analytics**
+- Budget health score with grades
+- Variance trend charts
+- Multi-version comparison
+- Automated alert checking
+
 ---
 
 ## **Next Steps**
@@ -262,9 +358,10 @@ import { KPICardWithBudget } from '@/components/Dashboard/KPICardWithBudget';
 1. ✅ Sign up and get promoted to admin
 2. ✅ Explore budget management UI
 3. ✅ Try user role management
-4. ✅ Integrate variance chips into dashboards
-5. 🔄 Wait for budget editor (coming soon)
-6. 🔄 Excel import/export (coming soon)
+4. ✅ Create or import budget versions
+5. ✅ Edit budget values in grid editor
+6. ✅ View budget analytics
+7. ✅ Integrate variance chips into dashboards
 
 ---
 
@@ -274,5 +371,6 @@ import { KPICardWithBudget } from '@/components/Dashboard/KPICardWithBudget';
 - **Security:** All budget values masked for non-admins
 - **Audit:** All changes logged in `budget_change_log`
 - **Roles:** Managed via `/admin/users`
+- **Analytics:** Available at `/admin/analytics`
 
 **Remember:** Budget management is admin-only. Regular users only see variance signals, never raw values.

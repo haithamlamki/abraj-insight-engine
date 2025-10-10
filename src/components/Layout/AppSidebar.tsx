@@ -107,6 +107,7 @@ const adminMenuItems = [
     items: [
       { title: "Budget Management", url: "/admin/budgets", icon: Wallet },
       { title: "User Management", url: "/admin/users", icon: Users },
+      { title: "Budget Analytics", url: "/admin/analytics", icon: BarChart3 },
     ],
   },
 ];
@@ -221,6 +222,10 @@ export function AppSidebar() {
                     <DropdownMenuItem onClick={() => window.location.href = '/admin/users'}>
                       <Shield className="mr-2 h-4 w-4" />
                       <span>User Management</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => window.location.href = '/admin/analytics'}>
+                      <BarChart3 className="mr-2 h-4 w-4" />
+                      <span>Budget Analytics</span>
                     </DropdownMenuItem>
                   </>
                 )}
