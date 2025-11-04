@@ -252,8 +252,9 @@ export function validateRevenueData(data: any[]): ValidationError[] {
     // Skip blank rows
     if (isBlankRow(row)) return;
     
-    // Check for required Rig field
-    if (!row.Rig && !row.rig) {
+    // Check for required Rig field using normalized matching
+    const rigVal = row.Rig ?? row.rig ?? getByNormalized(row, 'rig');
+    if (!rigVal) {
       errors.push({
         row: index + 2,
         column: 'Rig',
@@ -263,8 +264,8 @@ export function validateRevenueData(data: any[]): ValidationError[] {
       });
     }
     
-    // Check month format
-    const monthVal = row.Month ?? row.month ?? row.Mont;
+    // Check month format - recognize both "Month" and "Months"
+    const monthVal = row.Months ?? row.Month ?? row.month ?? row.Mont;
     if (monthVal) {
       const monthResult = convertMonthToNumber(monthVal);
       if (!monthResult.month) {
@@ -288,9 +289,12 @@ export function validateRevenueData(data: any[]): ValidationError[] {
       }
     }
     
-    // Validate numeric fields
-    const numericFields = ['Dayrate Actual', 'Dayrate Budget', 'Working Days', 
-                           'Revenue Actual', 'Revenue Budget', 'Variance'];
+    // Validate numeric fields - include both old and new names
+    const numericFields = [
+      'Dayrate Actual', 'Dayrate Budget', 'Working Days', 
+      'Revenue Actual', 'Revenue Budget', 'Variance',
+      'Actual', 'Total Rev', 'Budgeted Rev', 'Diff', 'Fuel', 'NPT Repair', 'NPT Zero'
+    ];
     
     numericFields.forEach(field => {
       const value = row[field];
@@ -517,6 +521,18 @@ function normalizeHeader(str: any): string {
 }
 
 /**
+ * Helper to get value from row by normalized key
+ */
+function getByNormalized(row: any, normalizedKey: string): any {
+  for (const k of Object.keys(row)) {
+    if (normalizeHeader(k) === normalizedKey) {
+      return row[k];
+    }
+  }
+  return undefined;
+}
+
+/**
  * Map Excel column names to database field names
  */
 export function mapExcelToDbFields(data: any, type: string): any {
@@ -532,6 +548,10 @@ export function mapExcelToDbFields(data: any, type: string): any {
       'Revenue Actual': 'revenue_actual',
       'Revenue Budget': 'revenue_budget',
       'Variance': 'variance',
+      'Actual': 'revenue_actual',
+      'Total Rev': 'revenue_actual',
+      'Budgeted Rev': 'revenue_budget',
+      'Diff': 'variance',
       'Fuel': 'fuel_charge',
       'NPT Repair': 'npt_repair',
       'NPT Zero': 'npt_zero',
@@ -690,7 +710,22 @@ export function mapExcelToDbFields(data: any, type: string): any {
     let value = data[key];
 
     // Parse numeric/typed fields based on type
-    if (type === 'utilization') {
+    if (type === 'revenue' || type === 'ytd') {
+      // Parse numeric fields for revenue
+      if ([
+        'dayrate_actual', 'dayrate_budget', 'working_days', 
+        'revenue_actual', 'revenue_budget', 'variance',
+        'fuel_charge', 'npt_repair', 'npt_zero'
+      ].includes(dbField)) {
+        value = parseNumeric(value);
+      } else if (dbField === 'year') {
+        value = value !== null && value !== undefined && String(value).trim() !== '' ? parseInt(String(value).trim()) : null;
+      } else if (dbField === 'rig') {
+        value = value !== null && value !== undefined ? String(value).trim() : '';
+      } else if (['month', 'comments', 'client'].includes(dbField)) {
+        value = value !== null && value !== undefined ? String(value).trim() : null;
+      }
+    } else if (type === 'utilization') {
       if (
         dbField === 'utilization_rate' ||
         dbField === 'allowable_npt' ||
@@ -734,6 +769,15 @@ export function mapExcelToDbFields(data: any, type: string): any {
   // If no columns were mapped, log warning
   if (Object.keys(mapped).length === 0) {
     console.warn(`No columns matched for type "${type}". Available columns:`, Object.keys(data));
+  }
+  
+  // Revenue-specific: prefer 'Total Rev' for revenue_actual if both exist
+  if (type === 'revenue') {
+    if (data['Total Rev'] !== null && data['Total Rev'] !== undefined && data['Total Rev'] !== '') {
+      mapped.revenue_actual = parseNumeric(data['Total Rev']);
+    } else if (data['Actual'] !== null && data['Actual'] !== undefined && data['Actual'] !== '' && !mapped.revenue_actual) {
+      mapped.revenue_actual = parseNumeric(data['Actual']);
+    }
   }
   
   // Universal date composition for ALL types with Year+Month+Date columns
