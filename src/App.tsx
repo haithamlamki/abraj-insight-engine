@@ -16,7 +16,7 @@ import NotFound from "./pages/NotFound";
 
 // Rig Financials sub-pages
 import Utilization from "./pages/RigFinancials/Utilization";
-import YTD from "./pages/RigFinancials/YTD";
+import BillingNPTSummary from "./pages/RigFinancials/BillingNPTSummary";
 import BillingNPT from "./pages/RigFinancials/BillingNPT";
 import Revenue from "./pages/RigFinancials/Revenue";
 
@@ -57,7 +57,8 @@ const App = () => (
               {/* Rig Financials */}
               <Route path="/rig-financials" element={<ProtectedRoute><RigFinancials /></ProtectedRoute>} />
               <Route path="/rig-financials/utilization" element={<ProtectedRoute><Utilization /></ProtectedRoute>} />
-              <Route path="/rig-financials/ytd" element={<ProtectedRoute><YTD /></ProtectedRoute>} />
+              <Route path="/rig-financials/ytd" element={<ProtectedRoute><BillingNPTSummary /></ProtectedRoute>} />
+              <Route path="/rig-financials/billing-npt-summary" element={<ProtectedRoute><BillingNPTSummary /></ProtectedRoute>} />
               <Route path="/rig-financials/billing-npt" element={<ProtectedRoute><BillingNPT /></ProtectedRoute>} />
               <Route path="/rig-financials/revenue" element={<ProtectedRoute><Revenue /></ProtectedRoute>} />
             

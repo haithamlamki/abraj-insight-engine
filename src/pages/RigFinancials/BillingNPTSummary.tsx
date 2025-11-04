@@ -1,18 +1,21 @@
 import { useState, useMemo } from "react";
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
-import { DataEntryForm } from "@/components/Reports/DataEntryForm";
-import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
-import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
-import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
-import { KPICard } from "@/components/Dashboard/KPICard";
-import { KPICardWithBudget } from "@/components/Dashboard/KPICardWithBudget";
-import { DollarSign, AlertTriangle, Calendar, BarChart3 } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EnhancedKPICard } from "@/components/Revenue/EnhancedKPICard";
 import { useReportData } from "@/hooks/useReportData";
-import { YTDFilters } from "@/components/Reports/YTDFilters";
-import { YTDAnalytics } from "@/components/Reports/YTDAnalytics";
+import { useBillingNPTFilters } from "@/hooks/useBillingNPTFilters";
+import { useBillingNPTAnalytics } from "@/hooks/useBillingNPTAnalytics";
+import { OperationalRateChart } from "@/components/BillingNPT/OperationalRateChart";
+import { NPTCategoryChart } from "@/components/BillingNPT/NPTCategoryChart";
+import { RigEfficiencyChart } from "@/components/BillingNPT/RigEfficiencyChart";
+import { PerformersPanel } from "@/components/BillingNPT/PerformersPanel";
+import { NPTCorrelationChart } from "@/components/BillingNPT/NPTCorrelationChart";
+import { BillingNPTFilterPanel } from "@/components/BillingNPT/BillingNPTFilterPanel";
+import { ActiveFiltersBar } from "@/components/BillingNPT/ActiveFiltersBar";
+import { AIInsightsPanel } from "@/components/BillingNPT/AIInsightsPanel";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TrendingUp, AlertTriangle, FileText, Target } from "lucide-react";
 
-const YTD = () => {
+const BillingNPTSummary = () => {
   const [filters, setFilters] = useState({
     year: "all",
     month: "all",
@@ -197,4 +200,4 @@ const YTD = () => {
   );
 };
 
-export default YTD;
+export default BillingNPTSummary;

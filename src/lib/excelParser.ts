@@ -462,6 +462,74 @@ export function validateBillingNptData(data: any[]): ValidationError[] {
   return errors;
 }
 
+/**
+ * Validate billing NPT aggregated data (rate-based format)
+ */
+export function validateBillingNPTAggregated(data: any[]): ValidationError[] {
+  const errors: ValidationError[] = [];
+
+  data.forEach((row, index) => {
+    if (isBlankRow(row)) return;
+
+    // Required fields
+    if (!row.Rig && !row.rig) {
+      errors.push({
+        row: index + 2,
+        column: 'Rig',
+        message: 'Rig is required',
+        value: null,
+        severity: 'error'
+      });
+    }
+
+    if (!row.Year && !row.year) {
+      errors.push({
+        row: index + 2,
+        column: 'Year',
+        message: 'Year is required',
+        value: null,
+        severity: 'error'
+      });
+    }
+
+    // Check month - handle "Mounth" typo
+    const monthVal = row.Month ?? row.Mounth ?? row.month;
+    if (!monthVal) {
+      errors.push({
+        row: index + 2,
+        column: 'Month',
+        message: 'Month is required',
+        value: null,
+        severity: 'error'
+      });
+    }
+
+    // Validate numeric rate fields
+    const rateFields = [
+      'Opr. Rate', 'Reduce Rate', 'Repair Rate', 'Zero Rate', 
+      'Special Rate', 'Rig Move', 'A.Maint', 'Total', 'Total NPT'
+    ];
+
+    rateFields.forEach(field => {
+      const value = row[field];
+      if (value !== null && value !== undefined && value !== '') {
+        const numValue = parseNumeric(value);
+        if (numValue === null) {
+          errors.push({
+            row: index + 2,
+            column: field,
+            message: 'Must be a valid number',
+            value,
+            severity: 'warning'
+          });
+        }
+      }
+    });
+  });
+
+  return errors;
+}
+
 
 /**
  * Helper function to parse numeric values that might have % or other characters
