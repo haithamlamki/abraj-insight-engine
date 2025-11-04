@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
 import { DataEntryForm } from "@/components/Reports/DataEntryForm";
 import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
@@ -14,7 +14,9 @@ import { RigPerformanceChart } from "@/components/Revenue/RigPerformanceChart";
 import { TopPerformersPanel } from "@/components/Revenue/TopPerformersPanel";
 import { NPTCorrelationChart } from "@/components/Revenue/NPTCorrelationChart";
 import { RevenueForecastChart } from "@/components/Revenue/RevenueForecastChart";
+import { ExportMenu } from "@/components/Revenue/ExportMenu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useReportData } from "@/hooks/useReportData";
 
 const Revenue = () => {
   const {
@@ -44,6 +46,10 @@ const Revenue = () => {
   } = useRevenueAnalytics(filters);
 
   const [selectedRig, setSelectedRig] = useState<string | null>(null);
+  const dashboardRef = useRef<HTMLDivElement>(null);
+
+  // Get all data for export
+  const { data: allRevenueData } = useReportData('revenue');
 
   // Calculate available years and revenue range from data
   const { availableYears, minRevenue, maxRevenue } = useMemo(() => {
@@ -139,16 +145,24 @@ const Revenue = () => {
               <TabsTrigger value="data">Detailed Data</TabsTrigger>
             </TabsList>
             
-            <RevenueFilterPanel
-              filters={filters}
-              onFiltersChange={updateFilters}
-              onReset={resetFilters}
-              onApplyQuickFilter={applyQuickFilter}
-              hasActiveFilters={hasActiveFilters}
-              availableYears={availableYears}
-              minRevenue={minRevenue}
-              maxRevenue={maxRevenue}
-            />
+            <div className="flex gap-2">
+              <ExportMenu
+                data={data}
+                filteredCount={data.length}
+                totalCount={allRevenueData?.length || 0}
+                dashboardRef={dashboardRef}
+              />
+              <RevenueFilterPanel
+                filters={filters}
+                onFiltersChange={updateFilters}
+                onReset={resetFilters}
+                onApplyQuickFilter={applyQuickFilter}
+                hasActiveFilters={hasActiveFilters}
+                availableYears={availableYears}
+                minRevenue={minRevenue}
+                maxRevenue={maxRevenue}
+              />
+            </div>
           </div>
 
           {hasActiveFilters && (
@@ -160,6 +174,7 @@ const Revenue = () => {
           )}
 
           <TabsContent value="dashboard" className="space-y-6">
+            <div ref={dashboardRef}>
             {/* KPI Cards */}
             <div className="grid gap-6 md:grid-cols-4">
               <EnhancedKPICard
@@ -195,20 +210,24 @@ const Revenue = () => {
             </div>
 
             {/* Time Series Chart */}
-            <RevenueTimeSeriesChart
-              data={monthlyTrend}
-              title="Revenue Trend Analysis"
-              description="Actual vs Budget over time with variance"
-            />
+            <div id="time-series-chart">
+              <RevenueTimeSeriesChart
+                data={monthlyTrend}
+                title="Revenue Trend Analysis"
+                description="Actual vs Budget over time with variance"
+              />
+            </div>
 
             {/* Rig Performance and Top Performers */}
             <div className="grid gap-6 lg:grid-cols-2">
-              <RigPerformanceChart
-                data={topRigsByVariance}
-                title="Rig Performance Analysis"
-                description="Variance by rig (top performers)"
-                onRigClick={handleRigClick}
-              />
+              <div id="rig-performance-chart">
+                <RigPerformanceChart
+                  data={topRigsByVariance}
+                  title="Rig Performance Analysis"
+                  description="Variance by rig (top performers)"
+                  onRigClick={handleRigClick}
+                />
+              </div>
               <TopPerformersPanel
                 topRigs={topRigsByVariance}
                 bottomRigs={bottomRigsByVariance}
@@ -220,23 +239,28 @@ const Revenue = () => {
 
             {/* Forecast Chart */}
             {historicalTimeSeries.length > 3 && (
-              <RevenueForecastChart
-                historicalData={historicalTimeSeries}
-                title="Revenue Forecast"
-                description="Projected revenue based on historical trends"
-              />
+              <div id="forecast-chart">
+                <RevenueForecastChart
+                  historicalData={historicalTimeSeries}
+                  title="Revenue Forecast"
+                  description="Projected revenue based on historical trends"
+                />
+              </div>
             )}
 
             {/* NPT Correlation */}
             {nptCorrelation.length > 0 && (
-              <NPTCorrelationChart
-                data={nptCorrelation}
-                correlationCoefficient={correlationCoefficient}
-                title="NPT Impact Analysis"
-                description="Correlation between NPT and revenue variance"
-                onRigClick={handleRigClick}
-              />
+              <div id="npt-correlation-chart">
+                <NPTCorrelationChart
+                  data={nptCorrelation}
+                  correlationCoefficient={correlationCoefficient}
+                  title="NPT Impact Analysis"
+                  description="Correlation between NPT and revenue variance"
+                  onRigClick={handleRigClick}
+                />
+              </div>
             )}
+            </div>
           </TabsContent>
 
           <TabsContent value="data" className="space-y-6">
