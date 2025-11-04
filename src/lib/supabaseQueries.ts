@@ -210,7 +210,7 @@ export async function saveWellTrackerData(data: any) {
 }
 
 /**
- * Save utilization data
+ * Save utilization data with client and status extraction
  */
 export async function saveUtilizationData(data: any) {
   // Helper function to parse numeric values that might have % or other characters
@@ -226,11 +226,13 @@ export async function saveUtilizationData(data: any) {
     month: data.month,
     year: parseInt(data.year || new Date().getFullYear()),
     comment: data.comment || null,
-    utilization_rate: parseNumeric(data.utilization || data.utilizationRate),
-    allowable_npt: parseNumeric(data.allowableNpt || data.allowableNPT),
-    npt_type: data.nptType || null,
-    working_days: parseNumeric(data.workingDays || data.totalWorkingDays),
-    monthly_total_days: parseNumeric(data.monthlyTotalDays),
+    client: data.client || null,
+    status: data.status || 'Active',
+    utilization_rate: parseNumeric(data.utilization || data.utilizationRate || data.utilization_rate),
+    allowable_npt: parseNumeric(data.allowableNpt || data.allowableNPT || data.allowable_npt),
+    npt_type: data.nptType || data.npt_type || null,
+    working_days: parseNumeric(data.workingDays || data.totalWorkingDays || data.working_days),
+    monthly_total_days: parseNumeric(data.monthlyTotalDays || data.monthly_total_days),
   });
 }
 

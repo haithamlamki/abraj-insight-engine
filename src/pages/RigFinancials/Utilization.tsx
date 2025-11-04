@@ -1,43 +1,33 @@
-import { useState, useMemo } from "react";
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
 import { DataEntryForm } from "@/components/Reports/DataEntryForm";
 import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
 import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
-import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
-import { KPICard } from "@/components/Dashboard/KPICard";
-import { KPICardWithBudget } from "@/components/Dashboard/KPICardWithBudget";
-import { UtilizationFilters, FilterState } from "@/components/Reports/UtilizationFilters";
-import { UtilizationAnalytics } from "@/components/Reports/UtilizationAnalytics";
-import { Percent, TrendingUp, Calendar, BarChart3 } from "lucide-react";
-import { useKPIData } from "@/hooks/useKPIData";
-import { useChartData } from "@/hooks/useChartData";
 import { useReportData } from "@/hooks/useReportData";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useUtilizationFilters } from "@/hooks/useUtilizationFilters";
+import { useUtilizationAnalytics } from "@/hooks/useUtilizationAnalytics";
+import { KPICardsGrid } from "@/components/Utilization/KPICardsGrid";
+import { UtilizationFilterPanel } from "@/components/Utilization/UtilizationFilterPanel";
+import { ActiveFiltersBar } from "@/components/Utilization/ActiveFiltersBar";
+import { ClientDistributionChart } from "@/components/Utilization/ClientDistributionChart";
+import { RigPerformanceTable } from "@/components/Utilization/RigPerformanceTable";
+import { UtilizationTrendChart } from "@/components/Utilization/UtilizationTrendChart";
+import { UtilizationHeatmap } from "@/components/Utilization/UtilizationHeatmap";
+import { UtilizationAnalytics } from "@/components/Reports/UtilizationAnalytics";
 
 const Utilization = () => {
-  const [filters, setFilters] = useState<FilterState>({
-    year: "all",
-    month: "all",
-    rig: "all",
-    nptType: "all",
-  });
+  const { data: rawData = [] } = useReportData("utilization");
+  const { filters, updateFilters, filterOptions, filteredData, clearFilters, applyQuickFilter, activeFilterCount, totalRecords, filteredRecords } = useUtilizationFilters(rawData);
+  const { kpis, clientDistribution, rigPerformance, timeSeriesData, heatmapData } = useUtilizationAnalytics(filteredData);
 
-  const { data: rawData, isLoading: dataLoading } = useReportData("utilization");
-  const { kpis, isLoading: kpisLoading } = useKPIData("utilization");
-  const { chartData, isLoading: chartLoading } = useChartData("utilization");
-
-  // Filter data based on active filters
-  const filteredData = useMemo(() => {
-    if (!rawData) return [];
-    
-    return rawData.filter((row: any) => {
-      if (filters.year !== "all" && row.year?.toString() !== filters.year) return false;
-      if (filters.month !== "all" && row.month !== filters.month) return false;
-      if (filters.rig !== "all" && row.rig !== filters.rig) return false;
-      if (filters.nptType !== "all" && row.npt_type !== filters.nptType) return false;
-      return true;
-    });
-  }, [rawData, filters]);
+  const handleRemoveFilter = (category: any, value: string) => {
+    if (category === 'utilizationRange') {
+      updateFilters({ ...filters, utilizationRange: [0, 100] });
+    } else {
+      const currentValues = filters[category] as string[];
+      updateFilters({ ...filters, [category]: currentValues.filter(v => v !== value) });
+    }
+  };
 
   const formFields = [
     { name: "year", label: "Year", type: "number" as const, required: true },
@@ -89,66 +79,60 @@ const Utilization = () => {
       ]}
       viewContent={
         <div className="space-y-6">
-          <Tabs defaultValue="overview" className="w-full">
+          <Tabs defaultValue="dashboard" className="w-full">
             <TabsList className="grid w-full max-w-md grid-cols-3">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
               <TabsTrigger value="data">Data Table</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="overview" className="space-y-6">
-              <div className="grid gap-6 md:grid-cols-3">
-                <KPICardWithBudget 
-                  title="Fleet Utilization" 
-                  value={kpisLoading ? "..." : `${kpis?.avgUtilization || 0}%`}
-                  icon={Percent}
-                  reportKey="utilization"
-                  year={new Date().getFullYear()}
-                  month={new Date().getMonth() + 1}
-                  metricKey="utilization_rate"
-                />
-                <KPICard 
-                  title="Working Days" 
-                  value={kpisLoading ? "..." : kpis?.totalWorkingDays || 0}
-                  trend="up" 
-                  icon={Calendar} 
-                />
-                <KPICard 
-                  title="Total Records" 
-                  value={dataLoading ? "..." : rawData?.length || 0}
-                  icon={BarChart3} 
-                />
+            <TabsContent value="dashboard" className="space-y-6">
+              <KPICardsGrid kpis={kpis} onFilterClick={applyQuickFilter} />
+              
+              <ActiveFiltersBar
+                filters={filters}
+                onRemoveFilter={handleRemoveFilter}
+                onClearAll={clearFilters}
+                totalRecords={totalRecords}
+                filteredRecords={filteredRecords}
+              />
+
+              <div className="grid gap-6 lg:grid-cols-4">
+                <div className="lg:col-span-1">
+                  <UtilizationFilterPanel
+                    filters={filters}
+                    onFilterChange={updateFilters}
+                    filterOptions={filterOptions}
+                    activeFilterCount={activeFilterCount}
+                    onClearFilters={clearFilters}
+                    onQuickFilter={applyQuickFilter}
+                  />
+                </div>
+                <div className="lg:col-span-3 space-y-6">
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <UtilizationTrendChart data={timeSeriesData} />
+                    <ClientDistributionChart
+                      data={clientDistribution}
+                      onClientClick={(client) => updateFilters({ ...filters, clients: [client] })}
+                    />
+                  </div>
+                  <UtilizationHeatmap
+                    data={heatmapData}
+                    onCellClick={(rig, month) => updateFilters({ ...filters, rigs: [rig] })}
+                  />
+                  <RigPerformanceTable
+                    data={rigPerformance}
+                    onRigClick={(rig) => updateFilters({ ...filters, rigs: [rig] })}
+                  />
+                </div>
               </div>
-
-              <UtilizationFilters 
-                data={rawData || []} 
-                onFilterChange={setFilters} 
-              />
-
-              <HistoricalTrendChart
-                title="Utilization Trend"
-                description="Fleet utilization rate over time"
-                data={chartLoading ? [] : chartData}
-                dataKeys={[
-                  { key: "utilization", label: "Utilization Rate", color: "hsl(var(--chart-1))" }
-                ]}
-                xAxisKey="month"
-              />
             </TabsContent>
 
             <TabsContent value="analytics" className="space-y-6">
-              <UtilizationFilters 
-                data={rawData || []} 
-                onFilterChange={setFilters} 
-              />
               <UtilizationAnalytics data={filteredData} />
             </TabsContent>
 
             <TabsContent value="data" className="space-y-6">
-              <UtilizationFilters 
-                data={rawData || []} 
-                onFilterChange={setFilters} 
-              />
               <DataTableWithDB 
                 columns={tableColumns} 
                 reportType="utilization"
@@ -157,6 +141,8 @@ const Utilization = () => {
                   month: row.month,
                   rig: row.rig,
                   comment: row.comment || '-',
+                  client: row.client || '-',
+                  status: row.status || 'Active',
                   utilization: row.utilization_rate ? `${row.utilization_rate}%` : '-',
                   allowableNPT: row.allowable_npt || '-',
                   nptType: row.npt_type || '-',
