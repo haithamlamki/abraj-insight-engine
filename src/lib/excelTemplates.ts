@@ -130,6 +130,20 @@ export function generateTemplate(type: string): Blob {
       { header: 'Comments', width: 30, example: 'On schedule' },
       { header: 'Client', width: 20, example: 'ADNOC' },
     ],
+    billing_npt_summary: [
+      { header: 'Year', width: 10, example: '2024' },
+      { header: 'Month', width: 12, example: 'January' },
+      { header: 'Rig', width: 15, example: '103' },
+      { header: 'Opr. Rate', width: 15, example: '24.5' },
+      { header: 'Reduce Rate', width: 15, example: '12.0' },
+      { header: 'Repair Rate', width: 15, example: '8.5' },
+      { header: 'Zero Rate', width: 15, example: '0.0' },
+      { header: 'Special Rate', width: 15, example: '5.0' },
+      { header: 'Rig Move', width: 15, example: '10.0' },
+      { header: 'A.Maint', width: 15, example: '6.0' },
+      { header: 'Total', width: 15, example: '66.0' },
+      { header: 'Total NPT', width: 15, example: '60.0' },
+    ],
   };
 
   const columns = templates[type] || [];

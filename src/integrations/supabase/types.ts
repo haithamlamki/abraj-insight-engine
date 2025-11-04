@@ -95,6 +95,60 @@ export type Database = {
         }
         Relationships: []
       }
+      billing_npt_summary: {
+        Row: {
+          a_maint: number | null
+          created_at: string | null
+          id: string
+          month: string
+          opr_rate: number | null
+          reduce_rate: number | null
+          repair_rate: number | null
+          rig: string
+          rig_move: number | null
+          special_rate: number | null
+          total: number | null
+          total_npt: number | null
+          updated_at: string | null
+          year: number
+          zero_rate: number | null
+        }
+        Insert: {
+          a_maint?: number | null
+          created_at?: string | null
+          id?: string
+          month: string
+          opr_rate?: number | null
+          reduce_rate?: number | null
+          repair_rate?: number | null
+          rig: string
+          rig_move?: number | null
+          special_rate?: number | null
+          total?: number | null
+          total_npt?: number | null
+          updated_at?: string | null
+          year: number
+          zero_rate?: number | null
+        }
+        Update: {
+          a_maint?: number | null
+          created_at?: string | null
+          id?: string
+          month?: string
+          opr_rate?: number | null
+          reduce_rate?: number | null
+          repair_rate?: number | null
+          rig?: string
+          rig_move?: number | null
+          special_rate?: number | null
+          total?: number | null
+          total_npt?: number | null
+          updated_at?: string | null
+          year?: number
+          zero_rate?: number | null
+        }
+        Relationships: []
+      }
       budget_change_log: {
         Row: {
           budget_id: string | null

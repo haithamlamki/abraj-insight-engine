@@ -237,12 +237,39 @@ export async function saveUtilizationData(data: any) {
 }
 
 /**
+ * Save billing NPT summary data (aggregated monthly by rate type)
+ */
+export async function saveBillingNPTSummaryData(data: any) {
+  const parseNumeric = (value: any) => {
+    if (!value) return 0;
+    const parsed = parseFloat(String(value).replace(/[,]/g, ''));
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  return insertData('billing_npt_summary', {
+    rig: data.rig,
+    month: data.month,
+    year: parseInt(data.year || new Date().getFullYear()),
+    opr_rate: parseNumeric(data.oprRate || data.opr_rate),
+    reduce_rate: parseNumeric(data.reduceRate || data.reduce_rate),
+    repair_rate: parseNumeric(data.repairRate || data.repair_rate),
+    zero_rate: parseNumeric(data.zeroRate || data.zero_rate),
+    special_rate: parseNumeric(data.specialRate || data.special_rate),
+    rig_move: parseNumeric(data.rigMove || data.rig_move),
+    a_maint: parseNumeric(data.aMaint || data.a_maint),
+    total: parseNumeric(data.total),
+    total_npt: parseNumeric(data.totalNpt || data.total_npt),
+  });
+}
+
+/**
  * Map report type to save function
  */
 export function getSaveFunction(reportType: string) {
   const mapping: { [key: string]: (data: any) => Promise<any> } = {
     revenue: saveRevenueData,
     billing_npt: saveBillingNPTData,
+    billing_npt_summary: saveBillingNPTSummaryData,
     work_orders: saveWorkOrdersData,
     fuel: saveFuelData,
     stock: saveStockData,
@@ -262,6 +289,7 @@ export function getTableName(reportType: string): string {
   const mapping: { [key: string]: string } = {
     revenue: 'revenue',
     billing_npt: 'billing_npt',
+    billing_npt_summary: 'billing_npt_summary',
     work_orders: 'work_orders',
     fuel: 'fuel_consumption',
     stock: 'stock_levels',

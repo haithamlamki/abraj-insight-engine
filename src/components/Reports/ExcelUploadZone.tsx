@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, FileSpreadsheet, Download, CheckCircle2, AlertCircle, Info } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { parseExcelFile, mapExcelToDbFields, validateBillingNptData, validateRevenueData, validateWorkOrdersData, ValidationError } from "@/lib/excelParser";
+import { parseExcelFile, mapExcelToDbFields, validateBillingNptData, validateBillingNPTSummaryData, validateRevenueData, validateWorkOrdersData, ValidationError } from "@/lib/excelParser";
 import { downloadTemplate } from "@/lib/excelTemplates";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useBulkSaveReportData } from "@/hooks/useReportData";
@@ -91,6 +91,8 @@ export const ExcelUploadZone = ({
       let validationErrors: ValidationError[] = [];
       if (reportType === 'billing_npt') {
         validationErrors = validateBillingNptData(allRows);
+      } else if (reportType === 'billing_npt_summary') {
+        validationErrors = validateBillingNPTSummaryData(allRows);
       } else if (reportType === 'revenue') {
         validationErrors = validateRevenueData(allRows);
       } else if (reportType === 'work_orders') {

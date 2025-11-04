@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
+import { DataEntryForm } from "@/components/Reports/DataEntryForm";
+import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
 import { EnhancedKPICard } from "@/components/Revenue/EnhancedKPICard";
 import { useReportData } from "@/hooks/useReportData";
 import { useBillingNPTFilters } from "@/hooks/useBillingNPTFilters";
@@ -17,6 +19,7 @@ import { TrendingUp, AlertTriangle, FileText, Target } from "lucide-react";
 
 const BillingNPTSummary = () => {
   const { data: nptData = [] } = useReportData('billing-npt');
+  const { data: summaryData = [] } = useReportData('billing_npt_summary');
   const { filters, updateFilters, clearFilters, applyQuickFilter, hasActiveFilters } = useBillingNPTFilters();
   
   const analytics = useBillingNPTAnalytics(nptData, filters);
@@ -171,16 +174,32 @@ const BillingNPTSummary = () => {
         </div>
       }
       entryContent={
-        <div className="text-center text-muted-foreground py-12">
-          <p className="text-lg font-semibold mb-2">Manual Data Entry</p>
-          <p className="text-sm">Form-based data entry interface coming soon</p>
-        </div>
+        <DataEntryForm
+          title="Add NPT Summary Record"
+          reportType="billing_npt_summary"
+          frequency="monthly"
+          fields={[
+            { name: 'year', label: 'Year', type: 'number', required: true },
+            { name: 'month', label: 'Month', type: 'text', required: true },
+            { name: 'rig', label: 'Rig', type: 'text', required: true },
+            { name: 'oprRate', label: 'Operational Rate (hrs)', type: 'number' },
+            { name: 'reduceRate', label: 'Reduced Rate (hrs)', type: 'number' },
+            { name: 'repairRate', label: 'Repair Rate (hrs)', type: 'number' },
+            { name: 'zeroRate', label: 'Zero Rate (hrs)', type: 'number' },
+            { name: 'specialRate', label: 'Special Rate (hrs)', type: 'number' },
+            { name: 'rigMove', label: 'Rig Move (hrs)', type: 'number' },
+            { name: 'aMaint', label: 'Allowable Maintenance (hrs)', type: 'number' },
+            { name: 'total', label: 'Total (hrs)', type: 'number' },
+            { name: 'totalNpt', label: 'Total NPT (hrs)', type: 'number' },
+          ]}
+        />
       }
       uploadContent={
-        <div className="text-center text-muted-foreground py-12">
-          <p className="text-lg font-semibold mb-2">Excel Upload</p>
-          <p className="text-sm">Bulk data upload functionality coming soon</p>
-        </div>
+        <ExcelUploadZone
+          title="Import Billing NPT Summary Data"
+          templateName="billing_npt_summary_template.xlsx"
+          reportType="billing_npt_summary"
+        />
       }
     />
   );

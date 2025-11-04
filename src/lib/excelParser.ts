@@ -429,6 +429,54 @@ export function validateRevenueData(data: any[]): ValidationError[] {
 }
 
 /**
+ * Validate billing NPT summary data (aggregated monthly format)
+ */
+export function validateBillingNPTSummaryData(data: any[]): ValidationError[] {
+  const errors: ValidationError[] = [];
+  
+  data.forEach((row, index) => {
+    // Skip blank rows
+    if (isBlankRow(row)) return;
+    
+    const rig = row.Rig || row.rig;
+    const year = row.Year || row.year;
+    const month = row.Month || row.month;
+    
+    if (!rig) {
+      errors.push({
+        row: index + 2,
+        column: 'Rig',
+        message: 'Rig number is required',
+        value: rig,
+        severity: 'error',
+      });
+    }
+    
+    if (!year) {
+      errors.push({
+        row: index + 2,
+        column: 'Year',
+        message: 'Year is required',
+        value: year,
+        severity: 'error',
+      });
+    }
+    
+    if (!month) {
+      errors.push({
+        row: index + 2,
+        column: 'Month',
+        message: 'Month is required',
+        value: month,
+        severity: 'error',
+      });
+    }
+  });
+  
+  return errors;
+}
+
+/**
  * Validate work orders data
  */
 export function validateWorkOrdersData(data: any[]): ValidationError[] {
@@ -873,6 +921,22 @@ export function mapExcelToDbFields(data: any, type: string): any {
       'Comments': 'comments',
       'Client': 'client',
     },
+    billing_npt_summary: {
+      'Year': 'year',
+      'Month': 'month',
+      'Rig': 'rig',
+      'Opr. Rate': 'opr_rate',
+      'Opr Rate': 'opr_rate',
+      'Reduce Rate': 'reduce_rate',
+      'Repair Rate': 'repair_rate',
+      'Zero Rate': 'zero_rate',
+      'Special Rate': 'special_rate',
+      'Rig Move': 'rig_move',
+      'A.Maint': 'a_maint',
+      'A Maint': 'a_maint',
+      'Total': 'total',
+      'Total NPT': 'total_npt',
+    },
   };
   
   const sourceMapping = mappings[type] || {};
@@ -938,6 +1002,19 @@ export function mapExcelToDbFields(data: any, type: string): any {
       ].includes(dbField)) {
         value = value !== null && value !== undefined ? String(value).trim() : null;
       }
+    } else if (type === 'billing_npt_summary') {
+      if ([
+        'opr_rate', 'reduce_rate', 'repair_rate', 'zero_rate', 
+        'special_rate', 'rig_move', 'a_maint', 'total', 'total_npt'
+      ].includes(dbField)) {
+        value = parseNumeric(value);
+      } else if (dbField === 'year') {
+        value = value !== null && value !== undefined && String(value).trim() !== '' ? parseInt(String(value).trim()) : null;
+      } else if (dbField === 'rig') {
+        value = value !== null && value !== undefined ? String(value).trim() : '';
+      } else if (dbField === 'month') {
+        value = value !== null && value !== undefined ? String(value).trim() : null;
+      }
     } else if (type === 'fuel' || type === 'rig_moves' || type === 'well_tracker' || type === 'stock' || type === 'ytd') {
       // Don't parse date fields directly - they will be composed from Y+M+D later
       if (dbField === 'date' || dbField === 'move_date' || dbField === 'start_date' || dbField === 'end_date' || dbField === 'last_reorder_date') {
@@ -981,7 +1058,7 @@ export function mapExcelToDbFields(data: any, type: string): any {
   }
   
   // For types with separate month fields, convert month names to numbers
-  const typesWithMonthField = ['revenue', 'work_orders', 'customer_satisfaction', 'utilization', 'ytd'];
+  const typesWithMonthField = ['revenue', 'work_orders', 'customer_satisfaction', 'utilization', 'ytd', 'billing_npt_summary'];
   if (typesWithMonthField.includes(type) && mapped.month) {
     const monthResult = convertMonthToNumber(mapped.month);
     if (monthResult.month) {
