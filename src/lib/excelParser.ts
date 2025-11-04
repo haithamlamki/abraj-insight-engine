@@ -329,9 +329,15 @@ export async function parseExcelFile(file: File, autoCorrect: boolean = false): 
         workbook.SheetNames.forEach((sheetName) => {
           const worksheet = workbook.Sheets[sheetName];
           const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
-            raw: false,
+            raw: true,
             defval: null 
           });
+          
+          console.log(`[parseExcelFile] Sheet: ${sheetName}, Rows: ${jsonData.length}`);
+          if (jsonData.length > 0) {
+            console.log(`[parseExcelFile] First row keys:`, Object.keys(jsonData[0]));
+            console.log(`[parseExcelFile] First row:`, jsonData[0]);
+          }
           
           // Filter out blank and title rows
           const filteredData = jsonData.filter((row: any) => {
@@ -339,6 +345,8 @@ export async function parseExcelFile(file: File, autoCorrect: boolean = false): 
             if (isTitleRow(row)) return false;
             return true;
           });
+          
+          console.log(`[parseExcelFile] Filtered to ${filteredData.length} rows`);
           
           parsedData[sheetName] = filteredData;
         });
@@ -434,6 +442,12 @@ export function validateRevenueData(data: any[]): ValidationError[] {
 export function validateBillingNPTSummaryData(data: any[]): ValidationError[] {
   const errors: ValidationError[] = [];
   
+  console.log(`[validateBillingNPTSummaryData] Validating ${data.length} rows`);
+  if (data.length > 0) {
+    console.log(`[validateBillingNPTSummaryData] First row keys:`, Object.keys(data[0]));
+    console.log(`[validateBillingNPTSummaryData] First row:`, data[0]);
+  }
+  
   data.forEach((row, index) => {
     // Skip blank rows
     if (isBlankRow(row)) return;
@@ -442,6 +456,10 @@ export function validateBillingNPTSummaryData(data: any[]): ValidationError[] {
     const rig = row.Rig ?? row.rig ?? row['Rig Number'] ?? row['Rig No'] ?? getByNormalized(row, 'rig') ?? getByNormalized(row, 'rignumber') ?? getByNormalized(row, 'rigno');
     const year = row.Year ?? row.year ?? getByNormalized(row, 'year');
     const monthRaw = row.Month ?? row.month ?? row.Mont ?? row.Mounth ?? getByNormalized(row, 'month') ?? getByNormalized(row, 'months') ?? getByNormalized(row, 'mont') ?? getByNormalized(row, 'mounth');
+    
+    if (index === 0) {
+      console.log(`[validateBillingNPTSummaryData] Row 0 - rig:`, rig, ', year:', year, ', month:', monthRaw);
+    }
 
     if (!rig) {
       errors.push({
