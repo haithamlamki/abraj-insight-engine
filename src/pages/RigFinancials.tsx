@@ -15,12 +15,12 @@ const RigFinancials = () => {
       trend: "+2.3%"
     },
     {
-      title: "YTD Analysis",
-      description: "Year-to-date financial performance and trends",
-      path: "/rig-financials/ytd",
+      title: "Billing NPT Summary",
+      description: "Interactive NPT & operational analysis with AI insights",
+      path: "/rig-financials/billing-npt-summary",
       icon: TrendingUp,
-      value: "$12.5M",
-      trend: "+15.2%"
+      value: "0 hrs",
+      trend: "0%"
     },
     {
       title: "Billing NPT",
@@ -53,7 +53,7 @@ const RigFinancials = () => {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <KPICard title="Total Revenue" value="$1.85M" trend="up" trendValue="+8.7%" status="success" />
           <KPICard title="Utilization Rate" value="87.5%" trend="up" trendValue="+2.3%" status="success" />
-          <KPICard title="YTD Revenue" value="$12.5M" trend="up" trendValue="+15.2%" status="success" />
+          <KPICard title="NPT Hours" value="0 hrs" trend="neutral" trendValue="0%" status="neutral" />
           <KPICard title="Billing NPT" value="344 hrs" trend="down" trendValue="+25.4%" status="warning" />
         </div>
 
