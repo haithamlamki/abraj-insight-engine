@@ -25,14 +25,17 @@ const Revenue = () => {
   ];
 
   const tableColumns = [
+    { key: "year", label: "Year", sortable: true },
+    { key: "month", label: "Months", sortable: true },
     { key: "rig", label: "Rig", sortable: true },
-    { key: "month", label: "Month", sortable: true },
-    { key: "days", label: "Days", sortable: true },
+    { key: "actual", label: "Actual", sortable: true },
     { key: "fuel", label: "Fuel", sortable: true },
+    { key: "totalRev", label: "Total Rev", sortable: true },
+    { key: "budgetedRev", label: "Budgeted Rev", sortable: true },
+    { key: "diff", label: "Diff", sortable: true },
     { key: "nptRepair", label: "NPT Repair", sortable: true },
     { key: "nptZero", label: "NPT Zero", sortable: true },
-    { key: "client", label: "Client", sortable: true },
-    { key: "revTotal", label: "Revenue Total", sortable: true },
+    { key: "comments", label: "Comments", sortable: true },
   ];
 
   const sampleData = [
@@ -98,14 +101,17 @@ const Revenue = () => {
             reportType="revenue"
             formatRow={(row) => ({
               ...row,
-              rig: row.rig,
+              year: row.year,
               month: row.month,
-              days: row.working_days,
+              rig: row.rig,
+              actual: `$${(row.revenue_actual / 1000000).toFixed(2)}M`,
               fuel: `$${row.fuel_charge?.toLocaleString() || 0}`,
+              totalRev: `$${(row.revenue_actual / 1000000).toFixed(2)}M`,
+              budgetedRev: `$${(row.revenue_budget / 1000000).toFixed(2)}M`,
+              diff: `$${(row.variance / 1000000).toFixed(2)}M`,
               nptRepair: `$${row.npt_repair?.toLocaleString() || 0}`,
               nptZero: `$${row.npt_zero?.toLocaleString() || 0}`,
-              client: row.client || '-',
-              revTotal: `$${(row.revenue_actual / 1000000).toFixed(1)}M`
+              comments: row.comments || '-'
             })}
           />
         </div>
