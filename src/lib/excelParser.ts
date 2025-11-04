@@ -264,8 +264,8 @@ export function validateRevenueData(data: any[]): ValidationError[] {
       });
     }
     
-    // Check month format - recognize both "Month" and "Months"
-    const monthVal = row.Months ?? row.Month ?? row.month ?? row.Mont;
+    // Check month format - recognize both "Month" and "Months" via normalized keys
+    const monthVal = row.Months ?? row.Month ?? row.month ?? row.Mont ?? getByNormalized(row, 'months') ?? getByNormalized(row, 'month');
     if (monthVal) {
       const monthResult = convertMonthToNumber(monthVal);
       if (!monthResult.month) {
@@ -513,10 +513,11 @@ function parseDate(value: any): string | null {
  */
 function normalizeHeader(str: any): string {
   return String(str || '')
+    .normalize('NFKD')
     .toLowerCase()
-    .replace(/[\u200B-\u200D\uFEFF]/g, '') // zero-width chars
-    .replace(/[()%.,]/g, '') // common punctuation
-    .replace(/\s+/g, ' ') // collapse spaces
+    .replace(/[\u200B-\u200D\uFEFF]/g, '') // Remove zero-width characters
+    .replace(/[\s\u00A0]+/g, '') // Remove ALL whitespace including NBSP
+    .replace(/[()%.,]/g, '') // Remove common punctuation
     .trim();
 }
 
