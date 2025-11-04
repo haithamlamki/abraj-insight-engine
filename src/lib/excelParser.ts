@@ -989,5 +989,12 @@ export function mapExcelToDbFields(data: any, type: string): any {
     }
   }
   
+  // Extract client and status from comment for utilization data
+  if (type === 'utilization' && mapped.comment) {
+    const { client, status } = extractClientAndStatus(mapped.comment);
+    if (client && !mapped.client) mapped.client = client;
+    if (status && !mapped.status) mapped.status = status;
+  }
+  
   return mapped;
 }
