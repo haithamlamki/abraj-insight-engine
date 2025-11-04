@@ -14,7 +14,7 @@ export function generateTemplate(type: string): Blob {
     revenue: [
       { header: 'Year', width: 10, example: '2024' },
       { header: 'Months', width: 12, example: 'Jan OR 1' },
-      { header: 'Rig', width: 15, example: 'ADC-225' },
+      { header: 'Rig', width: 15, example: '103' },
       { header: 'Actual', width: 15, example: '25000' },
       { header: 'Fuel', width: 12, example: '12000' },
       { header: 'Total Rev', width: 18, example: '700000' },
