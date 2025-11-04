@@ -325,31 +325,71 @@ export async function parseExcelFile(file: File, autoCorrect: boolean = false): 
         const warnings: ValidationError[] = [];
         const autoCorrections: string[] = [];
         
-        // Parse all sheets
-        workbook.SheetNames.forEach((sheetName) => {
-          const worksheet = workbook.Sheets[sheetName];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
-            raw: true,
-            defval: null 
-          });
-          
-          console.log(`[parseExcelFile] Sheet: ${sheetName}, Rows: ${jsonData.length}`);
-          if (jsonData.length > 0) {
-            console.log(`[parseExcelFile] First row keys:`, Object.keys(jsonData[0]));
-            console.log(`[parseExcelFile] First row:`, jsonData[0]);
-          }
-          
-          // Filter out blank and title rows
-          const filteredData = jsonData.filter((row: any) => {
-            if (isBlankRow(row)) return false;
-            if (isTitleRow(row)) return false;
-            return true;
-          });
-          
-          console.log(`[parseExcelFile] Filtered to ${filteredData.length} rows`);
-          
-          parsedData[sheetName] = filteredData;
+// Parse all sheets
+workbook.SheetNames.forEach((sheetName) => {
+  const worksheet = workbook.Sheets[sheetName];
+  let jsonData: any[] = XLSX.utils.sheet_to_json(worksheet, { 
+    raw: true,
+    defval: null 
+  });
+  
+  console.log(`[parseExcelFile] Sheet: ${sheetName}, Rows: ${jsonData.length}`);
+  if (jsonData.length > 0) {
+    console.log(`[parseExcelFile] First row keys:`, Object.keys(jsonData[0]));
+    console.log(`[parseExcelFile] First row:`, jsonData[0]);
+  }
+
+  // Fallback: some sheets have headers stored in the first data row and keys like "__EMPTY".
+  // Detect and rebuild objects using the header row.
+  const looksLikeEmptyKeys = jsonData[0] && Object.keys(jsonData[0]).every(k => k.startsWith('__EMPTY'));
+  const firstVals = jsonData[0] ? Object.values(jsonData[0]).map(v => String(v ?? '').trim().toLowerCase()) : [];
+  const headerRowLikely = firstVals.includes('year') && firstVals.includes('rig') && (firstVals.includes('month') || firstVals.includes('mounth') || firstVals.includes('mont'));
+
+  if (looksLikeEmptyKeys && headerRowLikely) {
+    const rowsAoA: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true, defval: null });
+    // Find the header row index within the first 20 rows
+    const headerIdx = (() => {
+      for (let i = 0; i < Math.min(rowsAoA.length, 20); i++) {
+        const vals = (rowsAoA[i] || []).map(c => String(c ?? '').trim().toLowerCase());
+        if (vals.includes('year') && vals.includes('rig') && (vals.includes('month') || vals.includes('mounth') || vals.includes('mont'))) {
+          return i;
+        }
+      }
+      return -1;
+    })();
+
+    if (headerIdx >= 0) {
+      const headersRaw = rowsAoA[headerIdx] as any[];
+      const headers = headersRaw.map((h, idx) => String(h ?? `col_${idx}`).trim());
+      const rebuilt: any[] = [];
+      for (let r = headerIdx + 1; r < rowsAoA.length; r++) {
+        const row = rowsAoA[r] || [];
+        const obj: any = {};
+        headers.forEach((h, cIdx) => {
+          obj[h] = row[cIdx] ?? null;
         });
+        rebuilt.push(obj);
+      }
+      jsonData = rebuilt;
+      console.log(`[parseExcelFile] Rebuilt using detected header row at index ${headerIdx}. New rows: ${jsonData.length}`);
+      if (jsonData.length > 0) {
+        console.log(`[parseExcelFile] Rebuilt first row keys:`, Object.keys(jsonData[0]));
+        console.log(`[parseExcelFile] Rebuilt first row:`, jsonData[0]);
+      }
+    }
+  }
+  
+  // Filter out blank and title rows
+  const filteredData = jsonData.filter((row: any) => {
+    if (isBlankRow(row)) return false;
+    if (isTitleRow(row)) return false;
+    return true;
+  });
+  
+  console.log(`[parseExcelFile] Filtered to ${filteredData.length} rows`);
+  
+  parsedData[sheetName] = filteredData;
+});
         
         resolve({ data: parsedData, errors, warnings, autoCorrections });
       } catch (error) {
