@@ -1,11 +1,12 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-Deno.serve(async (req) => {
+serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -21,23 +22,26 @@ Deno.serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    // Fetch billing NPT data
-    const headers = {
-      'apikey': supabaseKey,
-      'Authorization': `Bearer ${supabaseKey}`,
-    };
+    // Create Supabase client
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    let query = `${supabaseUrl}/rest/v1/billing_npt?select=*&order=date.desc&limit=1000`;
+    // Fetch billing NPT data using Supabase client
+    let query = supabase
+      .from('billing_npt')
+      .select('*')
+      .order('date', { ascending: false })
+      .limit(1000);
     
     if (filters?.years?.length > 0) {
-      query += `&year=in.(${filters.years.join(',')})`;
+      query = query.in('year', filters.years);
     }
     if (filters?.rigs?.length > 0) {
-      query += `&rig=in.(${filters.rigs.join(',')})`;
+      query = query.in('rig', filters.rigs);
     }
 
-    const response = await fetch(query, { headers });
-    const data = await response.json();
+    const { data, error } = await query;
+    
+    if (error) throw error;
 
     // Calculate aggregated metrics
     const totalNPT = data.reduce((sum: number, r: any) => sum + (r.npt_hours || 0), 0);
@@ -214,9 +218,9 @@ Summarize:
     );
 
   } catch (error) {
-    console.error('Error in billing-npt-insights:', error);
+    console.error('Error in billing_npt_insights:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'An error occurred' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

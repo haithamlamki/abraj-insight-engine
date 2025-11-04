@@ -3,5 +3,5 @@ project_id = "vfxpjubzliquatciwfpd"
 [functions.revenue-insights]
 verify_jwt = false
 
-[functions.billing-npt-insights]
+[functions.billing_npt_insights]
 verify_jwt = false
