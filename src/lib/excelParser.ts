@@ -524,6 +524,7 @@ export function mapExcelToDbFields(data: any, type: string): any {
     revenue: {
       'Rig': 'rig',
       'Month': 'month',
+      'Months': 'month',
       'Year': 'year',
       'Dayrate Actual': 'dayrate_actual',
       'Dayrate Budget': 'dayrate_budget',
@@ -656,6 +657,7 @@ export function mapExcelToDbFields(data: any, type: string): any {
     ytd: {
       'Rig': 'rig',
       'Month': 'month',
+      'Months': 'month',
       'Year': 'year',
       'Dayrate Actual': 'dayrate_actual',
       'Dayrate Budget': 'dayrate_budget',
