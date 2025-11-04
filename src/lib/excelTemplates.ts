@@ -12,19 +12,19 @@ export interface TemplateColumn {
 export function generateTemplate(type: string): Blob {
   const templates: { [key: string]: TemplateColumn[] } = {
     revenue: [
-      { header: 'Rig', width: 15, example: 'ADC-225' },
-      { header: 'Month', width: 12, example: 'Jan OR 1' },
       { header: 'Year', width: 10, example: '2024' },
-      { header: 'Dayrate Actual', width: 15, example: '25000' },
-      { header: 'Dayrate Budget', width: 15, example: '24000' },
-      { header: 'Working Days', width: 15, example: '28' },
+      { header: 'Month', width: 12, example: 'Jan OR 1' },
+      { header: 'Rig', width: 15, example: 'ADC-225' },
       { header: 'Revenue Actual', width: 18, example: '700000' },
+      { header: 'Fuel', width: 12, example: '12000' },
       { header: 'Revenue Budget', width: 18, example: '672000' },
       { header: 'Variance', width: 15, example: '28000' },
-      { header: 'Fuel', width: 12, example: '12000' },
       { header: 'NPT Repair', width: 15, example: '5000' },
       { header: 'NPT Zero', width: 12, example: '0' },
       { header: 'Comments', width: 30, example: 'On schedule' },
+      { header: 'Dayrate Actual', width: 15, example: '25000' },
+      { header: 'Dayrate Budget', width: 15, example: '24000' },
+      { header: 'Working Days', width: 15, example: '28' },
       { header: 'Client', width: 20, example: 'ADNOC' },
     ],
     billing_npt: [
