@@ -46,6 +46,8 @@ const Utilization = () => {
     { key: "month", label: "Month", sortable: true },
     { key: "rig", label: "Rig", sortable: true },
     { key: "comment", label: "Comment", sortable: true },
+    { key: "client", label: "Client", sortable: true },
+    { key: "status", label: "Status", sortable: true },
     { key: "utilization", label: "% Utilization", sortable: true },
     { key: "allowableNPT", label: "Allowable NPT", sortable: true },
     { key: "nptType", label: "NPT Type", sortable: true },
