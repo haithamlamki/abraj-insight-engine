@@ -437,11 +437,12 @@ export function validateBillingNPTSummaryData(data: any[]): ValidationError[] {
   data.forEach((row, index) => {
     // Skip blank rows
     if (isBlankRow(row)) return;
-    
-    const rig = row.Rig || row.rig;
-    const year = row.Year || row.year;
-    const month = row.Month || row.month;
-    
+
+    // Robust header detection (handles Mounth/Mont, Rig No, etc.)
+    const rig = row.Rig ?? row.rig ?? row['Rig Number'] ?? row['Rig No'] ?? getByNormalized(row, 'rig') ?? getByNormalized(row, 'rignumber') ?? getByNormalized(row, 'rigno');
+    const year = row.Year ?? row.year ?? getByNormalized(row, 'year');
+    const monthRaw = row.Month ?? row.month ?? row.Mont ?? row.Mounth ?? getByNormalized(row, 'month') ?? getByNormalized(row, 'months') ?? getByNormalized(row, 'mont') ?? getByNormalized(row, 'mounth');
+
     if (!rig) {
       errors.push({
         row: index + 2,
@@ -462,14 +463,36 @@ export function validateBillingNPTSummaryData(data: any[]): ValidationError[] {
       });
     }
     
-    if (!month) {
+    if (!monthRaw) {
       errors.push({
         row: index + 2,
         column: 'Month',
         message: 'Month is required',
-        value: month,
+        value: monthRaw,
         severity: 'error',
       });
+    } else {
+      // Validate recognizable month value and surface auto-conversion as info
+      const monthCheck = convertMonthToNumber(monthRaw);
+      if (!monthCheck.month) {
+        errors.push({
+          row: index + 2,
+          column: 'Month',
+          message: 'Invalid month format',
+          value: monthRaw,
+          severity: 'error',
+        });
+      } else if (monthCheck.converted) {
+        errors.push({
+          row: index + 2,
+          column: 'Month',
+          message: `Month name detected: "${monthRaw}" → ${monthCheck.month}`,
+          value: monthRaw,
+          autoFixable: true,
+          suggestedFix: `Auto-convert to ${monthCheck.month}`,
+          severity: 'info',
+        });
+      }
     }
   });
   
@@ -924,7 +947,13 @@ export function mapExcelToDbFields(data: any, type: string): any {
     billing_npt_summary: {
       'Year': 'year',
       'Month': 'month',
+      'Months': 'month',
+      'Mont': 'month',
+      'Mounth': 'month',
       'Rig': 'rig',
+      'Rig Number': 'rig',
+      'Rig No': 'rig',
+      'Rig No.': 'rig',
       'Opr. Rate': 'opr_rate',
       'Opr Rate': 'opr_rate',
       'Reduce Rate': 'reduce_rate',
