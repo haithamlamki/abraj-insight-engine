@@ -98,6 +98,7 @@ export type Database = {
       billing_npt_summary: {
         Row: {
           a_maint: number | null
+          a_maint_zero: number | null
           created_at: string | null
           id: string
           month: string
@@ -106,6 +107,7 @@ export type Database = {
           repair_rate: number | null
           rig: string
           rig_move: number | null
+          rig_move_reduce: number | null
           special_rate: number | null
           total: number | null
           total_npt: number | null
@@ -115,6 +117,7 @@ export type Database = {
         }
         Insert: {
           a_maint?: number | null
+          a_maint_zero?: number | null
           created_at?: string | null
           id?: string
           month: string
@@ -123,6 +126,7 @@ export type Database = {
           repair_rate?: number | null
           rig: string
           rig_move?: number | null
+          rig_move_reduce?: number | null
           special_rate?: number | null
           total?: number | null
           total_npt?: number | null
@@ -132,6 +136,7 @@ export type Database = {
         }
         Update: {
           a_maint?: number | null
+          a_maint_zero?: number | null
           created_at?: string | null
           id?: string
           month?: string
@@ -140,6 +145,7 @@ export type Database = {
           repair_rate?: number | null
           rig?: string
           rig_move?: number | null
+          rig_move_reduce?: number | null
           special_rate?: number | null
           total?: number | null
           total_npt?: number | null

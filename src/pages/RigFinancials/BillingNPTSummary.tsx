@@ -187,8 +187,10 @@ const BillingNPTSummary = () => {
             { name: 'repairRate', label: 'Repair Rate (hrs)', type: 'number' },
             { name: 'zeroRate', label: 'Zero Rate (hrs)', type: 'number' },
             { name: 'specialRate', label: 'Special Rate (hrs)', type: 'number' },
+            { name: 'rigMoveReduce', label: 'Rig Move (Reduce) (hrs)', type: 'number' },
             { name: 'rigMove', label: 'Rig Move (hrs)', type: 'number' },
             { name: 'aMaint', label: 'Allowable Maintenance (hrs)', type: 'number' },
+            { name: 'aMaintZero', label: 'A.Maint Zero (hrs)', type: 'number' },
             { name: 'total', label: 'Total (hrs)', type: 'number' },
             { name: 'totalNpt', label: 'Total NPT (hrs)', type: 'number' },
           ]}

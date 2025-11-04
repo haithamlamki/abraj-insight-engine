@@ -255,8 +255,10 @@ export async function saveBillingNPTSummaryData(data: any) {
     repair_rate: parseNumeric(data.repairRate || data.repair_rate),
     zero_rate: parseNumeric(data.zeroRate || data.zero_rate),
     special_rate: parseNumeric(data.specialRate || data.special_rate),
+    rig_move_reduce: parseNumeric(data.rigMoveReduce || data.rig_move_reduce),
     rig_move: parseNumeric(data.rigMove || data.rig_move),
     a_maint: parseNumeric(data.aMaint || data.a_maint),
+    a_maint_zero: parseNumeric(data.aMaintZero || data.a_maint_zero),
     total: parseNumeric(data.total),
     total_npt: parseNumeric(data.totalNpt || data.total_npt),
   });

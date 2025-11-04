@@ -960,9 +960,13 @@ export function mapExcelToDbFields(data: any, type: string): any {
       'Repair Rate': 'repair_rate',
       'Zero Rate': 'zero_rate',
       'Special Rate': 'special_rate',
+      'Rig Move(Reduce)': 'rig_move_reduce',
+      'Rig Move (Reduce)': 'rig_move_reduce',
       'Rig Move': 'rig_move',
       'A.Maint': 'a_maint',
       'A Maint': 'a_maint',
+      'A.Maint Zero': 'a_maint_zero',
+      'A Maint Zero': 'a_maint_zero',
       'Total': 'total',
       'Total NPT': 'total_npt',
     },
@@ -1034,7 +1038,7 @@ export function mapExcelToDbFields(data: any, type: string): any {
     } else if (type === 'billing_npt_summary') {
       if ([
         'opr_rate', 'reduce_rate', 'repair_rate', 'zero_rate', 
-        'special_rate', 'rig_move', 'a_maint', 'total', 'total_npt'
+        'special_rate', 'rig_move', 'rig_move_reduce', 'a_maint', 'a_maint_zero', 'total', 'total_npt'
       ].includes(dbField)) {
         value = parseNumeric(value);
       } else if (dbField === 'year') {
