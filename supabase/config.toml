@@ -1,1 +1,4 @@
 project_id = "vfxpjubzliquatciwfpd"
+
+[functions.revenue-insights]
+verify_jwt = false

@@ -15,6 +15,7 @@ import { TopPerformersPanel } from "@/components/Revenue/TopPerformersPanel";
 import { NPTCorrelationChart } from "@/components/Revenue/NPTCorrelationChart";
 import { RevenueForecastChart } from "@/components/Revenue/RevenueForecastChart";
 import { ExportMenu } from "@/components/Revenue/ExportMenu";
+import { AIInsightsPanel } from "@/components/Revenue/AIInsightsPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useReportData } from "@/hooks/useReportData";
 
@@ -260,6 +261,9 @@ const Revenue = () => {
                 />
               </div>
             )}
+
+            {/* AI Insights Panel */}
+            <AIInsightsPanel filters={filters} />
             </div>
           </TabsContent>
 
