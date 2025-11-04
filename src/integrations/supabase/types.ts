@@ -103,7 +103,7 @@ export type Database = {
           changed_by: string
           field_name: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           metadata: Json | null
           new_value: string | null
           old_value: string | null
@@ -119,7 +119,7 @@ export type Database = {
           changed_by: string
           field_name?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           new_value?: string | null
           old_value?: string | null
@@ -135,7 +135,7 @@ export type Database = {
           changed_by?: string
           field_name?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           new_value?: string | null
           old_value?: string | null
@@ -753,6 +753,7 @@ export type Database = {
           npt_type: string | null
           operating_days: number | null
           rig: string
+          status: string
           updated_at: string | null
           utilization_rate: number | null
           working_days: number | null
@@ -770,6 +771,7 @@ export type Database = {
           npt_type?: string | null
           operating_days?: number | null
           rig: string
+          status?: string
           updated_at?: string | null
           utilization_rate?: number | null
           working_days?: number | null
@@ -787,6 +789,7 @@ export type Database = {
           npt_type?: string | null
           operating_days?: number | null
           rig?: string
+          status?: string
           updated_at?: string | null
           utilization_rate?: number | null
           working_days?: number | null
