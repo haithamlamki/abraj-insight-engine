@@ -26,7 +26,7 @@ export const AIInsightsPanel = ({ filters }: AIInsightsPanelProps) => {
   const generateInsights = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('billing-npt-insights', {
+      const { data, error } = await supabase.functions.invoke('billing_npt_insights', {
         body: { filters, focusArea }
       });
 

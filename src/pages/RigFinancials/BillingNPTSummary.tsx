@@ -18,7 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUp, AlertTriangle, FileText, Target } from "lucide-react";
 
 const BillingNPTSummary = () => {
-  const { data: nptData = [] } = useReportData('billing-npt');
+  const { data: nptData = [] } = useReportData('billing_npt');
   const { data: summaryData = [] } = useReportData('billing_npt_summary');
   const { filters, updateFilters, clearFilters, applyQuickFilter, hasActiveFilters } = useBillingNPTFilters();
   
