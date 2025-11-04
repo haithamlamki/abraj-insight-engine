@@ -341,12 +341,12 @@ workbook.SheetNames.forEach((sheetName) => {
 
   // Fallback: some sheets have headers stored in the first data row and keys like "__EMPTY".
   // Detect and rebuild objects using the header row.
-  const looksLikeEmptyKeys = jsonData[0] && Object.keys(jsonData[0]).every(k => k.startsWith('__EMPTY'));
+  const hasEmptyOrNumericKeys = jsonData[0] && Object.keys(jsonData[0]).some(k => k.startsWith('__EMPTY') || /^\d+(_\d+)?$/.test(k));
   const firstVals = jsonData[0] ? Object.values(jsonData[0]).map(v => String(v ?? '').trim().toLowerCase()) : [];
   const headerRowLikely = firstVals.includes('year') && firstVals.includes('rig') && (firstVals.includes('month') || firstVals.includes('mounth') || firstVals.includes('mont'));
 
-  if (looksLikeEmptyKeys && headerRowLikely) {
-    const rowsAoA: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true, defval: null });
+  if (hasEmptyOrNumericKeys || headerRowLikely) {
+    const rowsAoA: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false, defval: null });
     // Find the header row index within the first 20 rows
     const headerIdx = (() => {
       for (let i = 0; i < Math.min(rowsAoA.length, 20); i++) {
