@@ -1,16 +1,85 @@
+import { useState, useMemo } from "react";
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
 import { DataEntryForm } from "@/components/Reports/DataEntryForm";
 import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
 import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
-import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
-import { KPICard } from "@/components/Dashboard/KPICard";
-import { DollarSign, TrendingUp, PieChart } from "lucide-react";
-import { useKPIData } from "@/hooks/useKPIData";
-import { useChartData } from "@/hooks/useChartData";
+import { DollarSign, TrendingUp, PieChart, Target } from "lucide-react";
+import { useRevenueFilters } from "@/hooks/useRevenueFilters";
+import { useRevenueAnalytics } from "@/hooks/useRevenueAnalytics";
+import { RevenueFilterPanel } from "@/components/Revenue/RevenueFilterPanel";
+import { ActiveFiltersBar } from "@/components/Revenue/ActiveFiltersBar";
+import { EnhancedKPICard } from "@/components/Revenue/EnhancedKPICard";
+import { RevenueTimeSeriesChart } from "@/components/Revenue/RevenueTimeSeriesChart";
+import { RigPerformanceChart } from "@/components/Revenue/RigPerformanceChart";
+import { TopPerformersPanel } from "@/components/Revenue/TopPerformersPanel";
+import { NPTCorrelationChart } from "@/components/Revenue/NPTCorrelationChart";
+import { RevenueForecastChart } from "@/components/Revenue/RevenueForecastChart";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Revenue = () => {
-  const { kpis, isLoading: kpisLoading } = useKPIData("revenue");
-  const { chartData, isLoading: chartLoading } = useChartData("revenue");
+  const {
+    filters,
+    updateFilters,
+    resetFilters,
+    applyQuickFilter,
+    hasActiveFilters,
+  } = useRevenueFilters();
+
+  const {
+    data,
+    monthlyTrend,
+    topRigsByVariance,
+    bottomRigsByVariance,
+    topMonthsByRevenue,
+    nptCorrelation,
+    totalActual,
+    totalBudget,
+    totalVariance,
+    variancePct,
+    avgMonthlyRevenue,
+    avgDayrate,
+    historicalTimeSeries,
+    correlationCoefficient,
+    isLoading,
+  } = useRevenueAnalytics(filters);
+
+  const [selectedRig, setSelectedRig] = useState<string | null>(null);
+
+  // Calculate available years and revenue range from data
+  const { availableYears, minRevenue, maxRevenue } = useMemo(() => {
+    if (!data || data.length === 0) {
+      return {
+        availableYears: [new Date().getFullYear()],
+        minRevenue: 0,
+        maxRevenue: 10000000,
+      };
+    }
+
+    const years = [...new Set(data.map(d => d.year))].sort((a, b) => b - a);
+    const revenues = data.map(d => d.revenue_actual);
+    
+    return {
+      availableYears: years,
+      minRevenue: Math.min(...revenues),
+      maxRevenue: Math.max(...revenues),
+    };
+  }, [data]);
+
+  // Handle rig drill-down
+  const handleRigClick = (rig: string) => {
+    setSelectedRig(rig);
+    updateFilters({ rigs: [rig] });
+  };
+
+  // Handle month drill-down
+  const handleMonthClick = (month: string, year: number) => {
+    updateFilters({ months: [month], years: [year] });
+  };
+
+  // Handle filter removal
+  const handleRemoveFilter = (filterType: keyof typeof filters, value: any) => {
+    updateFilters({ [filterType]: value });
+  };
 
   const formFields = [
     { name: "rig", label: "Rig", type: "text" as const, required: true },
@@ -55,66 +124,142 @@ const Revenue = () => {
 
   return (
     <DataEntryLayout
-      title="Revenue Analysis"
-      description="Detailed revenue tracking and breakdown by rig"
+      title="Revenue Analysis Dashboard"
+      description="Interactive revenue tracking and analysis with forecasting"
       breadcrumbs={[
         { label: "Dashboard", href: "/" },
         { label: "Rig Financials", href: "/rig-financials" },
         { label: "Revenue" }
       ]}
       viewContent={
-        <div className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-3">
-            <KPICard 
-              title="Total Revenue" 
-              value={kpisLoading ? "..." : `$${Number(kpis?.totalRevenue || 0).toLocaleString()}`}
-              trend="up" 
-              icon={DollarSign} 
-            />
-            <KPICard 
-              title="Budget Variance" 
-              value={kpisLoading ? "..." : `${kpis?.variance || 0}%`}
-              change={Number(kpis?.variance || 0)}
-              trend={Number(kpis?.variance || 0) >= 0 ? "up" : "down"}
-              icon={TrendingUp} 
-            />
-            <KPICard 
-              title="Avg Dayrate" 
-              value={kpisLoading ? "..." : `$${Number(kpis?.avgDayrate || 0).toLocaleString()}`}
-              icon={PieChart} 
+        <Tabs defaultValue="dashboard" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <TabsList>
+              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+              <TabsTrigger value="data">Detailed Data</TabsTrigger>
+            </TabsList>
+            
+            <RevenueFilterPanel
+              filters={filters}
+              onFiltersChange={updateFilters}
+              onReset={resetFilters}
+              onApplyQuickFilter={applyQuickFilter}
+              hasActiveFilters={hasActiveFilters}
+              availableYears={availableYears}
+              minRevenue={minRevenue}
+              maxRevenue={maxRevenue}
             />
           </div>
 
-          <HistoricalTrendChart
-            title="Revenue Trend"
-            description="Actual vs Budget revenue over time"
-            data={chartLoading ? [] : chartData}
-            dataKeys={[
-              { key: "actual", label: "Actual Revenue", color: "hsl(var(--chart-1))" },
-              { key: "budget", label: "Budget Revenue", color: "hsl(var(--chart-2))" }
-            ]}
-            xAxisKey="month"
-          />
+          {hasActiveFilters && (
+            <ActiveFiltersBar
+              filters={filters}
+              onRemoveFilter={handleRemoveFilter}
+              onClearAll={resetFilters}
+            />
+          )}
 
-          <DataTableWithDB 
-            columns={tableColumns} 
-            reportType="revenue"
-            formatRow={(row) => ({
-              ...row,
-              year: row.year,
-              month: row.month,
-              rig: row.rig,
-              actual: `$${(row.revenue_actual / 1000000).toFixed(2)}M`,
-              fuel: `$${row.fuel_charge?.toLocaleString() || 0}`,
-              totalRev: `$${(row.revenue_actual / 1000000).toFixed(2)}M`,
-              budgetedRev: `$${(row.revenue_budget / 1000000).toFixed(2)}M`,
-              diff: `$${(row.variance / 1000000).toFixed(2)}M`,
-              nptRepair: `$${row.npt_repair?.toLocaleString() || 0}`,
-              nptZero: `$${row.npt_zero?.toLocaleString() || 0}`,
-              comments: row.comments || '-'
-            })}
-          />
-        </div>
+          <TabsContent value="dashboard" className="space-y-6">
+            {/* KPI Cards */}
+            <div className="grid gap-6 md:grid-cols-4">
+              <EnhancedKPICard
+                title="Total Revenue"
+                value={isLoading ? "..." : `$${(totalActual / 1000000).toFixed(2)}M`}
+                icon={DollarSign}
+                trend={variancePct >= 0 ? 'up' : 'down'}
+                change={variancePct}
+                subtitle="vs budget"
+                sparklineData={monthlyTrend.map(m => m.actual)}
+              />
+              <EnhancedKPICard
+                title="Budget Variance"
+                value={isLoading ? "..." : `${variancePct >= 0 ? '+' : ''}${variancePct.toFixed(1)}%`}
+                icon={TrendingUp}
+                trend={variancePct >= 0 ? 'up' : 'down'}
+                change={variancePct}
+                subtitle={`$${(totalVariance / 1000000).toFixed(2)}M`}
+              />
+              <EnhancedKPICard
+                title="Avg Dayrate"
+                value={isLoading ? "..." : `$${avgDayrate.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                icon={PieChart}
+                subtitle="per day"
+              />
+              <EnhancedKPICard
+                title="Avg Monthly"
+                value={isLoading ? "..." : `$${(avgMonthlyRevenue / 1000000).toFixed(2)}M`}
+                icon={Target}
+                subtitle="revenue"
+                sparklineData={monthlyTrend.map(m => m.actual)}
+              />
+            </div>
+
+            {/* Time Series Chart */}
+            <RevenueTimeSeriesChart
+              data={monthlyTrend}
+              title="Revenue Trend Analysis"
+              description="Actual vs Budget over time with variance"
+            />
+
+            {/* Rig Performance and Top Performers */}
+            <div className="grid gap-6 lg:grid-cols-2">
+              <RigPerformanceChart
+                data={topRigsByVariance}
+                title="Rig Performance Analysis"
+                description="Variance by rig (top performers)"
+                onRigClick={handleRigClick}
+              />
+              <TopPerformersPanel
+                topRigs={topRigsByVariance}
+                bottomRigs={bottomRigsByVariance}
+                topMonths={topMonthsByRevenue}
+                onRigClick={handleRigClick}
+                onMonthClick={handleMonthClick}
+              />
+            </div>
+
+            {/* Forecast Chart */}
+            {historicalTimeSeries.length > 3 && (
+              <RevenueForecastChart
+                historicalData={historicalTimeSeries}
+                title="Revenue Forecast"
+                description="Projected revenue based on historical trends"
+              />
+            )}
+
+            {/* NPT Correlation */}
+            {nptCorrelation.length > 0 && (
+              <NPTCorrelationChart
+                data={nptCorrelation}
+                correlationCoefficient={correlationCoefficient}
+                title="NPT Impact Analysis"
+                description="Correlation between NPT and revenue variance"
+                onRigClick={handleRigClick}
+              />
+            )}
+          </TabsContent>
+
+          <TabsContent value="data" className="space-y-6">
+            <DataTableWithDB 
+              columns={tableColumns} 
+              reportType="revenue"
+              formatRow={(row) => ({
+                ...row,
+                year: row.year,
+                month: row.month,
+                rig: row.rig,
+                actual: `$${(row.revenue_actual / 1000000).toFixed(2)}M`,
+                fuel: `$${row.fuel_charge?.toLocaleString() || 0}`,
+                totalRev: `$${(row.revenue_actual / 1000000).toFixed(2)}M`,
+                budgetedRev: `$${(row.revenue_budget / 1000000).toFixed(2)}M`,
+                diff: `$${(row.variance / 1000000).toFixed(2)}M`,
+                nptRepair: `$${row.npt_repair?.toLocaleString() || 0}`,
+                nptZero: `$${row.npt_zero?.toLocaleString() || 0}`,
+                comments: row.comments || '-'
+              })}
+            />
+          </TabsContent>
+        </Tabs>
       }
       entryContent={
         <DataEntryForm
