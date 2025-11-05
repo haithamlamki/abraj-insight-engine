@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, FileSpreadsheet, Download, CheckCircle2, AlertCircle, Info } from "lucide-react";
+import { Upload, FileSpreadsheet, Download, CheckCircle2, AlertCircle, Info, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { parseExcelFile, mapExcelToDbFields, validateBillingNptData, validateBillingNPTSummaryData, validateRevenueData, validateWorkOrdersData, ValidationError } from "@/lib/excelParser";
@@ -11,6 +11,7 @@ import { useBulkSaveReportData } from "@/hooks/useReportData";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
 
 interface ExcelUploadZoneProps {
   title: string;
@@ -34,6 +35,7 @@ export const ExcelUploadZone = ({
   const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const [autoCorrect, setAutoCorrect] = useState(true);
   const [autoCorrections, setAutoCorrections] = useState<string[]>([]);
+  const [reportingDate, setReportingDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bulkSave = useBulkSaveReportData(reportType);
 
@@ -124,11 +126,24 @@ export const ExcelUploadZone = ({
           console.log('[ExcelUploadZone] First row mapped:', mappedDataRaw[0]);
         }
         
+        // Apply reporting date to fuel data that doesn't have dates
+        if (reportType === 'fuel') {
+          mappedDataRaw.forEach((row: any) => {
+            if (row && (!row.date || row.date === null)) {
+              row.date = reportingDate;
+            }
+          });
+        }
+        
         // Filter out rows missing required fields or with null dates
         let mappedData;
         if (reportType === 'billing_npt') {
           mappedData = mappedDataRaw.filter((row: any) => 
             row && row.rig && row.date !== null && row.date !== undefined
+          );
+        } else if (reportType === 'fuel') {
+          mappedData = mappedDataRaw.filter((row: any) => 
+            row && row.rig && row.date && row.total_cost !== null
           );
         } else {
           mappedData = mappedDataRaw.filter((row: any) => 
@@ -200,6 +215,28 @@ export const ExcelUploadZone = ({
           <CardDescription>Upload Excel files or download the template to get started</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* Date picker for fuel reports */}
+          {reportType === 'fuel' && (
+            <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg border">
+              <Calendar className="h-5 w-5 text-muted-foreground" />
+              <div className="flex-1">
+                <Label htmlFor="reporting-date" className="text-sm font-medium">
+                  Reporting Date
+                </Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  This date will be applied to all fuel records in the uploaded file
+                </p>
+              </div>
+              <Input
+                id="reporting-date"
+                type="date"
+                value={reportingDate}
+                onChange={(e) => setReportingDate(e.target.value)}
+                className="w-48"
+              />
+            </div>
+          )}
+          
           {/* Auto-correction toggle */}
           <div className="flex items-center space-x-2 p-4 bg-muted/50 rounded-lg border">
             <Switch 
