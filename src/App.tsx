@@ -22,6 +22,7 @@ import Revenue from "./pages/RigFinancials/Revenue";
 
 // Rig Consumption sub-pages
 import Fuel from "./pages/RigConsumption/Fuel";
+import FuelAnalytics from "./pages/RigConsumption/FuelAnalytics";
 import Material from "./pages/RigConsumption/Material";
 import Maintenance from "./pages/RigConsumption/Maintenance";
 
@@ -65,6 +66,7 @@ const App = () => (
               {/* Rig Consumption */}
               <Route path="/rig-consumption" element={<ProtectedRoute><RigConsumption /></ProtectedRoute>} />
               <Route path="/rig-consumption/fuel" element={<ProtectedRoute><Fuel /></ProtectedRoute>} />
+              <Route path="/rig-consumption/fuel-analytics" element={<ProtectedRoute><FuelAnalytics /></ProtectedRoute>} />
               <Route path="/rig-consumption/material" element={<ProtectedRoute><Material /></ProtectedRoute>} />
               <Route path="/rig-consumption/maintenance" element={<ProtectedRoute><Maintenance /></ProtectedRoute>} />
             

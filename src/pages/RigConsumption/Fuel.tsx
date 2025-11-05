@@ -4,11 +4,14 @@ import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
 import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
-import { Fuel as FuelIcon, TrendingDown, Gauge } from "lucide-react";
+import { Fuel as FuelIcon, TrendingDown, Gauge, BarChart3 } from "lucide-react";
 import { useKPIData } from "@/hooks/useKPIData";
 import { useChartData } from "@/hooks/useChartData";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const Fuel = () => {
+  const navigate = useNavigate();
   const { kpis, isLoading: kpisLoading } = useKPIData("fuel_consumption");
   const { chartData, isLoading: chartLoading } = useChartData("fuel_consumption");
 
@@ -58,6 +61,16 @@ const Fuel = () => {
       ]}
       viewContent={
         <div className="space-y-6">
+          <div className="flex justify-end">
+            <Button 
+              onClick={() => navigate('/rig-consumption/fuel-analytics')}
+              variant="default"
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              View Analytics Dashboard
+            </Button>
+          </div>
+          
           <div className="grid gap-6 md:grid-cols-3">
             <KPICard 
               title="Total Consumption" 
