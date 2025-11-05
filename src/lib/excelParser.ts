@@ -929,6 +929,12 @@ export function mapExcelToDbFields(data: any, type: string): any {
       'Total Cost': 'total_cost',
       'Supplier': 'supplier',
       'Remarks': 'remarks',
+      // SAP cost report format
+      'WBS Element': 'rig',
+      'Cost element descr.': 'fuel_type',
+      'Val.in rep.cur.': 'total_cost',
+      'Purchase order text': 'remarks',
+      'Name': 'supplier',
     },
     stock: {
       'Rig': 'rig',
@@ -1091,6 +1097,18 @@ export function mapExcelToDbFields(data: any, type: string): any {
       } else if ([
         'rig','month','npt_type','system','parent_equipment_failure','part_equipment_failure','contractual_process','department_responsibility','immediate_cause','root_cause','corrective_action','future_action','action_party','notification_number','failure_investigation_reports','comments','equipment_failure'
       ].includes(dbField)) {
+        value = value !== null && value !== undefined ? String(value).trim() : null;
+      }
+    } else if (type === 'fuel') {
+      if (dbField === 'total_cost' || dbField === 'fuel_consumed' || dbField === 'unit_price') {
+        value = parseNumeric(value);
+      } else if (dbField === 'date') {
+        value = parseDate(value);
+      } else if (dbField === 'rig') {
+        // Extract rig number from WBS Element format (e.g., "R.R201.01.04.02" -> "R201")
+        const wbsMatch = String(value || '').match(/R\.R(\d+)\./);
+        value = wbsMatch ? `ADC-${wbsMatch[1]}` : String(value || '').trim();
+      } else {
         value = value !== null && value !== undefined ? String(value).trim() : null;
       }
     } else if (type === 'billing_npt_summary') {
