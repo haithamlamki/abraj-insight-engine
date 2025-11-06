@@ -32,13 +32,26 @@ const FuelAnalytics = () => {
   });
   const [costRange, setCostRange] = useState<[number, number]>([0, 50000]);
   const [searchText, setSearchText] = useState("");
+  
+  // Drill-down filters
+  const [drillDownFilters, setDrillDownFilters] = useState<{
+    selectedRig?: string;
+    selectedCostElement?: string;
+    selectedMonth?: string;
+    selectedYear?: string;
+  }>({});
 
-  const { data: analytics, isLoading } = useFuelAnalytics({
+  // Combine all filters
+  const combinedFilters: FuelFilters = {
     ...filters,
     minValue: costRange[0],
     maxValue: costRange[1],
     searchText: searchText || undefined,
-  });
+    wbsElement: drillDownFilters.selectedRig || filters.wbsElement,
+    costElement: drillDownFilters.selectedCostElement || filters.costElement,
+  };
+
+  const { data: analytics, isLoading } = useFuelAnalytics(combinedFilters);
 
   const handleYearChange = (year: string) => {
     setFilters(prev => ({ ...prev, year: parseInt(year), month: undefined }));
@@ -70,7 +83,52 @@ const FuelAnalytics = () => {
     setFilters({ year: currentYear });
     setCostRange([0, 50000]);
     setSearchText("");
+    setDrillDownFilters({});
   };
+
+  const handleDrillDown = (type: 'rig' | 'costElement' | 'month' | 'year', value: string) => {
+    setDrillDownFilters(prev => {
+      const newFilters = { ...prev };
+      const isRemoving = prev[`selected${type.charAt(0).toUpperCase() + type.slice(1)}` as keyof typeof prev] === value;
+      
+      if (type === 'rig') {
+        newFilters.selectedRig = prev.selectedRig === value ? undefined : value;
+      } else if (type === 'costElement') {
+        newFilters.selectedCostElement = prev.selectedCostElement === value ? undefined : value;
+      } else if (type === 'month') {
+        newFilters.selectedMonth = prev.selectedMonth === value ? undefined : value;
+      } else if (type === 'year') {
+        newFilters.selectedYear = prev.selectedYear === value ? undefined : value;
+        if (prev.selectedYear !== value) {
+          const yearNum = parseInt(value);
+          setFilters(prev => ({ ...prev, year: yearNum }));
+        }
+      }
+      
+      if (!isRemoving) {
+        toast.success(`Filtered by ${type}: ${value}`);
+      }
+      
+      return newFilters;
+    });
+  };
+
+  const clearDrillDown = (type?: 'rig' | 'costElement' | 'month' | 'year') => {
+    if (type) {
+      setDrillDownFilters(prev => {
+        const newFilters = { ...prev };
+        if (type === 'rig') delete newFilters.selectedRig;
+        else if (type === 'costElement') delete newFilters.selectedCostElement;
+        else if (type === 'month') delete newFilters.selectedMonth;
+        else if (type === 'year') delete newFilters.selectedYear;
+        return newFilters;
+      });
+    } else {
+      setDrillDownFilters({});
+    }
+  };
+
+  const hasActiveDrillDown = Object.values(drillDownFilters).some(v => v !== undefined);
 
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
   const months = [
@@ -229,6 +287,46 @@ const FuelAnalytics = () => {
           </CardContent>
         </Card>
 
+        {/* Active Drill-Down Filters */}
+        {hasActiveDrillDown && (
+          <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-medium">Active Filters:</span>
+                  {drillDownFilters.selectedRig && (
+                    <Badge variant="secondary" className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground transition-colors">
+                      Rig: {drillDownFilters.selectedRig}
+                      <button onClick={() => clearDrillDown('rig')} className="ml-2">×</button>
+                    </Badge>
+                  )}
+                  {drillDownFilters.selectedCostElement && (
+                    <Badge variant="secondary" className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground transition-colors">
+                      Element: {drillDownFilters.selectedCostElement}
+                      <button onClick={() => clearDrillDown('costElement')} className="ml-2">×</button>
+                    </Badge>
+                  )}
+                  {drillDownFilters.selectedYear && (
+                    <Badge variant="secondary" className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground transition-colors">
+                      Year: {drillDownFilters.selectedYear}
+                      <button onClick={() => clearDrillDown('year')} className="ml-2">×</button>
+                    </Badge>
+                  )}
+                  {drillDownFilters.selectedMonth && (
+                    <Badge variant="secondary" className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground transition-colors">
+                      Month: {drillDownFilters.selectedMonth}
+                      <button onClick={() => clearDrillDown('month')} className="ml-2">×</button>
+                    </Badge>
+                  )}
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => clearDrillDown()}>
+                  Clear All
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Overall KPIs */}
         <div className="grid gap-6 md:grid-cols-3">
           <KPICard
@@ -266,7 +364,14 @@ const FuelAnalytics = () => {
                 description="Cost trend over selected period"
               >
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={analytics?.monthlyTrend || []}>
+                  <LineChart 
+                    data={analytics?.monthlyTrend || []}
+                    onClick={(data) => {
+                      if (data && data.activeLabel) {
+                        handleDrillDown('month', data.activeLabel);
+                      }
+                    }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
                     <YAxis stroke="hsl(var(--muted-foreground))" />
@@ -285,6 +390,7 @@ const FuelAnalytics = () => {
                       stroke="hsl(var(--chart-1))" 
                       strokeWidth={2}
                       name="Cost"
+                      cursor="pointer"
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -296,7 +402,14 @@ const FuelAnalytics = () => {
                 description="Compare costs across years"
               >
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={analytics?.yearlyComparison || []}>
+                  <BarChart 
+                    data={analytics?.yearlyComparison || []}
+                    onClick={(data) => {
+                      if (data && data.activeLabel) {
+                        handleDrillDown('year', data.activeLabel);
+                      }
+                    }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="year" stroke="hsl(var(--muted-foreground))" />
                     <YAxis stroke="hsl(var(--muted-foreground))" />
@@ -309,7 +422,12 @@ const FuelAnalytics = () => {
                       formatter={(value: number) => `$${value.toLocaleString()}`}
                     />
                     <Legend />
-                    <Bar dataKey="cost" fill="hsl(var(--chart-2))" name="Cost" />
+                    <Bar 
+                      dataKey="cost" 
+                      fill="hsl(var(--chart-2))" 
+                      name="Cost"
+                      cursor="pointer"
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </ChartCard>
@@ -325,7 +443,15 @@ const FuelAnalytics = () => {
                 description="Distribution across rigs"
               >
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={analytics?.rigBreakdown.slice(0, 10) || []} layout="vertical">
+                  <BarChart 
+                    data={analytics?.rigBreakdown.slice(0, 10) || []} 
+                    layout="vertical"
+                    onClick={(data) => {
+                      if (data && data.activeLabel) {
+                        handleDrillDown('rig', data.activeLabel);
+                      }
+                    }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis type="number" stroke="hsl(var(--muted-foreground))" />
                     <YAxis type="category" dataKey="name" stroke="hsl(var(--muted-foreground))" width={100} />
@@ -337,7 +463,11 @@ const FuelAnalytics = () => {
                       }}
                       formatter={(value: number) => `$${value.toLocaleString()}`}
                     />
-                    <Bar dataKey="value" fill="hsl(var(--chart-3))" />
+                    <Bar 
+                      dataKey="value" 
+                      fill="hsl(var(--chart-3))"
+                      cursor="pointer"
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </ChartCard>
@@ -357,9 +487,14 @@ const FuelAnalytics = () => {
                       cy="50%"
                       outerRadius={100}
                       label={(entry) => `${entry.name}: ${entry.percentage}%`}
+                      onClick={(entry) => handleDrillDown('costElement', entry.name)}
+                      cursor="pointer"
                     >
                       {analytics?.costElementBreakdown.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={COLORS[index % COLORS.length]}
+                        />
                       ))}
                     </Pie>
                     <Tooltip 
@@ -383,7 +518,14 @@ const FuelAnalytics = () => {
               description="Highest spending categories"
             >
               <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={analytics?.topCostElements || []}>
+                <BarChart 
+                  data={analytics?.topCostElements || []}
+                  onClick={(data) => {
+                    if (data && data.activeLabel) {
+                      handleDrillDown('costElement', data.activeLabel);
+                    }
+                  }}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
                   <YAxis stroke="hsl(var(--muted-foreground))" />
@@ -395,7 +537,11 @@ const FuelAnalytics = () => {
                     }}
                     formatter={(value: number) => `$${value.toLocaleString()}`}
                   />
-                  <Bar dataKey="value" fill="hsl(var(--chart-4))">
+                  <Bar 
+                    dataKey="value" 
+                    fill="hsl(var(--chart-4))"
+                    cursor="pointer"
+                  >
                     {analytics?.topCostElements.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
