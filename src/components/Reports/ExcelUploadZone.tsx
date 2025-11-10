@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, FileSpreadsheet, Download, CheckCircle2, AlertCircle, Info, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { parseExcelFile, mapExcelToDbFields, validateBillingNptData, validateBillingNPTSummaryData, validateRevenueData, validateWorkOrdersData, ValidationError, hasRequiredFields } from "@/lib/excelParser";
+import { parseExcelFile, mapExcelToDbFields, validateBillingNptData, validateBillingNPTSummaryData, validateRevenueData, validateWorkOrdersData, ValidationError } from "@/lib/excelParser";
 import { downloadTemplate } from "@/lib/excelTemplates";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useBulkSaveReportData } from "@/hooks/useReportData";
@@ -89,22 +89,16 @@ export const ExcelUploadZone = ({
       const sheetNames = Object.keys(result.data);
       const allRows = sheetNames.reduce((acc: any[], name) => acc.concat(result.data[name] || []), [] as any[]);
 
-      // Filter out rows that don't have minimum required fields BEFORE validation
-      // This prevents validation errors on completely empty rows at the end of Excel files
-      const rowsWithRequiredFields = allRows.filter(row => hasRequiredFields(row, reportType));
-      
-      console.log(`[ExcelUploadZone] Total rows: ${allRows.length}, Rows with required fields: ${rowsWithRequiredFields.length}`);
-
       // Validate data based on report type
       let validationErrors: ValidationError[] = [];
       if (reportType === 'billing_npt') {
-        validationErrors = validateBillingNptData(rowsWithRequiredFields);
+        validationErrors = validateBillingNptData(allRows);
       } else if (reportType === 'billing_npt_summary') {
-        validationErrors = validateBillingNPTSummaryData(rowsWithRequiredFields);
+        validationErrors = validateBillingNPTSummaryData(allRows);
       } else if (reportType === 'revenue') {
-        validationErrors = validateRevenueData(rowsWithRequiredFields);
+        validationErrors = validateRevenueData(allRows);
       } else if (reportType === 'work_orders') {
-        validationErrors = validateWorkOrdersData(rowsWithRequiredFields);
+        validationErrors = validateWorkOrdersData(allRows);
       }
 
       // Separate errors by severity
@@ -123,12 +117,12 @@ export const ExcelUploadZone = ({
         toast.error(`Validation failed: ${actualErrors.length} errors found`);
       } else {
         setUploadStatus("success");
-        // Map Excel data to database format (use filtered rows)
-        const mappedDataRaw = rowsWithRequiredFields.map(row => mapExcelToDbFields(row, reportType));
+        // Map Excel data to database format
+        const mappedDataRaw = allRows.map(row => mapExcelToDbFields(row, reportType));
         
         // Debug first row mapping
-        if (rowsWithRequiredFields.length > 0) {
-          console.log('[ExcelUploadZone] First row original:', rowsWithRequiredFields[0]);
+        if (allRows.length > 0) {
+          console.log('[ExcelUploadZone] First row original:', allRows[0]);
           console.log('[ExcelUploadZone] First row mapped:', mappedDataRaw[0]);
         }
         
@@ -157,7 +151,7 @@ export const ExcelUploadZone = ({
           );
         }
         
-        console.log(`[ExcelUploadZone] Sheets: ${sheetNames.length}, Total rows: ${allRows.length}, Rows with required fields: ${rowsWithRequiredFields.length}, Rows valid after mapping: ${mappedData.length}`);
+        console.log(`[ExcelUploadZone] Sheets: ${sheetNames.length}, Rows found: ${allRows.length}, Rows valid: ${mappedData.length}`);
         setParsedData(mappedData);
 
         // Track auto-corrections

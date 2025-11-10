@@ -15,64 +15,17 @@ export async function insertData(table: string, data: any) {
 }
 
 /**
- * Deduplicate array by unique key(s)
- * Keeps the last occurrence of each duplicate
- */
-function deduplicateByKeys(dataArray: any[], keys: string[]): any[] {
-  const seen = new Map<string, any>();
-  
-  dataArray.forEach(item => {
-    const keyStr = keys.map(k => String(item[k] ?? '')).join('|');
-    seen.set(keyStr, item); // Later items overwrite earlier ones
-  });
-  
-  return Array.from(seen.values());
-}
-
-/**
- * Generic bulk insert/upsert function for any table
+ * Generic bulk insert function for any table
  */
 export async function bulkInsertData(table: string, dataArray: any[]) {
   const chunkSize = 500;
   const results: any[] = [];
-
-  // Determine conflict target for upsert if the table has a known unique constraint
-  const conflictTargetMap: Record<string, string[]> = {
-    billing_npt_summary: ['year', 'month', 'rig'],
-  };
-  const conflictKeys = conflictTargetMap[table];
-
-  // Deduplicate within the batch if there's a unique constraint
-  let processedData = dataArray;
-  if (conflictKeys) {
-    const originalCount = dataArray.length;
-    processedData = deduplicateByKeys(dataArray, conflictKeys);
-    const duplicatesRemoved = originalCount - processedData.length;
-    
-    if (duplicatesRemoved > 0) {
-      console.log(`[bulkInsertData] Removed ${duplicatesRemoved} duplicate rows from ${table} (${processedData.length} unique rows remaining)`);
-    }
-  }
-
-  for (let i = 0; i < processedData.length; i += chunkSize) {
-    const chunk = processedData.slice(i, i + chunkSize);
-
-    let resp;
-    if (conflictKeys) {
-      // Use upsert to update existing rows instead of failing on duplicates
-      const conflictTarget = conflictKeys.join(',');
-      resp = await (supabase as any)
-        .from(table)
-        .upsert(chunk, { onConflict: conflictTarget })
-        .select();
-    } else {
-      resp = await (supabase as any)
-        .from(table)
-        .insert(chunk)
-        .select();
-    }
-
-    const { data, error } = resp;
+  for (let i = 0; i < dataArray.length; i += chunkSize) {
+    const chunk = dataArray.slice(i, i + chunkSize);
+    const { data, error } = await (supabase as any)
+      .from(table)
+      .insert(chunk)
+      .select();
     if (error) throw error;
     if (data) results.push(...data);
   }
