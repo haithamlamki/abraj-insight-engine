@@ -581,6 +581,7 @@ export function validateBillingNPTSummaryData(data: any[]): ValidationError[] {
 
 /**
  * Validate NPT root cause data
+ * Only validates essential fields - other fields are optional
  */
 export function validateNPTRootCauseData(data: any[]): ValidationError[] {
   const errors: ValidationError[] = [];
@@ -595,19 +596,19 @@ export function validateNPTRootCauseData(data: any[]): ValidationError[] {
     // Skip blank rows
     if (isBlankRow(row)) return;
 
-    // Robust header detection
+    // Robust header detection - only check essential fields
     const rig = row['Rig Number'] ?? row.Rig ?? row.rig ?? getByNormalized(row, 'rignumber') ?? getByNormalized(row, 'rig');
     const year = row.Year ?? row.year ?? getByNormalized(row, 'year');
     const monthRaw = row.Month ?? row.month ?? row.Mont ?? row.Mounth ?? getByNormalized(row, 'month');
     const date = row.Date ?? row.date ?? row.Day ?? getByNormalized(row, 'date');
     const hrs = row['Hrs.'] ?? row.Hrs ?? row.Hours ?? getByNormalized(row, 'hrs');
     const nptType = row['NPT type'] ?? row['NPT Type'] ?? row.npt_type ?? getByNormalized(row, 'npttype');
-    const system = row.SYSTEM ?? row.System ?? row.system ?? getByNormalized(row, 'system');
     
     if (index === 0) {
       console.log(`[validateNPTRootCauseData] Row 0 - rig:`, rig, ', year:', year, ', month:', monthRaw, ', hrs:', hrs);
     }
 
+    // Only validate essential fields - system, root cause, etc. are optional
     if (!rig) {
       errors.push({
         row: index + 2,
@@ -638,7 +639,7 @@ export function validateNPTRootCauseData(data: any[]): ValidationError[] {
       });
     }
     
-    if (!date) {
+    if (!date && date !== 0) {
       errors.push({
         row: index + 2,
         column: 'Date',
@@ -648,7 +649,7 @@ export function validateNPTRootCauseData(data: any[]): ValidationError[] {
       });
     }
     
-    if (!hrs && hrs !== 0) {
+    if (hrs === null || hrs === undefined || hrs === '') {
       errors.push({
         row: index + 2,
         column: 'Hrs.',
@@ -668,15 +669,8 @@ export function validateNPTRootCauseData(data: any[]): ValidationError[] {
       });
     }
     
-    if (!system) {
-      errors.push({
-        row: index + 2,
-        column: 'SYSTEM',
-        message: 'System is required',
-        value: system,
-        severity: 'error',
-      });
-    }
+    // System, root cause, equipment fields are optional (especially for Contractual types)
+    // No validation errors for missing optional fields
   });
   
   return errors;
