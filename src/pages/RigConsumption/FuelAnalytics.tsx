@@ -44,11 +44,10 @@ const FuelAnalytics = () => {
   // Combine all filters
   const combinedFilters: FuelFilters = {
     ...filters,
-    minValue: costRange[0],
-    maxValue: costRange[1],
+    minCost: costRange[0],
+    maxCost: costRange[1],
     searchText: searchText || undefined,
-    wbsElement: drillDownFilters.selectedRig || filters.wbsElement,
-    costElement: drillDownFilters.selectedCostElement || filters.costElement,
+    rig: drillDownFilters.selectedRig || filters.rig,
   };
 
   const { data: analytics, isLoading } = useFuelAnalytics(combinedFilters);
@@ -58,11 +57,11 @@ const FuelAnalytics = () => {
   };
 
   const handleMonthChange = (month: string) => {
-    setFilters(prev => ({ ...prev, month: month === 'all' ? undefined : parseInt(month) }));
+    setFilters(prev => ({ ...prev, month: month === 'all' ? undefined : month }));
   };
 
   const handleRigChange = (rig: string) => {
-    setFilters(prev => ({ ...prev, wbsElement: rig === 'all' ? undefined : rig }));
+    setFilters(prev => ({ ...prev, rig: rig === 'all' ? undefined : rig }));
   };
 
   const handleCostElementChange = (element: string) => {

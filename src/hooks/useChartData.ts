@@ -79,23 +79,27 @@ export function useChartData(reportType: string) {
       }
 
       case "fuel_consumption": {
-        // Group by month from date
+        // Group by month and year
         const monthlyData = data.reduce((acc: any, row: any) => {
-          const date = new Date(row.date);
-          const monthKey = `${date.toLocaleString('default', { month: 'short' })}-${date.getFullYear()}`;
+          const monthKey = `${row.month}-${row.year}`;
           if (!acc[monthKey]) {
             acc[monthKey] = {
-              month: date.toLocaleString('default', { month: 'short' }),
+              month: row.month,
+              year: row.year,
               consumed: 0,
               cost: 0,
             };
           }
-          acc[monthKey].consumed += Number(row.fuel_consumed) || 0;
-          acc[monthKey].cost += Number(row.total_cost) || 0;
+          acc[monthKey].consumed += Number(row.total_consumed) || 0;
+          acc[monthKey].cost += Number(row.fuel_cost) || 0;
           return acc;
         }, {});
 
-        return Object.values(monthlyData);
+        return Object.values(monthlyData).sort((a: any, b: any) => {
+          if (a.year !== b.year) return a.year - b.year;
+          const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+          return months.indexOf(a.month) - months.indexOf(b.month);
+        });
       }
 
       case "rig_moves": {

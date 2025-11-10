@@ -544,43 +544,58 @@ export type Database = {
       }
       fuel_consumption: {
         Row: {
-          created_at: string | null
-          date: string
-          fuel_consumed: number | null
-          fuel_type: string | null
+          camp_engine_consumption: number | null
+          closing_balance: number | null
+          created_at: string
+          fuel_cost: number | null
           id: string
-          remarks: string | null
+          invoice_to_client: number | null
+          month: string
+          opening_stock: number | null
+          other_site_consumers: number | null
           rig: string
-          supplier: string | null
-          total_cost: number | null
-          unit_price: number | null
-          updated_at: string | null
+          rig_engine_consumption: number | null
+          total_consumed: number | null
+          total_received: number | null
+          updated_at: string
+          vehicles_consumption: number | null
+          year: number
         }
         Insert: {
-          created_at?: string | null
-          date: string
-          fuel_consumed?: number | null
-          fuel_type?: string | null
+          camp_engine_consumption?: number | null
+          closing_balance?: number | null
+          created_at?: string
+          fuel_cost?: number | null
           id?: string
-          remarks?: string | null
+          invoice_to_client?: number | null
+          month: string
+          opening_stock?: number | null
+          other_site_consumers?: number | null
           rig: string
-          supplier?: string | null
-          total_cost?: number | null
-          unit_price?: number | null
-          updated_at?: string | null
+          rig_engine_consumption?: number | null
+          total_consumed?: number | null
+          total_received?: number | null
+          updated_at?: string
+          vehicles_consumption?: number | null
+          year: number
         }
         Update: {
-          created_at?: string | null
-          date?: string
-          fuel_consumed?: number | null
-          fuel_type?: string | null
+          camp_engine_consumption?: number | null
+          closing_balance?: number | null
+          created_at?: string
+          fuel_cost?: number | null
           id?: string
-          remarks?: string | null
+          invoice_to_client?: number | null
+          month?: string
+          opening_stock?: number | null
+          other_site_consumers?: number | null
           rig?: string
-          supplier?: string | null
-          total_cost?: number | null
-          unit_price?: number | null
-          updated_at?: string | null
+          rig_engine_consumption?: number | null
+          total_consumed?: number | null
+          total_received?: number | null
+          updated_at?: string
+          vehicles_consumption?: number | null
+          year?: number
         }
         Relationships: []
       }

@@ -4,22 +4,26 @@ import { supabase } from "@/integrations/supabase/client";
 export interface FuelRecord {
   id: string;
   rig: string;
-  date: string;
-  fuel_consumed: number;
-  fuel_type: string;
-  unit_price: number;
-  total_cost: number;
-  supplier: string;
-  remarks: string;
+  year: number;
+  month: string;
+  opening_stock: number;
+  total_received: number;
+  total_consumed: number;
+  rig_engine_consumption: number;
+  camp_engine_consumption: number;
+  invoice_to_client: number;
+  other_site_consumers: number;
+  vehicles_consumption: number;
+  closing_balance: number;
+  fuel_cost: number;
 }
 
 export interface FuelFilters {
   year?: number;
-  month?: number;
-  wbsElement?: string;
-  costElement?: string;
-  minValue?: number;
-  maxValue?: number;
+  month?: string;
+  rig?: string;
+  minCost?: number;
+  maxCost?: number;
   searchText?: string;
 }
 
@@ -30,38 +34,32 @@ export const useFuelAnalytics = (filters: FuelFilters = {}) => {
       let query = supabase
         .from('fuel_consumption')
         .select('*')
-        .order('date', { ascending: false });
+        .order('year', { ascending: false })
+        .order('month', { ascending: false });
 
       // Apply filters
       if (filters.year) {
-        query = query.gte('date', `${filters.year}-01-01`)
-                    .lte('date', `${filters.year}-12-31`);
+        query = query.eq('year', filters.year);
       }
       
-      if (filters.month && filters.year) {
-        const monthStr = filters.month.toString().padStart(2, '0');
-        query = query.gte('date', `${filters.year}-${monthStr}-01`)
-                    .lte('date', `${filters.year}-${monthStr}-31`);
+      if (filters.month) {
+        query = query.eq('month', filters.month);
       }
 
-      if (filters.wbsElement) {
-        query = query.eq('rig', filters.wbsElement);
+      if (filters.rig) {
+        query = query.eq('rig', filters.rig);
       }
 
-      if (filters.costElement) {
-        query = query.eq('fuel_type', filters.costElement);
+      if (filters.minCost !== undefined) {
+        query = query.gte('fuel_cost', filters.minCost);
       }
 
-      if (filters.minValue !== undefined) {
-        query = query.gte('total_cost', filters.minValue);
-      }
-
-      if (filters.maxValue !== undefined) {
-        query = query.lte('total_cost', filters.maxValue);
+      if (filters.maxCost !== undefined) {
+        query = query.lte('fuel_cost', filters.maxCost);
       }
 
       if (filters.searchText) {
-        query = query.or(`remarks.ilike.%${filters.searchText}%,supplier.ilike.%${filters.searchText}%`);
+        query = query.or(`rig.ilike.%${filters.searchText}%`);
       }
 
       const { data, error } = await query;
@@ -71,26 +69,16 @@ export const useFuelAnalytics = (filters: FuelFilters = {}) => {
       // Calculate analytics
       const records = data as FuelRecord[];
       
-      const totalCost = records.reduce((sum, r) => sum + (r.total_cost || 0), 0);
+      const totalCost = records.reduce((sum, r) => sum + (r.fuel_cost || 0), 0);
+      const totalConsumed = records.reduce((sum, r) => sum + (r.total_consumed || 0), 0);
+      const totalReceived = records.reduce((sum, r) => sum + (r.total_received || 0), 0);
       const uniqueRigs = [...new Set(records.map(r => r.rig))];
       const avgCostPerRig = uniqueRigs.length > 0 ? totalCost / uniqueRigs.length : 0;
 
-      // Top 5 cost elements
-      const costByType = records.reduce((acc, r) => {
-        const type = r.fuel_type || 'Unknown';
-        acc[type] = (acc[type] || 0) + (r.total_cost || 0);
-        return acc;
-      }, {} as Record<string, number>);
-
-      const topCostElements = Object.entries(costByType)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(([name, value]) => ({ name, value }));
-
-      // Cost by WBS Element (Rig)
+      // Cost by Rig
       const costByRig = records.reduce((acc, r) => {
         const rig = r.rig || 'Unknown';
-        acc[rig] = (acc[rig] || 0) + (r.total_cost || 0);
+        acc[rig] = (acc[rig] || 0) + (r.fuel_cost || 0);
         return acc;
       }, {} as Record<string, number>);
 
@@ -98,17 +86,36 @@ export const useFuelAnalytics = (filters: FuelFilters = {}) => {
         .sort((a, b) => b[1] - a[1])
         .map(([name, value]) => ({ name, value }));
 
+      // Consumption by Rig
+      const consumptionByRig = records.reduce((acc, r) => {
+        const rig = r.rig || 'Unknown';
+        acc[rig] = (acc[rig] || 0) + (r.total_consumed || 0);
+        return acc;
+      }, {} as Record<string, number>);
+
+      const topConsumers = Object.entries(consumptionByRig)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([name, value]) => ({ name, value }));
+
       // Monthly trend
       const monthlyData = records.reduce((acc, r) => {
-        const date = new Date(r.date);
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const monthKey = `${r.year}-${r.month}`;
         if (!acc[monthKey]) {
-          acc[monthKey] = { month: monthKey, cost: 0, count: 0 };
+          acc[monthKey] = { 
+            month: monthKey, 
+            cost: 0, 
+            consumed: 0,
+            received: 0,
+            count: 0 
+          };
         }
-        acc[monthKey].cost += r.total_cost || 0;
+        acc[monthKey].cost += r.fuel_cost || 0;
+        acc[monthKey].consumed += r.total_consumed || 0;
+        acc[monthKey].received += r.total_received || 0;
         acc[monthKey].count += 1;
         return acc;
-      }, {} as Record<string, { month: string; cost: number; count: number }>);
+      }, {} as Record<string, { month: string; cost: number; consumed: number; received: number; count: number }>);
 
       const monthlyTrend = Object.values(monthlyData).sort((a, b) => 
         a.month.localeCompare(b.month)
@@ -116,37 +123,36 @@ export const useFuelAnalytics = (filters: FuelFilters = {}) => {
 
       // Yearly comparison
       const yearlyData = records.reduce((acc, r) => {
-        const year = new Date(r.date).getFullYear();
+        const year = r.year;
         if (!acc[year]) {
-          acc[year] = { year: year.toString(), cost: 0, count: 0 };
+          acc[year] = { 
+            year: year.toString(), 
+            cost: 0, 
+            consumed: 0,
+            count: 0 
+          };
         }
-        acc[year].cost += r.total_cost || 0;
+        acc[year].cost += r.fuel_cost || 0;
+        acc[year].consumed += r.total_consumed || 0;
         acc[year].count += 1;
         return acc;
-      }, {} as Record<number, { year: string; cost: number; count: number }>);
+      }, {} as Record<number, { year: string; cost: number; consumed: number; count: number }>);
 
       const yearlyComparison = Object.values(yearlyData).sort((a, b) => 
         a.year.localeCompare(b.year)
       );
 
-      // Cost element breakdown for pie chart
-      const costElementBreakdown = Object.entries(costByType)
-        .map(([name, value]) => ({ 
-          name, 
-          value,
-          percentage: (value / totalCost * 100).toFixed(1)
-        }));
-
       return {
         records,
         totalCost,
+        totalConsumed,
+        totalReceived,
         avgCostPerRig,
         uniqueRigsCount: uniqueRigs.length,
-        topCostElements,
+        topConsumers,
         rigBreakdown,
         monthlyTrend,
         yearlyComparison,
-        costElementBreakdown,
       };
     },
   });

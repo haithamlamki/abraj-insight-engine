@@ -17,22 +17,27 @@ const Fuel = () => {
 
   const formFields = [
     { name: "rig", label: "Rig", type: "text" as const, required: true },
-    { name: "date", label: "Date", type: "date" as const, required: true },
-    { name: "fuelType", label: "Fuel Type", type: "select" as const, options: ["Diesel", "Gas", "Biodiesel"], required: true },
-    { name: "quantity", label: "Quantity (L)", type: "number" as const, required: true },
-    { name: "cost", label: "Cost ($)", type: "number" as const, required: true },
-    { name: "supplier", label: "Supplier", type: "text" as const },
-    { name: "hoursOperated", label: "Hours Operated", type: "number" as const },
-    { name: "efficiency", label: "Efficiency (L/hr)", type: "number" as const },
+    { name: "year", label: "Year", type: "number" as const, required: true },
+    { name: "month", label: "Month", type: "select" as const, options: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], required: true },
+    { name: "openingStock", label: "Opening Stock (L)", type: "number" as const },
+    { name: "totalReceived", label: "Total Received (L)", type: "number" as const },
+    { name: "totalConsumed", label: "Total Consumed (L)", type: "number" as const },
+    { name: "rigEngineConsumption", label: "Rig Engine Consumption (L)", type: "number" as const },
+    { name: "campEngineConsumption", label: "Camp Engine Consumption (L)", type: "number" as const },
+    { name: "invoiceToClient", label: "Invoice to Client (L)", type: "number" as const },
+    { name: "otherSiteConsumers", label: "Other Site Consumers (L)", type: "number" as const },
+    { name: "vehiclesConsumption", label: "Vehicles Consumption (L)", type: "number" as const },
+    { name: "closingBalance", label: "Closing Balance (L)", type: "number" as const },
+    { name: "fuelCost", label: "Fuel Cost ($)", type: "number" as const },
   ];
 
   const tableColumns = [
     { key: "rig", label: "Rig", sortable: true },
-    { key: "date", label: "Date", sortable: true },
-    { key: "fuelType", label: "Type", sortable: true },
-    { key: "quantity", label: "Quantity (L)", sortable: true },
-    { key: "cost", label: "Cost", sortable: true },
-    { key: "efficiency", label: "Efficiency", sortable: true },
+    { key: "year", label: "Year", sortable: true },
+    { key: "month", label: "Month", sortable: true },
+    { key: "totalConsumed", label: "Total Consumed (L)", sortable: true },
+    { key: "fuelCost", label: "Fuel Cost ($)", sortable: true },
+    { key: "closingBalance", label: "Closing Balance (L)", sortable: true },
   ];
 
   const sampleData = [
@@ -74,7 +79,7 @@ const Fuel = () => {
           <div className="grid gap-6 md:grid-cols-3">
             <KPICard 
               title="Total Consumption" 
-              value={kpisLoading ? "..." : `${Number(kpis?.totalFuel || 0).toLocaleString()} L`}
+              value={kpisLoading ? "..." : `${Number(kpis?.totalConsumed || 0).toLocaleString()} L`}
               icon={FuelIcon} 
             />
             <KPICard 
@@ -83,8 +88,8 @@ const Fuel = () => {
               icon={TrendingDown} 
             />
             <KPICard 
-              title="Avg Price/L" 
-              value={kpisLoading ? "..." : `$${kpis?.avgPrice || 0}`}
+              title="Active Rigs" 
+              value={kpisLoading ? "..." : kpis?.uniqueRigs || 0}
               icon={Gauge} 
             />
           </div>
@@ -105,11 +110,9 @@ const Fuel = () => {
             reportType="fuel"
             formatRow={(row) => ({
               ...row,
-              date: new Date(row.date).toLocaleDateString(),
-              fuelType: row.fuel_type,
-              quantity: row.fuel_consumed?.toLocaleString(),
-              cost: `$${row.total_cost?.toLocaleString()}`,
-              efficiency: '-'
+              totalConsumed: row.total_consumed?.toLocaleString(),
+              fuelCost: `$${row.fuel_cost?.toLocaleString()}`,
+              closingBalance: row.closing_balance?.toLocaleString()
             })}
           />
         </div>

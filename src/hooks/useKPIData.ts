@@ -56,14 +56,14 @@ export function useKPIData(reportType: string) {
       }
 
       case "fuel_consumption": {
-        const totalFuel = data.reduce((sum, row) => sum + (Number(row.fuel_consumed) || 0), 0);
-        const totalCost = data.reduce((sum, row) => sum + (Number(row.total_cost) || 0), 0);
-        const avgPrice = totalFuel > 0 ? totalCost / totalFuel : 0;
+        const totalConsumed = data.reduce((sum, row) => sum + (Number(row.total_consumed) || 0), 0);
+        const totalCost = data.reduce((sum, row) => sum + (Number(row.fuel_cost) || 0), 0);
+        const uniqueRigs = new Set(data.map(row => row.rig)).size;
 
         return {
-          totalFuel: totalFuel.toFixed(0),
+          totalConsumed: totalConsumed.toFixed(0),
           totalCost: totalCost.toFixed(0),
-          avgPrice: avgPrice.toFixed(2),
+          uniqueRigs: uniqueRigs,
           recordCount: data.length,
         };
       }
