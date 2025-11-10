@@ -682,13 +682,15 @@ export function validateNPTRootCauseData(data: any[]): ValidationError[] {
       });
     }
     
+    // Date is optional for NPT Root Cause - it will be composed from Year/Month/Day during mapping
+    // Only warn if missing
     if (!date && date !== 0) {
       errors.push({
         row: index + 2,
         column: 'Date',
-        message: 'Date is required',
+        message: 'Date will be composed from Year and Month',
         value: date,
-        severity: 'error',
+        severity: 'info',
       });
     }
     
