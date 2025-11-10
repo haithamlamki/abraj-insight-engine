@@ -1056,6 +1056,40 @@ export function mapExcelToDbFields(data: any, type: string): any {
       'Total': 'total',
       'Total NPT': 'total_npt',
     },
+    npt_root_cause: {
+      'Rig Number': 'rig_number',
+      'Rig': 'rig_number',
+      'Year': 'year',
+      'Month': 'month',
+      'Months': 'month',
+      'Date': 'date',
+      'Day': 'date',
+      'Hrs.': 'hrs',
+      'Hrs': 'hrs',
+      'Hours': 'hrs',
+      'NPT type': 'npt_type',
+      'NPT Type': 'npt_type',
+      'SYSTEM': 'system',
+      'System': 'system',
+      'Parent Equipment Failure': 'parent_equipment_failure',
+      'Part Equipment Failure': 'part_equipment_failure',
+      'Contractual Process': 'contractual_process',
+      'Department Responsibility': 'department_responsibility',
+      'Immediate Cause of Failure': 'immediate_cause_of_failure',
+      'Immediate Cause': 'immediate_cause_of_failure',
+      'Root Cause': 'root_cause',
+      'Immediate Corrective action': 'immediate_corrective_action',
+      'Immediate Corrective Action': 'immediate_corrective_action',
+      'Future Action & Improvement': 'future_action_improvement',
+      'Future Action': 'future_action_improvement',
+      'Action Party': 'action_party',
+      'Notification Number (N2)': 'notification_number',
+      'Notification Number': 'notification_number',
+      'N2': 'notification_number',
+      'Failure investigation reports': 'failure_investigation_reports',
+      'Failure Investigation Reports': 'failure_investigation_reports',
+      'Investigation Reports': 'failure_investigation_reports',
+    },
   };
   
   const sourceMapping = mappings[type] || {};
@@ -1146,6 +1180,22 @@ export function mapExcelToDbFields(data: any, type: string): any {
       } else if (dbField === 'month') {
         value = value !== null && value !== undefined ? String(value).trim() : null;
       }
+    } else if (type === 'npt_root_cause') {
+      if (dbField === 'hrs') {
+        value = parseNumeric(value);
+      } else if (dbField === 'year') {
+        value = value !== null && value !== undefined && String(value).trim() !== '' ? parseInt(String(value).trim()) : null;
+      } else if (dbField === 'date') {
+        value = value !== null && value !== undefined && String(value).trim() !== '' ? parseInt(String(value).trim()) : null;
+      } else if ([
+        'rig_number', 'month', 'npt_type', 'system', 'parent_equipment_failure',
+        'part_equipment_failure', 'contractual_process', 'department_responsibility',
+        'immediate_cause_of_failure', 'root_cause', 'immediate_corrective_action',
+        'future_action_improvement', 'action_party', 'notification_number',
+        'failure_investigation_reports'
+      ].includes(dbField)) {
+        value = value !== null && value !== undefined ? String(value).trim() : null;
+      }
     } else if (type === 'fuel' || type === 'rig_moves' || type === 'well_tracker' || type === 'stock' || type === 'ytd') {
       // Don't parse date fields directly - they will be composed from Y+M+D later
       if (dbField === 'date' || dbField === 'move_date' || dbField === 'start_date' || dbField === 'end_date' || dbField === 'last_reorder_date') {
@@ -1189,7 +1239,7 @@ export function mapExcelToDbFields(data: any, type: string): any {
   }
   
   // For types with separate month fields, convert month names to numbers
-  const typesWithMonthField = ['revenue', 'work_orders', 'customer_satisfaction', 'utilization', 'ytd', 'billing_npt_summary'];
+  const typesWithMonthField = ['revenue', 'work_orders', 'customer_satisfaction', 'utilization', 'ytd', 'billing_npt_summary', 'npt_root_cause'];
   if (typesWithMonthField.includes(type) && mapped.month) {
     const monthResult = convertMonthToNumber(mapped.month);
     if (monthResult.month) {
