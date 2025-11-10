@@ -17,9 +17,12 @@ type SortKey = keyof RigPerformance;
 type SortOrder = 'asc' | 'desc';
 
 export const RigPerformanceTable = ({ data, onRigClick }: RigPerformanceTableProps) => {
+  // State for search and sorting
   const [searchTerm, setSearchTerm] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('avgUtilization');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  
+  // State for infinite scroll
   const [displayCount, setDisplayCount] = useState(50);
   const scrollRef = useRef<HTMLDivElement>(null);
   const observerTarget = useRef<HTMLDivElement>(null);
