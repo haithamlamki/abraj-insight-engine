@@ -963,7 +963,7 @@ function parseDate(value: any): string | null {
 /**
  * Normalize header names to avoid mismatches due to spaces/case/punctuation
  */
-function normalizeHeader(str: any): string {
+export function normalizeHeader(str: any): string {
   return String(str || '')
     .normalize('NFKD')
     .toLowerCase()
@@ -988,7 +988,7 @@ function getByNormalized(row: any, normalizedKey: string): any {
 /**
  * Map Excel column names to database field names
  */
-export function mapExcelToDbFields(data: any, type: string): any {
+export function mapExcelToDbFields(data: any, type: string, customMapping?: { [normalizedSourceHeader: string]: string }): any {
   const mappings: { [key: string]: { [key: string]: string } } = {
     revenue: {
       'Rig': 'rig',
