@@ -148,15 +148,26 @@ export async function saveWorkOrdersData(data: any) {
  * Save fuel consumption data
  */
 export async function saveFuelData(data: any) {
+  const parseNumeric = (value: any) => {
+    if (!value) return 0;
+    const parsed = parseFloat(String(value).replace(/[,]/g, ''));
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
   return insertData('fuel_consumption', {
     rig: data.rig || data.rigNumber,
-    date: data.date,
-    fuel_consumed: parseFloat(data.fuelConsumed || data.quantity),
-    fuel_type: data.fuelType || data.type,
-    unit_price: data.unitPrice ? parseFloat(data.unitPrice) : null,
-    total_cost: data.totalCost ? parseFloat(data.totalCost) : null,
-    supplier: data.supplier || null,
-    remarks: data.remarks || data.notes || null,
+    year: parseInt(data.year || new Date().getFullYear()),
+    month: data.month,
+    opening_stock: parseNumeric(data.opening_stock || data.openingStock),
+    total_received: parseNumeric(data.total_received || data.totalReceived),
+    total_consumed: parseNumeric(data.total_consumed || data.totalConsumed),
+    rig_engine_consumption: parseNumeric(data.rig_engine_consumption || data.rigEngineConsumption),
+    camp_engine_consumption: parseNumeric(data.camp_engine_consumption || data.campEngineConsumption),
+    invoice_to_client: parseNumeric(data.invoice_to_client || data.invoiceToClient),
+    other_site_consumers: parseNumeric(data.other_site_consumers || data.otherSiteConsumers),
+    vehicles_consumption: parseNumeric(data.vehicles_consumption || data.vehiclesConsumption),
+    closing_balance: parseNumeric(data.closing_balance || data.closingBalance),
+    fuel_cost: parseNumeric(data.fuel_cost || data.fuelCost),
   });
 }
 
