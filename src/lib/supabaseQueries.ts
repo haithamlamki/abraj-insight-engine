@@ -33,7 +33,7 @@ export async function bulkInsertData(table: string, dataArray: any[]) {
 }
 
 /**
- * Generic fetch function for any table
+ * Generic fetch function for any table with pagination support
  */
 export async function fetchData(table: string, limit = 100) {
   const { data, error } = await (supabase as any)
@@ -44,6 +44,24 @@ export async function fetchData(table: string, limit = 100) {
   
   if (error) throw error;
   return data;
+}
+
+/**
+ * Fetch paginated data for infinite scroll
+ */
+export async function fetchPaginatedData(
+  table: string, 
+  offset: number = 0, 
+  limit: number = 50
+) {
+  const { data, error, count } = await (supabase as any)
+    .from(table)
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+  
+  if (error) throw error;
+  return { data, count };
 }
 
 /**

@@ -1,11 +1,12 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Download, FileSpreadsheet } from "lucide-react";
-import { useReportData } from "@/hooks/useReportData";
+import { ArrowUpDown, Download, FileSpreadsheet, Loader2 } from "lucide-react";
+import { useInfiniteReportData } from "@/hooks/useInfiniteReportData";
 import { DateRangeFilter } from "./DateRangeFilter";
 import { LoadingSpinner } from "./LoadingSpinner";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import * as XLSX from "xlsx";
 
 interface Column {
@@ -33,7 +34,44 @@ export const DataTableWithDB = ({
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   
-  const { data: rawData, isLoading, error } = useReportData(reportType);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const observerTarget = useRef<HTMLDivElement>(null);
+  
+  const { 
+    data, 
+    isLoading, 
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useInfiniteReportData(reportType);
+  
+  const rawData = useMemo(() => {
+    return data?.pages.flatMap(page => page.data) ?? [];
+  }, [data]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   const handleDateRangeChange = (start: Date | null, end: Date | null) => {
     setStartDate(start);
@@ -187,9 +225,9 @@ export const DataTableWithDB = ({
               {searchTerm ? 'No matching records found' : 'No data available yet'}
             </div>
           ) : (
-            <div className="rounded-md border overflow-x-auto">
+            <ScrollArea className="h-[600px] rounded-md border" ref={scrollRef}>
               <table className="w-full min-w-[600px]">
-                <thead>
+                <thead className="sticky top-0 bg-background z-10">
                   <tr className="border-b bg-muted/50">
                     {columns.map((column) => (
                       <th
@@ -223,7 +261,16 @@ export const DataTableWithDB = ({
                   ))}
                 </tbody>
               </table>
-            </div>
+              
+              {/* Infinite scroll trigger */}
+              <div ref={observerTarget} className="h-4" />
+              
+              {isFetchingNextPage && (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                </div>
+              )}
+            </ScrollArea>
           )}
         </div>
       </CardContent>

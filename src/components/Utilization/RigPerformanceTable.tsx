@@ -3,9 +3,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { RigPerformance } from "@/hooks/useUtilizationAnalytics";
-import { useState, useMemo } from "react";
-import { Search, ArrowUpDown } from "lucide-react";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { Search, ArrowUpDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface RigPerformanceTableProps {
   data: RigPerformance[];
@@ -19,6 +20,9 @@ export const RigPerformanceTable = ({ data, onRigClick }: RigPerformanceTablePro
   const [searchTerm, setSearchTerm] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('avgUtilization');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [displayCount, setDisplayCount] = useState(50);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const observerTarget = useRef<HTMLDivElement>(null);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -29,7 +33,7 @@ export const RigPerformanceTable = ({ data, onRigClick }: RigPerformanceTablePro
     }
   };
 
-  const filteredAndSortedData = useMemo(() => {
+  const sortedAndFilteredData = useMemo(() => {
     let filtered = data;
 
     if (searchTerm) {
@@ -53,6 +57,33 @@ export const RigPerformanceTable = ({ data, onRigClick }: RigPerformanceTablePro
       return sortOrder === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
     });
   }, [data, searchTerm, sortKey, sortOrder]);
+  
+  const displayedData = useMemo(() => {
+    return sortedAndFilteredData.slice(0, displayCount);
+  }, [sortedAndFilteredData, displayCount]);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && displayCount < sortedAndFilteredData.length) {
+          setDisplayCount(prev => Math.min(prev + 50, sortedAndFilteredData.length));
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [displayCount, sortedAndFilteredData.length]);
 
   const getUtilizationColor = (utilization: number) => {
     if (utilization >= 90) return 'text-green-600 bg-green-50';
@@ -67,7 +98,9 @@ export const RigPerformanceTable = ({ data, onRigClick }: RigPerformanceTablePro
         <div className="flex items-center justify-between">
           <div>
             <CardTitle>Rig Performance</CardTitle>
-            <CardDescription>Individual rig utilization metrics</CardDescription>
+            <CardDescription>
+              Showing {displayedData.length} of {sortedAndFilteredData.length} rigs
+            </CardDescription>
           </div>
           <div className="relative w-64">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -81,9 +114,9 @@ export const RigPerformanceTable = ({ data, onRigClick }: RigPerformanceTablePro
         </div>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border">
+        <ScrollArea className="h-[600px] rounded-md border" ref={scrollRef}>
           <Table>
-            <TableHeader>
+            <TableHeader className="sticky top-0 bg-background z-10">
               <TableRow>
                 <TableHead>
                   <Button
@@ -124,14 +157,14 @@ export const RigPerformanceTable = ({ data, onRigClick }: RigPerformanceTablePro
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredAndSortedData.length === 0 ? (
+              {sortedAndFilteredData.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground">
                     No data available
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredAndSortedData.map((rig) => (
+                displayedData.map((rig) => (
                   <TableRow
                     key={rig.rig}
                     className="cursor-pointer hover:bg-muted/50"
@@ -172,7 +205,16 @@ export const RigPerformanceTable = ({ data, onRigClick }: RigPerformanceTablePro
               )}
             </TableBody>
           </Table>
-        </div>
+          
+          {/* Infinite scroll trigger */}
+          <div ref={observerTarget} className="h-4" />
+          
+          {displayCount < sortedAndFilteredData.length && (
+            <div className="flex justify-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          )}
+        </ScrollArea>
       </CardContent>
     </Card>
   );
