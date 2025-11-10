@@ -239,18 +239,47 @@ export async function saveUtilizationData(data: any) {
     return isNaN(parsed) ? null : parsed;
   };
 
+  // Extract client from comment if not provided
+  let client = data.client;
+  const comment = data.comment || data.coment || '';
+  
+  if (!client && comment) {
+    // Look for patterns like "Working with [Client]" or "worked with [Client]"
+    const workingWithMatch = comment.match(/working with\s+([^,]+)/i);
+    if (workingWithMatch) {
+      client = workingWithMatch[1].trim();
+    }
+  }
+
+  // Derive status from utilization rate if not provided
+  const utilizationRate = parseNumeric(data.utilization || data.utilizationRate || data.utilization_rate || data['% utilization']);
+  let status = data.status;
+  
+  if (!status) {
+    // If utilization is 0 or null/undefined, mark as Inactive
+    // If comment contains "N/A" or "NA", mark as Inactive
+    // Otherwise, mark as Active
+    if (utilizationRate === null || utilizationRate === 0) {
+      status = 'Inactive';
+    } else if (comment && (comment.toUpperCase().includes('N/A') || comment.toUpperCase().includes('NA'))) {
+      status = 'Inactive';
+    } else {
+      status = 'Active';
+    }
+  }
+
   return insertData('utilization', {
     rig: data.rig,
     month: data.month,
     year: parseInt(data.year || new Date().getFullYear()),
-    comment: data.comment || null,
-    client: data.client || null,
-    status: data.status || 'Active',
-    utilization_rate: parseNumeric(data.utilization || data.utilizationRate || data.utilization_rate),
-    allowable_npt: parseNumeric(data.allowableNpt || data.allowableNPT || data.allowable_npt),
-    npt_type: data.nptType || data.npt_type || null,
-    working_days: parseNumeric(data.workingDays || data.totalWorkingDays || data.working_days),
-    monthly_total_days: parseNumeric(data.monthlyTotalDays || data.monthly_total_days),
+    comment: comment || null,
+    client: client || null,
+    status: status,
+    utilization_rate: utilizationRate,
+    allowable_npt: parseNumeric(data.allowableNpt || data.allowableNPT || data.allowable_npt || data['allowable npt']),
+    npt_type: data.nptType || data.npt_type || data['npt type'] || null,
+    working_days: parseNumeric(data.workingDays || data.totalWorkingDays || data.working_days || data['total working days']),
+    monthly_total_days: parseNumeric(data.monthlyTotalDays || data.monthly_total_days || data['monthly total days']),
   });
 }
 
