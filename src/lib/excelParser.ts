@@ -988,7 +988,19 @@ function getByNormalized(row: any, normalizedKey: string): any {
 /**
  * Map Excel column names to database field names
  */
-export function mapExcelToDbFields(data: any, type: string, customMapping?: { [normalizedSourceHeader: string]: string }): any {
+export function mapExcelToDbFields(data: any, type: string, customMapping?: { [dbField: string]: string }): any {
+  // If custom mapping is provided, use it directly
+  if (customMapping && Object.keys(customMapping).length > 0) {
+    const mapped: any = {};
+    Object.entries(customMapping).forEach(([dbField, excelHeader]) => {
+      if (data[excelHeader] !== undefined) {
+        mapped[dbField] = data[excelHeader];
+      }
+    });
+    return mapped;
+  }
+
+  // Otherwise use default mapping logic
   const mappings: { [key: string]: { [key: string]: string } } = {
     revenue: {
       'Rig': 'rig',

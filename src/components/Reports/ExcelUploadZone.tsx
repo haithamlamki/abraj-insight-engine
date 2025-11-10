@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { HeaderMappingPreview } from "./HeaderMappingPreview";
 
 interface ExcelUploadZoneProps {
   title: string;
@@ -36,6 +37,9 @@ export const ExcelUploadZone = ({
   const [autoCorrect, setAutoCorrect] = useState(true);
   const [autoCorrections, setAutoCorrections] = useState<string[]>([]);
   const [reportingDate, setReportingDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [showHeaderMapping, setShowHeaderMapping] = useState(false);
+  const [detectedHeaders, setDetectedHeaders] = useState<string[]>([]);
+  const [rawParsedData, setRawParsedData] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bulkSave = useBulkSaveReportData(reportType);
 
@@ -81,6 +85,7 @@ export const ExcelUploadZone = ({
     setParsedData([]);
     setValidationErrors([]);
     setAutoCorrections([]);
+    setShowHeaderMapping(false);
 
     try {
       const result = await parseExcelFile(file, autoCorrect);
@@ -89,18 +94,47 @@ export const ExcelUploadZone = ({
       const sheetNames = Object.keys(result.data);
       const allRows = sheetNames.reduce((acc: any[], name) => acc.concat(result.data[name] || []), [] as any[]);
 
+      // Extract headers from first row
+      if (allRows.length > 0) {
+        const firstRow = allRows[0];
+        const headers = Object.keys(firstRow).filter(key => !key.startsWith('__'));
+        setDetectedHeaders(headers);
+        setRawParsedData(allRows);
+        
+        // Show header mapping UI
+        setShowHeaderMapping(true);
+        setUploading(false);
+        return;
+      }
+
+    } catch (error) {
+      setUploadStatus("error");
+      console.error('Excel parse error:', error);
+      const msg = (error as any)?.message ? String((error as any).message) : String(error);
+      setErrorMessage(`Failed to parse Excel file: ${msg}`);
+      toast.error(`Failed to parse the Excel file: ${msg}`);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleMappingConfirmed = async (customMapping: { [key: string]: string }) => {
+    setShowHeaderMapping(false);
+    setUploading(true);
+
+    try {
       // Validate data based on report type
       let validationErrors: ValidationError[] = [];
       if (reportType === 'billing_npt') {
-        validationErrors = validateBillingNptData(allRows);
+        validationErrors = validateBillingNptData(rawParsedData);
       } else if (reportType === 'billing_npt_summary') {
-        validationErrors = validateBillingNPTSummaryData(allRows);
+        validationErrors = validateBillingNPTSummaryData(rawParsedData);
       } else if (reportType === 'npt_root_cause') {
-        validationErrors = validateNPTRootCauseData(allRows);
+        validationErrors = validateNPTRootCauseData(rawParsedData);
       } else if (reportType === 'revenue') {
-        validationErrors = validateRevenueData(allRows);
+        validationErrors = validateRevenueData(rawParsedData);
       } else if (reportType === 'work_orders') {
-        validationErrors = validateWorkOrdersData(allRows);
+        validationErrors = validateWorkOrdersData(rawParsedData);
       }
 
       // Separate errors by severity
@@ -119,13 +153,14 @@ export const ExcelUploadZone = ({
         toast.error(`Validation failed: ${actualErrors.length} errors found`);
       } else {
         setUploadStatus("success");
-        // Map Excel data to database format
-        const mappedDataRaw = allRows.map(row => mapExcelToDbFields(row, reportType));
+        // Map Excel data to database format with custom mapping
+        const mappedDataRaw = rawParsedData.map(row => mapExcelToDbFields(row, reportType, customMapping));
         
         // Debug first row mapping
-        if (allRows.length > 0) {
-          console.log('[ExcelUploadZone] First row original:', allRows[0]);
+        if (rawParsedData.length > 0) {
+          console.log('[ExcelUploadZone] First row original:', rawParsedData[0]);
           console.log('[ExcelUploadZone] First row mapped:', mappedDataRaw[0]);
+          console.log('[ExcelUploadZone] Custom mapping:', customMapping);
         }
         
         // Apply reporting date to fuel data that doesn't have dates
@@ -157,7 +192,7 @@ export const ExcelUploadZone = ({
           );
         }
         
-        console.log(`[ExcelUploadZone] Sheets: ${sheetNames.length}, Rows found: ${allRows.length}, Rows valid: ${mappedData.length}`);
+        console.log(`[ExcelUploadZone] Rows found: ${rawParsedData.length}, Rows valid: ${mappedData.length}`);
         setParsedData(mappedData);
 
         // Track auto-corrections
@@ -178,7 +213,7 @@ export const ExcelUploadZone = ({
         const correctionMsg = autoCorrect && infos.length > 0 
           ? ` (${infos.length} auto-corrections applied)` 
           : '';
-        toast.success(`Parsed ${mappedData.length} valid records from ${allRows.length} rows${correctionMsg}`);
+        toast.success(`Parsed ${mappedData.length} valid records from ${rawParsedData.length} rows${correctionMsg}`);
       }
     } catch (error) {
       setUploadStatus("error");
@@ -215,8 +250,28 @@ export const ExcelUploadZone = ({
     toast.success("Template downloaded successfully");
   };
 
+  const handleMappingCancelled = () => {
+    setShowHeaderMapping(false);
+    setUploadedFile(null);
+    setRawParsedData([]);
+    setDetectedHeaders([]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Header Mapping Step */}
+      {showHeaderMapping && (
+        <HeaderMappingPreview
+          detectedHeaders={detectedHeaders}
+          reportType={reportType}
+          onMappingConfirmed={handleMappingConfirmed}
+          onCancel={handleMappingCancelled}
+        />
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>{title}</CardTitle>
