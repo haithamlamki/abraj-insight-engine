@@ -584,6 +584,78 @@ export type Database = {
         }
         Relationships: []
       }
+      npt_root_cause: {
+        Row: {
+          action_party: string | null
+          contractual_process: string | null
+          created_at: string
+          date: number
+          department_responsibility: string | null
+          failure_investigation_reports: string | null
+          future_action_improvement: string | null
+          hrs: number
+          id: number
+          immediate_cause_of_failure: string | null
+          immediate_corrective_action: string | null
+          month: string
+          notification_number: string | null
+          npt_type: string
+          parent_equipment_failure: string | null
+          part_equipment_failure: string | null
+          rig_number: string
+          root_cause: string | null
+          system: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          action_party?: string | null
+          contractual_process?: string | null
+          created_at?: string
+          date: number
+          department_responsibility?: string | null
+          failure_investigation_reports?: string | null
+          future_action_improvement?: string | null
+          hrs: number
+          id?: number
+          immediate_cause_of_failure?: string | null
+          immediate_corrective_action?: string | null
+          month: string
+          notification_number?: string | null
+          npt_type: string
+          parent_equipment_failure?: string | null
+          part_equipment_failure?: string | null
+          rig_number: string
+          root_cause?: string | null
+          system: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          action_party?: string | null
+          contractual_process?: string | null
+          created_at?: string
+          date?: number
+          department_responsibility?: string | null
+          failure_investigation_reports?: string | null
+          future_action_improvement?: string | null
+          hrs?: number
+          id?: number
+          immediate_cause_of_failure?: string | null
+          immediate_corrective_action?: string | null
+          month?: string
+          notification_number?: string | null
+          npt_type?: string
+          parent_equipment_failure?: string | null
+          part_equipment_failure?: string | null
+          rig_number?: string
+          root_cause?: string | null
+          system?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null

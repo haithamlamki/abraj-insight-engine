@@ -65,6 +65,7 @@ const menuItems = [
       { title: "Utilization", url: "/rig-financials/utilization", icon: Activity },
       { title: "YTD Summary", url: "/rig-financials/ytd", icon: Calendar },
       { title: "Billing & NPT", url: "/rig-financials/billing-npt", icon: Receipt },
+      { title: "NPT Root Cause", url: "/rig-financials/npt-root-cause", icon: Target },
       { title: "Revenue", url: "/rig-financials/revenue", icon: DollarSign },
     ],
   },
