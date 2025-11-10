@@ -59,19 +59,32 @@ export function useBillingNPTAnalytics(data: any[], filters: BillingNPTFilters) 
     if (filteredData.length === 0) {
       return {
         totalNPTHours: 0,
+        nptPercentage: 0,
         avgOperationalRate: 0,
+        reducedRatePercentage: 0,
+        repairNPTPercentage: 0,
+        zeroNPTPercentage: 0,
         totalRecords: 0,
         problemRigsCount: 0,
         avgNPTPerRig: 0,
-        totalOperationalHours: 0
+        totalOperationalHours: 0,
+        totalHours: 0,
+        yoyNPTChange: 0
       };
     }
 
     const totalNPT = filteredData.reduce((sum, r) => sum + (r.total_npt || 0), 0);
     const totalOprHours = filteredData.reduce((sum, r) => sum + (r.opr_rate || 0), 0);
+    const totalReduceHours = filteredData.reduce((sum, r) => sum + (r.reduce_rate || 0), 0);
+    const totalRepairHours = filteredData.reduce((sum, r) => sum + (r.repair_rate || 0), 0);
+    const totalZeroHours = filteredData.reduce((sum, r) => sum + (r.zero_rate || 0), 0);
     const totalHours = filteredData.reduce((sum, r) => sum + (r.total || 0), 0);
     
+    const nptPercentage = totalHours > 0 ? (totalNPT / totalHours) * 100 : 0;
     const avgOperationalRate = totalHours > 0 ? (totalOprHours / totalHours) * 100 : 0;
+    const reducedRatePercentage = totalHours > 0 ? (totalReduceHours / totalHours) * 100 : 0;
+    const repairNPTPercentage = totalNPT > 0 ? (totalRepairHours / totalNPT) * 100 : 0;
+    const zeroNPTPercentage = totalNPT > 0 ? (totalZeroHours / totalNPT) * 100 : 0;
     
     const rigNPT = new Map<string, number>();
     filteredData.forEach(r => {
@@ -81,15 +94,37 @@ export function useBillingNPTAnalytics(data: any[], filters: BillingNPTFilters) 
     
     const problemRigs = Array.from(rigNPT.entries()).filter(([, npt]) => npt > 500);
 
+    // YoY calculation
+    const currentYear = Math.max(...filteredData.map(r => r.year));
+    const previousYear = currentYear - 1;
+    
+    const currentYearData = data.filter(r => r.year === currentYear);
+    const previousYearData = data.filter(r => r.year === previousYear);
+    
+    const currentYearTotal = currentYearData.reduce((sum, r) => sum + (r.total || 0), 0);
+    const currentYearNPT = currentYearData.reduce((sum, r) => sum + (r.total_npt || 0), 0);
+    const previousYearTotal = previousYearData.reduce((sum, r) => sum + (r.total || 0), 0);
+    const previousYearNPT = previousYearData.reduce((sum, r) => sum + (r.total_npt || 0), 0);
+    
+    const currentYearNPTPercent = currentYearTotal > 0 ? (currentYearNPT / currentYearTotal) * 100 : 0;
+    const previousYearNPTPercent = previousYearTotal > 0 ? (previousYearNPT / previousYearTotal) * 100 : 0;
+    const yoyNPTChange = currentYearNPTPercent - previousYearNPTPercent;
+
     return {
       totalNPTHours: Math.round(totalNPT),
+      nptPercentage: Math.round(nptPercentage * 10) / 10,
       avgOperationalRate: Math.round(avgOperationalRate * 10) / 10,
+      reducedRatePercentage: Math.round(reducedRatePercentage * 10) / 10,
+      repairNPTPercentage: Math.round(repairNPTPercentage * 10) / 10,
+      zeroNPTPercentage: Math.round(zeroNPTPercentage * 10) / 10,
       totalRecords: filteredData.length,
       problemRigsCount: problemRigs.length,
       avgNPTPerRig: rigNPT.size > 0 ? Math.round(totalNPT / rigNPT.size) : 0,
-      totalOperationalHours: Math.round(totalOprHours)
+      totalOperationalHours: Math.round(totalOprHours),
+      totalHours: Math.round(totalHours),
+      yoyNPTChange: Math.round(yoyNPTChange * 10) / 10
     };
-  }, [filteredData]);
+  }, [filteredData, data]);
 
   // Monthly trends
   const monthlyTrends = useMemo(() => {
@@ -235,6 +270,104 @@ export function useBillingNPTAnalytics(data: any[], filters: BillingNPTFilters) 
     }));
   }, [filteredData]);
 
+  // Hour breakdown for stacked charts
+  const hourBreakdown = useMemo(() => {
+    const breakdownMap = new Map<string, any>();
+
+    filteredData.forEach(record => {
+      const key = `${record.year}-${record.month}`;
+      const existing = breakdownMap.get(key) || {
+        yearMonth: key,
+        year: record.year,
+        month: record.month,
+        oprRate: 0,
+        reduceRate: 0,
+        repairRate: 0,
+        zeroRate: 0,
+        specialRate: 0,
+        rigMove: 0,
+        aMaint: 0,
+        total: 0
+      };
+
+      existing.oprRate += record.opr_rate || 0;
+      existing.reduceRate += record.reduce_rate || 0;
+      existing.repairRate += record.repair_rate || 0;
+      existing.zeroRate += record.zero_rate || 0;
+      existing.specialRate += record.special_rate || 0;
+      existing.rigMove += (record.rig_move || 0) + (record.rig_move_reduce || 0);
+      existing.aMaint += (record.a_maint || 0) + (record.a_maint_zero || 0);
+      existing.total += record.total || 0;
+
+      breakdownMap.set(key, existing);
+    });
+
+    return Array.from(breakdownMap.values()).sort((a, b) => {
+      if (a.year !== b.year) return a.year - b.year;
+      const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month);
+    });
+  }, [filteredData]);
+
+  // Rig hour breakdown
+  const rigHourBreakdown = useMemo(() => {
+    const rigMap = new Map<string, any>();
+
+    filteredData.forEach(record => {
+      const existing = rigMap.get(record.rig) || {
+        rig: record.rig,
+        oprRate: 0,
+        reduceRate: 0,
+        repairRate: 0,
+        zeroRate: 0,
+        specialRate: 0,
+        rigMove: 0,
+        aMaint: 0,
+        total: 0
+      };
+
+      existing.oprRate += record.opr_rate || 0;
+      existing.reduceRate += record.reduce_rate || 0;
+      existing.repairRate += record.repair_rate || 0;
+      existing.zeroRate += record.zero_rate || 0;
+      existing.specialRate += record.special_rate || 0;
+      existing.rigMove += (record.rig_move || 0) + (record.rig_move_reduce || 0);
+      existing.aMaint += (record.a_maint || 0) + (record.a_maint_zero || 0);
+      existing.total += record.total || 0;
+
+      rigMap.set(record.rig, existing);
+    });
+
+    return Array.from(rigMap.values()).sort((a, b) => a.rig.localeCompare(b.rig));
+  }, [filteredData]);
+
+  // Heatmap data (Rig vs Month)
+  const heatmapData = useMemo(() => {
+    const heatmap: any[] = [];
+    const rigSet = new Set(filteredData.map(r => r.rig));
+    const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    rigSet.forEach(rig => {
+      monthOrder.forEach(month => {
+        const records = filteredData.filter(r => r.rig === rig && r.month === month);
+        if (records.length > 0) {
+          const totalNPT = records.reduce((sum, r) => sum + (r.total_npt || 0), 0);
+          const totalHours = records.reduce((sum, r) => sum + (r.total || 0), 0);
+          const nptPercent = totalHours > 0 ? (totalNPT / totalHours) * 100 : 0;
+          
+          heatmap.push({
+            rig,
+            month,
+            nptPercent: Math.round(nptPercent * 10) / 10,
+            totalNPT: Math.round(totalNPT)
+          });
+        }
+      });
+    });
+
+    return heatmap;
+  }, [filteredData]);
+
   return {
     filteredData,
     kpis,
@@ -243,6 +376,9 @@ export function useBillingNPTAnalytics(data: any[], filters: BillingNPTFilters) 
     categoryBreakdown,
     topPerformers,
     bottomPerformers,
-    correlationData
+    correlationData,
+    hourBreakdown,
+    rigHourBreakdown,
+    heatmapData
   };
 }

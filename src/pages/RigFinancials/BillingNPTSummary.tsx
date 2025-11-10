@@ -16,29 +16,30 @@ import { BillingNPTFilterPanel } from "@/components/BillingNPT/BillingNPTFilterP
 import { ActiveFiltersBar } from "@/components/BillingNPT/ActiveFiltersBar";
 import { AIInsightsPanel } from "@/components/BillingNPT/AIInsightsPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TrendingUp, AlertTriangle, FileText, Target } from "lucide-react";
+import { TrendingUp, AlertTriangle, FileText, Target, Percent, TrendingDown, Activity } from "lucide-react";
+import { HourBreakdownChart } from "@/components/BillingNPT/HourBreakdownChart";
+import { NPTHeatmap } from "@/components/BillingNPT/NPTHeatmap";
 
 const BillingNPTSummary = () => {
-  const { data: nptData = [] } = useReportData('billing_npt');
   const { data: summaryData = [] } = useReportData('billing_npt_summary');
   const { filters, updateFilters, clearFilters, applyQuickFilter, hasActiveFilters } = useBillingNPTFilters();
   
-  const analytics = useBillingNPTAnalytics(nptData, filters);
+  const analytics = useBillingNPTAnalytics(summaryData, filters);
 
   const availableYears = useMemo<number[]>(() => {
-    const years = new Set(nptData.map((r: any) => r.year).filter(Boolean));
+    const years = new Set(summaryData.map((r: any) => r.year).filter(Boolean));
     return Array.from(years).map(y => Number(y)).sort((a, b) => b - a);
-  }, [nptData]);
+  }, [summaryData]);
 
   const availableMonths = useMemo<string[]>(() => {
-    const months = new Set(nptData.map((r: any) => r.month).filter(Boolean));
+    const months = new Set(summaryData.map((r: any) => r.month).filter(Boolean));
     return Array.from(months).map(m => String(m));
-  }, [nptData]);
+  }, [summaryData]);
 
   const availableRigs = useMemo<string[]>(() => {
-    const rigs = new Set(nptData.map((r: any) => r.rig).filter(Boolean));
+    const rigs = new Set(summaryData.map((r: any) => r.rig).filter(Boolean));
     return Array.from(rigs).map(r => String(r)).sort();
-  }, [nptData]);
+  }, [summaryData]);
 
   const handleRemoveFilter = (filterType: string, value?: string | number) => {
     if (filterType === 'years' && value !== undefined) {
@@ -63,8 +64,11 @@ const BillingNPTSummary = () => {
   };
 
   const handleCategoryClick = (category: string) => {
-    // Future: Add rate type filter
     console.log('Category clicked:', category);
+  };
+
+  const handleHeatmapClick = (rig: string, month: string) => {
+    updateFilters({ rigs: [rig], months: [month] });
   };
 
   return (
@@ -87,7 +91,7 @@ const BillingNPTSummary = () => {
 
             <TabsContent value="dashboard" className="space-y-6 mt-6">
               {/* KPI Cards */}
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 <EnhancedKPICard
                   title="Total NPT Hours"
                   value={analytics.kpis.totalNPTHours.toLocaleString()}
@@ -96,18 +100,46 @@ const BillingNPTSummary = () => {
                   subtitle="All incidents"
                 />
                 <EnhancedKPICard
-                  title="Avg Operational Rate"
+                  title="NPT % of Time"
+                  value={`${analytics.kpis.nptPercentage}%`}
+                  icon={Percent}
+                  trend={analytics.kpis.nptPercentage < 10 ? "up" : analytics.kpis.nptPercentage > 15 ? "down" : "neutral"}
+                  subtitle={`${analytics.kpis.totalNPTHours.toLocaleString()} / ${analytics.kpis.totalHours.toLocaleString()} hrs`}
+                />
+                <EnhancedKPICard
+                  title="Operating Efficiency"
                   value={`${analytics.kpis.avgOperationalRate}%`}
                   icon={TrendingUp}
-                  trend="neutral"
+                  trend={analytics.kpis.avgOperationalRate >= 75 ? "up" : analytics.kpis.avgOperationalRate < 65 ? "down" : "neutral"}
                   subtitle="Fleet average"
                 />
                 <EnhancedKPICard
-                  title="Total Records"
-                  value={analytics.kpis.totalRecords.toLocaleString()}
-                  icon={FileText}
+                  title="Reduced Rate %"
+                  value={`${analytics.kpis.reducedRatePercentage}%`}
+                  icon={Activity}
                   trend="neutral"
-                  subtitle="Data points"
+                  subtitle="Of total time"
+                />
+                <EnhancedKPICard
+                  title="Repair NPT %"
+                  value={`${analytics.kpis.repairNPTPercentage}%`}
+                  icon={AlertTriangle}
+                  trend="neutral"
+                  subtitle="Of total NPT"
+                />
+                <EnhancedKPICard
+                  title="Zero NPT %"
+                  value={`${analytics.kpis.zeroNPTPercentage}%`}
+                  icon={Target}
+                  trend="neutral"
+                  subtitle="Of total NPT"
+                />
+                <EnhancedKPICard
+                  title="YoY NPT Change"
+                  value={`${analytics.kpis.yoyNPTChange > 0 ? '+' : ''}${analytics.kpis.yoyNPTChange}%`}
+                  icon={TrendingDown}
+                  trend={analytics.kpis.yoyNPTChange < 0 ? "up" : analytics.kpis.yoyNPTChange > 0 ? "down" : "neutral"}
+                  subtitle="vs previous year"
                 />
                 <EnhancedKPICard
                   title="Problem Rigs"
@@ -121,7 +153,7 @@ const BillingNPTSummary = () => {
               {hasActiveFilters && (
                 <ActiveFiltersBar
                   filters={filters}
-                  totalRecords={nptData.length}
+                  totalRecords={summaryData.length}
                   filteredRecords={analytics.filteredData.length}
                   onRemoveFilter={handleRemoveFilter}
                   onClearAll={clearFilters}
@@ -162,6 +194,29 @@ const BillingNPTSummary = () => {
                 />
                 <NPTCorrelationChart data={analytics.correlationData} />
               </div>
+
+              <HourBreakdownChart
+                data={analytics.hourBreakdown}
+                title="Hour Breakdown by Month"
+                description="How time is spent across all billing categories"
+                xAxisKey="yearMonth"
+                onBarClick={handleMonthClick}
+              />
+
+              <HourBreakdownChart
+                data={analytics.rigHourBreakdown}
+                title="Hour Breakdown by Rig"
+                description="Time distribution across rigs for selected period"
+                xAxisKey="rig"
+                onBarClick={handleRigClick}
+              />
+
+              <NPTHeatmap
+                data={analytics.heatmapData}
+                title="NPT % Heatmap: Rig vs Month"
+                description="Click on a cell to filter by rig and month"
+                onCellClick={handleHeatmapClick}
+              />
 
               <AIInsightsPanel filters={filters} />
             </TabsContent>
