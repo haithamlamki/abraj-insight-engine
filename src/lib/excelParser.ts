@@ -343,34 +343,37 @@ export async function parseExcelFile(file: File, autoCorrect: boolean = false): 
 
     let workbook: XLSX.WorkBook;
 
-    // Prefer modern File API to avoid FileReader edge cases
+    // Use robust arrayBuffer-only approach with fallback
     try {
       const buf = await file.arrayBuffer();
-      workbook = XLSX.read(buf, { type: 'array' });
-    } catch (arrayErr) {
-      console.warn('[parseExcelFile] arrayBuffer path failed, falling back to FileReader', arrayErr);
-      // Fallback to FileReader for legacy browsers
-      workbook = await new Promise<XLSX.WorkBook>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          try {
-            const data = e.target?.result as ArrayBuffer | string | null;
-            if (data instanceof ArrayBuffer) {
-              resolve(XLSX.read(data, { type: 'array' }));
-            } else if (typeof data === 'string') {
-              resolve(XLSX.read(data, { type: 'binary' }));
-            } else {
-              reject(new Error('Unsupported file data'));
-            }
-          } catch (err) {
-            reject(err);
-          }
-        };
-        reader.onerror = () => reject(new Error('Failed to read file (FileReader)'));
-        if (reader.readAsArrayBuffer) reader.readAsArrayBuffer(file);
-        else // @ts-ignore legacy
-          reader.readAsBinaryString(file);
-      });
+      console.info('[parseExcelFile] File size:', buf.byteLength, 'bytes');
+      
+      // Try primary read with optimal settings
+      try {
+        workbook = XLSX.read(buf, { 
+          type: 'array', 
+          cellDates: true, 
+          raw: true, 
+          codepage: 65001 // UTF-8
+        });
+        console.info('[parseExcelFile] Successfully parsed with primary method');
+      } catch (e1) {
+        console.warn('[parseExcelFile] Primary read failed, trying Uint8Array fallback', e1);
+        // Fallback: try with Uint8Array
+        const u8 = new Uint8Array(buf);
+        workbook = XLSX.read(u8, { 
+          type: 'array', 
+          raw: true 
+        });
+        console.info('[parseExcelFile] Successfully parsed with Uint8Array fallback');
+      }
+    } catch (e) {
+      const originalError = e instanceof Error ? e.message : String(e);
+      console.error('[parseExcelFile] Failed to read Excel file:', originalError);
+      throw new Error(
+        `Unable to read Excel file: ${originalError}. ` +
+        `Try re-saving the file as .xlsx (not .xls), remove macros/password protection, and re-upload.`
+      );
     }
 
     const parsedData: ParsedData = {};
@@ -438,8 +441,24 @@ export async function parseExcelFile(file: File, autoCorrect: boolean = false): 
       });
 
       console.log(`[parseExcelFile] Filtered to ${filteredData.length} rows`);
+      
+      // Check for zero data rows
+      if (filteredData.length === 0 && jsonData.length > 0) {
+        console.warn(`[parseExcelFile] Sheet "${sheetName}" has no data rows after filtering. All rows were blank or title rows.`);
+      }
+      
       parsedData[sheetName] = filteredData;
     });
+
+    // Final check: ensure we have at least some data
+    const totalRows = Object.values(parsedData).reduce((sum, rows) => sum + rows.length, 0);
+    if (totalRows === 0) {
+      throw new Error(
+        'No data rows detected in the Excel file. ' +
+        'Ensure your header row is not merged and is in row 1, or we can detect it within the first 20 rows. ' +
+        'Make sure there are data rows below the headers.'
+      );
+    }
 
     return { data: parsedData, errors, warnings, autoCorrections };
   } catch (error) {

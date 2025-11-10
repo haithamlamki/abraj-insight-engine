@@ -110,9 +110,16 @@ export const ExcelUploadZone = ({
     } catch (error) {
       setUploadStatus("error");
       console.error('Excel parse error:', error);
-      const msg = (error as any)?.message ? String((error as any).message) : String(error);
-      setErrorMessage(`Failed to parse Excel file: ${msg}`);
-      toast.error(`Failed to parse the Excel file: ${msg}`);
+      const msg = error instanceof Error ? error.message : String(error);
+      
+      // Provide actionable error message
+      const userFriendlyMsg = msg.includes('Unable to read') 
+        ? msg 
+        : `Failed to parse Excel file: ${msg}. Try re-saving as .xlsx without macros or password protection.`;
+      
+      setErrorMessage(userFriendlyMsg);
+      toast.error(userFriendlyMsg);
+      console.info('[ExcelUploadZone] Parsing failed. File:', uploadedFile?.name, 'Size:', uploadedFile?.size);
     } finally {
       setUploading(false);
     }
@@ -217,10 +224,10 @@ export const ExcelUploadZone = ({
       }
     } catch (error) {
       setUploadStatus("error");
-      console.error('Excel parse error:', error);
-      const msg = (error as any)?.message ? String((error as any).message) : String(error);
-      setErrorMessage(`Failed to parse Excel file: ${msg}`);
-      toast.error(`Failed to parse the Excel file: ${msg}`);
+      console.error('Data validation error:', error);
+      const msg = error instanceof Error ? error.message : String(error);
+      setErrorMessage(`Failed to process data: ${msg}`);
+      toast.error(`Data processing failed: ${msg}`);
     } finally {
       setUploading(false);
     }
