@@ -257,14 +257,14 @@ export const HeaderMappingPreview = ({
                 </p>
               </div>
               <Select
-                value={mapping[field] || ""}
-                onValueChange={(value) => handleMappingChange(field, value)}
+                value={mapping[field] || "unmapped"}
+                onValueChange={(value) => handleMappingChange(field, value === "unmapped" ? "" : value)}
               >
                 <SelectTrigger className={!mapping[field] && required ? 'border-destructive' : ''}>
                   <SelectValue placeholder="Select Excel column..." />
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
-                  <SelectItem value="">-- Not Mapped --</SelectItem>
+                  <SelectItem value="unmapped">-- Not Mapped --</SelectItem>
                   {detectedHeaders.map((header) => (
                     <SelectItem key={header} value={header}>
                       {header}
