@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
 import { DataEntryForm } from "@/components/Reports/DataEntryForm";
 import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
+import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { EnhancedKPICard } from "@/components/Revenue/EnhancedKPICard";
 import { useReportData } from "@/hooks/useReportData";
 import { useBillingNPTFilters } from "@/hooks/useBillingNPTFilters";
@@ -78,8 +79,9 @@ const BillingNPTSummary = () => {
       viewContent={
         <div className="space-y-6">
           <Tabs defaultValue="dashboard" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+              <TabsTrigger value="data">Data Table</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
             </TabsList>
 
@@ -162,6 +164,39 @@ const BillingNPTSummary = () => {
               </div>
 
               <AIInsightsPanel filters={filters} />
+            </TabsContent>
+
+            <TabsContent value="data" className="space-y-6 mt-6">
+              <DataTableWithDB
+                reportType="billing_npt_summary"
+                title="Billing NPT Summary Records"
+                columns={[
+                  { key: 'year', label: 'Year', sortable: true },
+                  { key: 'month', label: 'Month', sortable: true },
+                  { key: 'rig', label: 'Rig', sortable: true },
+                  { key: 'opr_rate', label: 'Opr Rate', sortable: true },
+                  { key: 'reduce_rate', label: 'Reduce Rate', sortable: true },
+                  { key: 'repair_rate', label: 'Repair Rate', sortable: true },
+                  { key: 'zero_rate', label: 'Zero Rate', sortable: true },
+                  { key: 'special_rate', label: 'Special Rate', sortable: true },
+                  { key: 'rig_move', label: 'Rig Move', sortable: true },
+                  { key: 'a_maint', label: 'A.Maint', sortable: true },
+                  { key: 'total', label: 'Total', sortable: true },
+                  { key: 'total_npt', label: 'Total NPT', sortable: true },
+                ]}
+                formatRow={(row) => ({
+                  ...row,
+                  opr_rate: row.opr_rate?.toFixed(2) || '0.00',
+                  reduce_rate: row.reduce_rate?.toFixed(2) || '0.00',
+                  repair_rate: row.repair_rate?.toFixed(2) || '0.00',
+                  zero_rate: row.zero_rate?.toFixed(2) || '0.00',
+                  special_rate: row.special_rate?.toFixed(2) || '0.00',
+                  rig_move: row.rig_move?.toFixed(2) || '0.00',
+                  a_maint: row.a_maint?.toFixed(2) || '0.00',
+                  total: row.total?.toFixed(2) || '0.00',
+                  total_npt: row.total_npt?.toFixed(2) || '0.00',
+                })}
+              />
             </TabsContent>
 
             <TabsContent value="analytics" className="space-y-6 mt-6">
