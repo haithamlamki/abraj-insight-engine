@@ -580,6 +580,109 @@ export function validateBillingNPTSummaryData(data: any[]): ValidationError[] {
 }
 
 /**
+ * Validate NPT root cause data
+ */
+export function validateNPTRootCauseData(data: any[]): ValidationError[] {
+  const errors: ValidationError[] = [];
+  
+  console.log(`[validateNPTRootCauseData] Validating ${data.length} rows`);
+  if (data.length > 0) {
+    console.log(`[validateNPTRootCauseData] First row keys:`, Object.keys(data[0]));
+    console.log(`[validateNPTRootCauseData] First row:`, data[0]);
+  }
+  
+  data.forEach((row, index) => {
+    // Skip blank rows
+    if (isBlankRow(row)) return;
+
+    // Robust header detection
+    const rig = row['Rig Number'] ?? row.Rig ?? row.rig ?? getByNormalized(row, 'rignumber') ?? getByNormalized(row, 'rig');
+    const year = row.Year ?? row.year ?? getByNormalized(row, 'year');
+    const monthRaw = row.Month ?? row.month ?? row.Mont ?? row.Mounth ?? getByNormalized(row, 'month');
+    const date = row.Date ?? row.date ?? row.Day ?? getByNormalized(row, 'date');
+    const hrs = row['Hrs.'] ?? row.Hrs ?? row.Hours ?? getByNormalized(row, 'hrs');
+    const nptType = row['NPT type'] ?? row['NPT Type'] ?? row.npt_type ?? getByNormalized(row, 'npttype');
+    const system = row.SYSTEM ?? row.System ?? row.system ?? getByNormalized(row, 'system');
+    
+    if (index === 0) {
+      console.log(`[validateNPTRootCauseData] Row 0 - rig:`, rig, ', year:', year, ', month:', monthRaw, ', hrs:', hrs);
+    }
+
+    if (!rig) {
+      errors.push({
+        row: index + 2,
+        column: 'Rig Number',
+        message: 'Rig number is required',
+        value: rig,
+        severity: 'error',
+      });
+    }
+    
+    if (!year) {
+      errors.push({
+        row: index + 2,
+        column: 'Year',
+        message: 'Year is required',
+        value: year,
+        severity: 'error',
+      });
+    }
+    
+    if (!monthRaw) {
+      errors.push({
+        row: index + 2,
+        column: 'Month',
+        message: 'Month is required',
+        value: monthRaw,
+        severity: 'error',
+      });
+    }
+    
+    if (!date) {
+      errors.push({
+        row: index + 2,
+        column: 'Date',
+        message: 'Date is required',
+        value: date,
+        severity: 'error',
+      });
+    }
+    
+    if (!hrs && hrs !== 0) {
+      errors.push({
+        row: index + 2,
+        column: 'Hrs.',
+        message: 'Hours is required',
+        value: hrs,
+        severity: 'error',
+      });
+    }
+    
+    if (!nptType) {
+      errors.push({
+        row: index + 2,
+        column: 'NPT type',
+        message: 'NPT type is required',
+        value: nptType,
+        severity: 'error',
+      });
+    }
+    
+    if (!system) {
+      errors.push({
+        row: index + 2,
+        column: 'SYSTEM',
+        message: 'System is required',
+        value: system,
+        severity: 'error',
+      });
+    }
+  });
+  
+  return errors;
+}
+
+/**
  * Validate work orders data
  */
 export function validateWorkOrdersData(data: any[]): ValidationError[] {
