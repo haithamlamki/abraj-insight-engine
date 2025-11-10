@@ -48,7 +48,7 @@ const reportTypeFields: { [key: string]: { field: string; required: boolean; lab
     { field: 'npt_type', required: false, label: 'NPT Type' },
     { field: 'system', required: false, label: 'System' },
     { field: 'root_cause', required: false, label: 'Root Cause' },
-    { field: 'hours', required: false, label: 'Hours' },
+    { field: 'hrs', required: false, label: 'Hours' },
   ],
   utilization: [
     { field: 'year', required: true, label: 'Year' },
