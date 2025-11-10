@@ -58,10 +58,6 @@ export const useFuelAnalytics = (filters: FuelFilters = {}) => {
         query = query.lte('fuel_cost', filters.maxCost);
       }
 
-      if (filters.searchText) {
-        query = query.or(`rig.ilike.%${filters.searchText}%`);
-      }
-
       const { data, error } = await query;
 
       if (error) throw error;
@@ -75,6 +71,18 @@ export const useFuelAnalytics = (filters: FuelFilters = {}) => {
       const uniqueRigs = [...new Set(records.map(r => r.rig))];
       const avgCostPerRig = uniqueRigs.length > 0 ? totalCost / uniqueRigs.length : 0;
 
+      // Top 5 consumers by total consumed
+      const consumedByRig = records.reduce((acc, r) => {
+        const rig = r.rig || 'Unknown';
+        acc[rig] = (acc[rig] || 0) + (r.total_consumed || 0);
+        return acc;
+      }, {} as Record<string, number>);
+
+      const topConsumers = Object.entries(consumedByRig)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([name, value]) => ({ name, value }));
+
       // Cost by Rig
       const costByRig = records.reduce((acc, r) => {
         const rig = r.rig || 'Unknown';
@@ -86,36 +94,17 @@ export const useFuelAnalytics = (filters: FuelFilters = {}) => {
         .sort((a, b) => b[1] - a[1])
         .map(([name, value]) => ({ name, value }));
 
-      // Consumption by Rig
-      const consumptionByRig = records.reduce((acc, r) => {
-        const rig = r.rig || 'Unknown';
-        acc[rig] = (acc[rig] || 0) + (r.total_consumed || 0);
-        return acc;
-      }, {} as Record<string, number>);
-
-      const topConsumers = Object.entries(consumptionByRig)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(([name, value]) => ({ name, value }));
-
       // Monthly trend
       const monthlyData = records.reduce((acc, r) => {
         const monthKey = `${r.year}-${r.month}`;
         if (!acc[monthKey]) {
-          acc[monthKey] = { 
-            month: monthKey, 
-            cost: 0, 
-            consumed: 0,
-            received: 0,
-            count: 0 
-          };
+          acc[monthKey] = { month: monthKey, cost: 0, consumed: 0, received: 0 };
         }
         acc[monthKey].cost += r.fuel_cost || 0;
         acc[monthKey].consumed += r.total_consumed || 0;
         acc[monthKey].received += r.total_received || 0;
-        acc[monthKey].count += 1;
         return acc;
-      }, {} as Record<string, { month: string; cost: number; consumed: number; received: number; count: number }>);
+      }, {} as Record<string, { month: string; cost: number; consumed: number; received: number }>);
 
       const monthlyTrend = Object.values(monthlyData).sort((a, b) => 
         a.month.localeCompare(b.month)
@@ -125,18 +114,13 @@ export const useFuelAnalytics = (filters: FuelFilters = {}) => {
       const yearlyData = records.reduce((acc, r) => {
         const year = r.year;
         if (!acc[year]) {
-          acc[year] = { 
-            year: year.toString(), 
-            cost: 0, 
-            consumed: 0,
-            count: 0 
-          };
+          acc[year] = { year: year.toString(), cost: 0, consumed: 0, received: 0 };
         }
         acc[year].cost += r.fuel_cost || 0;
         acc[year].consumed += r.total_consumed || 0;
-        acc[year].count += 1;
+        acc[year].received += r.total_received || 0;
         return acc;
-      }, {} as Record<number, { year: string; cost: number; consumed: number; count: number }>);
+      }, {} as Record<number, { year: string; cost: number; consumed: number; received: number }>);
 
       const yearlyComparison = Object.values(yearlyData).sort((a, b) => 
         a.year.localeCompare(b.year)

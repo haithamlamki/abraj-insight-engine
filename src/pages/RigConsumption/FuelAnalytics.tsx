@@ -30,13 +30,12 @@ const FuelAnalytics = () => {
   const [filters, setFilters] = useState<FuelFilters>({
     year: currentYear,
   });
-  const [costRange, setCostRange] = useState<[number, number]>([0, 50000]);
+  const [costRange, setCostRange] = useState<[number, number]>([0, 100000]);
   const [searchText, setSearchText] = useState("");
   
   // Drill-down filters
   const [drillDownFilters, setDrillDownFilters] = useState<{
     selectedRig?: string;
-    selectedCostElement?: string;
     selectedMonth?: string;
     selectedYear?: string;
   }>({});
@@ -46,7 +45,6 @@ const FuelAnalytics = () => {
     ...filters,
     minCost: costRange[0],
     maxCost: costRange[1],
-    searchText: searchText || undefined,
     rig: drillDownFilters.selectedRig || filters.rig,
   };
 
@@ -64,10 +62,6 @@ const FuelAnalytics = () => {
     setFilters(prev => ({ ...prev, rig: rig === 'all' ? undefined : rig }));
   };
 
-  const handleCostElementChange = (element: string) => {
-    setFilters(prev => ({ ...prev, costElement: element === 'all' ? undefined : element }));
-  };
-
   const handleExportToExcel = () => {
     if (!analytics?.records) return;
 
@@ -80,20 +74,18 @@ const FuelAnalytics = () => {
 
   const handleResetFilters = () => {
     setFilters({ year: currentYear });
-    setCostRange([0, 50000]);
+    setCostRange([0, 100000]);
     setSearchText("");
     setDrillDownFilters({});
   };
 
-  const handleDrillDown = (type: 'rig' | 'costElement' | 'month' | 'year', value: string) => {
+  const handleDrillDown = (type: 'rig' | 'month' | 'year', value: string) => {
     setDrillDownFilters(prev => {
       const newFilters = { ...prev };
       const isRemoving = prev[`selected${type.charAt(0).toUpperCase() + type.slice(1)}` as keyof typeof prev] === value;
       
       if (type === 'rig') {
         newFilters.selectedRig = prev.selectedRig === value ? undefined : value;
-      } else if (type === 'costElement') {
-        newFilters.selectedCostElement = prev.selectedCostElement === value ? undefined : value;
       } else if (type === 'month') {
         newFilters.selectedMonth = prev.selectedMonth === value ? undefined : value;
       } else if (type === 'year') {
@@ -112,12 +104,11 @@ const FuelAnalytics = () => {
     });
   };
 
-  const clearDrillDown = (type?: 'rig' | 'costElement' | 'month' | 'year') => {
+  const clearDrillDown = (type?: 'rig' | 'month' | 'year') => {
     if (type) {
       setDrillDownFilters(prev => {
         const newFilters = { ...prev };
         if (type === 'rig') delete newFilters.selectedRig;
-        else if (type === 'costElement') delete newFilters.selectedCostElement;
         else if (type === 'month') delete newFilters.selectedMonth;
         else if (type === 'year') delete newFilters.selectedYear;
         return newFilters;
@@ -131,22 +122,11 @@ const FuelAnalytics = () => {
 
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
   const months = [
-    { value: '1', label: 'January' },
-    { value: '2', label: 'February' },
-    { value: '3', label: 'March' },
-    { value: '4', label: 'April' },
-    { value: '5', label: 'May' },
-    { value: '6', label: 'June' },
-    { value: '7', label: 'July' },
-    { value: '8', label: 'August' },
-    { value: '9', label: 'September' },
-    { value: '10', label: 'October' },
-    { value: '11', label: 'November' },
-    { value: '12', label: 'December' },
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
   ];
 
   const uniqueRigs = analytics ? [...new Set(analytics.records.map(r => r.rig))] : [];
-  const uniqueCostElements = analytics ? [...new Set(analytics.records.map(r => r.fuel_type))] : [];
 
   if (isLoading) {
     return (
@@ -172,6 +152,7 @@ const FuelAnalytics = () => {
           <h2 className="text-3xl font-bold tracking-tight">Fuel Cost Analytics</h2>
           <p className="text-muted-foreground">Interactive dashboard for fuel consumption analysis</p>
         </div>
+
         {/* Smart Filters */}
         <Card>
           <CardHeader>
@@ -192,7 +173,7 @@ const FuelAnalytics = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Year Filter */}
               <div className="space-y-2">
                 <Label>Year</Label>
@@ -211,23 +192,23 @@ const FuelAnalytics = () => {
               {/* Month Filter */}
               <div className="space-y-2">
                 <Label>Month</Label>
-                <Select value={filters.month?.toString() || 'all'} onValueChange={handleMonthChange}>
+                <Select value={filters.month || 'all'} onValueChange={handleMonthChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="All months" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Months</SelectItem>
-                    {months.map(month => (
-                      <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>
+                    {months.map((month, idx) => (
+                      <SelectItem key={month} value={month}>{month}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              {/* WBS Element (Rig) Filter */}
+              {/* Rig Filter */}
               <div className="space-y-2">
-                <Label>WBS Element (Rig)</Label>
-                <Select value={filters.wbsElement || 'all'} onValueChange={handleRigChange}>
+                <Label>Rig</Label>
+                <Select value={filters.rig || 'all'} onValueChange={handleRigChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="All rigs" />
                   </SelectTrigger>
@@ -239,372 +220,175 @@ const FuelAnalytics = () => {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
 
-              {/* Cost Element Filter */}
-              <div className="space-y-2">
-                <Label>Cost Element</Label>
-                <Select value={filters.costElement || 'all'} onValueChange={handleCostElementChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All elements" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Elements</SelectItem>
-                    {uniqueCostElements.map(element => (
-                      <SelectItem key={element} value={element}>{element}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Cost Range Slider */}
-              <div className="space-y-2 md:col-span-2">
-                <Label>Cost Range: ${costRange[0].toLocaleString()} - ${costRange[1].toLocaleString()}</Label>
-                <Slider
-                  min={0}
-                  max={50000}
-                  step={1000}
-                  value={costRange}
-                  onValueChange={(value) => setCostRange(value as [number, number])}
-                  className="mt-2"
-                />
-              </div>
-
-              {/* Search Box */}
-              <div className="space-y-2 md:col-span-2">
-                <Label>Search (PO Text / Supplier)</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search purchase orders or suppliers..."
-                    value={searchText}
-                    onChange={(e) => setSearchText(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-              </div>
+            {/* Cost Range Filter */}
+            <div className="space-y-4 mt-4">
+              <Label>Fuel Cost Range: ${costRange[0].toLocaleString()} - ${costRange[1].toLocaleString()}</Label>
+              <Slider
+                value={costRange}
+                onValueChange={(value) => setCostRange(value as [number, number])}
+                min={0}
+                max={100000}
+                step={1000}
+                className="w-full"
+              />
             </div>
           </CardContent>
         </Card>
 
-        {/* Active Drill-Down Filters */}
-        {hasActiveDrillDown && (
-          <Card className="bg-primary/5 border-primary/20">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium">Active Filters:</span>
-                  {drillDownFilters.selectedRig && (
-                    <Badge variant="secondary" className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground transition-colors">
-                      Rig: {drillDownFilters.selectedRig}
-                      <button onClick={() => clearDrillDown('rig')} className="ml-2">×</button>
-                    </Badge>
-                  )}
-                  {drillDownFilters.selectedCostElement && (
-                    <Badge variant="secondary" className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground transition-colors">
-                      Element: {drillDownFilters.selectedCostElement}
-                      <button onClick={() => clearDrillDown('costElement')} className="ml-2">×</button>
-                    </Badge>
-                  )}
-                  {drillDownFilters.selectedYear && (
-                    <Badge variant="secondary" className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground transition-colors">
-                      Year: {drillDownFilters.selectedYear}
-                      <button onClick={() => clearDrillDown('year')} className="ml-2">×</button>
-                    </Badge>
-                  )}
-                  {drillDownFilters.selectedMonth && (
-                    <Badge variant="secondary" className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground transition-colors">
-                      Month: {drillDownFilters.selectedMonth}
-                      <button onClick={() => clearDrillDown('month')} className="ml-2">×</button>
-                    </Badge>
-                  )}
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => clearDrillDown()}>
-                  Clear All
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Overall KPIs */}
-        <div className="grid gap-6 md:grid-cols-3">
+        {/* KPI Summary */}
+        <div className="grid gap-6 md:grid-cols-4">
           <KPICard
-            title="Total Cost"
-            value={`$${analytics?.totalCost.toLocaleString() || 0}`}
+            title="Total Fuel Cost"
+            value={`$${(analytics?.totalCost || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}`}
             icon={DollarSign}
           />
           <KPICard
-            title="Avg Cost per WBS Element"
-            value={`$${analytics?.avgCostPerRig.toLocaleString(undefined, { maximumFractionDigits: 0 }) || 0}`}
+            title="Total Consumed"
+            value={`${(analytics?.totalConsumed || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })} L`}
             icon={TrendingUp}
           />
           <KPICard
-            title="WBS Elements"
-            value={analytics?.uniqueRigsCount.toString() || '0'}
+            title="Total Received"
+            value={`${(analytics?.totalReceived || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })} L`}
             icon={Factory}
+          />
+          <KPICard
+            title="Active Rigs"
+            value={analytics?.uniqueRigsCount || 0}
+            icon={BarChart3}
           />
         </div>
 
-        {/* Charts Tabs */}
-        <Tabs defaultValue="trends" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="trends">Trends</TabsTrigger>
-            <TabsTrigger value="breakdown">Breakdown</TabsTrigger>
-            <TabsTrigger value="top5">Top 5 Costs</TabsTrigger>
-            <TabsTrigger value="details">Detailed Table</TabsTrigger>
-          </TabsList>
+        {/* Charts Section */}
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Monthly Trend */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Monthly Trend</CardTitle>
+              <CardDescription>Fuel consumption and cost over time</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={analytics?.monthlyTrend || []}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis yAxisId="left" />
+                  <YAxis yAxisId="right" orientation="right" />
+                  <Tooltip />
+                  <Legend />
+                  <Line yAxisId="left" type="monotone" dataKey="consumed" stroke={COLORS[0]} name="Consumed (L)" />
+                  <Line yAxisId="right" type="monotone" dataKey="cost" stroke={COLORS[1]} name="Cost ($)" />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
 
-          {/* Trend Analysis Tab */}
-          <TabsContent value="trends" className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* Monthly Spend Trend */}
-              <ChartCard
-                title="Monthly Spend Trend"
-                description="Cost trend over selected period"
-              >
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart 
-                    data={analytics?.monthlyTrend || []}
-                    onClick={(data) => {
-                      if (data && data.activeLabel) {
-                        handleDrillDown('month', data.activeLabel);
-                      }
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
-                    <YAxis stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                      formatter={(value: number) => `$${value.toLocaleString()}`}
-                    />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="cost" 
-                      stroke="hsl(var(--chart-1))" 
-                      strokeWidth={2}
-                      name="Cost"
-                      cursor="pointer"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </ChartCard>
-
-              {/* Yearly Comparison */}
-              <ChartCard
-                title="Yearly Spend Comparison"
-                description="Compare costs across years"
-              >
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart 
-                    data={analytics?.yearlyComparison || []}
-                    onClick={(data) => {
-                      if (data && data.activeLabel) {
-                        handleDrillDown('year', data.activeLabel);
-                      }
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="year" stroke="hsl(var(--muted-foreground))" />
-                    <YAxis stroke="hsl(var(--muted-foreground))" />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                      formatter={(value: number) => `$${value.toLocaleString()}`}
-                    />
-                    <Legend />
-                    <Bar 
-                      dataKey="cost" 
-                      fill="hsl(var(--chart-2))" 
-                      name="Cost"
-                      cursor="pointer"
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartCard>
-            </div>
-          </TabsContent>
-
-          {/* Category Breakdown Tab */}
-          <TabsContent value="breakdown" className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* Cost by WBS Element */}
-              <ChartCard
-                title="Cost by WBS Element"
-                description="Distribution across rigs"
-              >
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart 
-                    data={analytics?.rigBreakdown.slice(0, 10) || []} 
-                    layout="vertical"
-                    onClick={(data) => {
-                      if (data && data.activeLabel) {
-                        handleDrillDown('rig', data.activeLabel);
-                      }
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis type="number" stroke="hsl(var(--muted-foreground))" />
-                    <YAxis type="category" dataKey="name" stroke="hsl(var(--muted-foreground))" width={100} />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                      formatter={(value: number) => `$${value.toLocaleString()}`}
-                    />
-                    <Bar 
-                      dataKey="value" 
-                      fill="hsl(var(--chart-3))"
-                      cursor="pointer"
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartCard>
-
-              {/* Cost by Element Description */}
-              <ChartCard
-                title="Cost by Element Description"
-                description="Breakdown by cost type"
-              >
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={analytics?.costElementBreakdown || []}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      label={(entry) => `${entry.name}: ${entry.percentage}%`}
-                      onClick={(entry) => handleDrillDown('costElement', entry.name)}
-                      cursor="pointer"
-                    >
-                      {analytics?.costElementBreakdown.map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={COLORS[index % COLORS.length]}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                      formatter={(value: number) => `$${value.toLocaleString()}`}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </ChartCard>
-            </div>
-          </TabsContent>
-
-          {/* Top 5 Tab */}
-          <TabsContent value="top5">
-            <ChartCard
-              title="Top 5 Cost Elements by Spend"
-              description="Highest spending categories"
-            >
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart 
-                  data={analytics?.topCostElements || []}
-                  onClick={(data) => {
-                    if (data && data.activeLabel) {
-                      handleDrillDown('costElement', data.activeLabel);
-                    }
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
-                  <YAxis stroke="hsl(var(--muted-foreground))" />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
-                    }}
-                    formatter={(value: number) => `$${value.toLocaleString()}`}
-                  />
-                  <Bar 
-                    dataKey="value" 
-                    fill="hsl(var(--chart-4))"
-                    cursor="pointer"
-                  >
-                    {analytics?.topCostElements.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Bar>
+          {/* Top Consumers */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Top Fuel Consumers</CardTitle>
+              <CardDescription>Rigs with highest consumption</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={analytics?.topConsumers || []}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="value" fill={COLORS[2]} name="Consumed (L)" />
                 </BarChart>
               </ResponsiveContainer>
-            </ChartCard>
-          </TabsContent>
+            </CardContent>
+          </Card>
 
-          {/* Detailed Table Tab */}
-          <TabsContent value="details">
-            <Card>
-              <CardHeader>
-                <CardTitle>Detailed Fuel Records</CardTitle>
-                <CardDescription>
-                  All fuel consumption records with applied filters
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-md border overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>WBS Element</TableHead>
-                        <TableHead>Cost Element</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead className="text-right">Value</TableHead>
-                        <TableHead>Supplier</TableHead>
-                        <TableHead>Remarks</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {analytics?.records.slice(0, 50).map((record) => (
-                        <TableRow key={record.id}>
-                          <TableCell>{new Date(record.date).toLocaleDateString()}</TableCell>
-                          <TableCell className="font-medium">{record.rig}</TableCell>
-                          <TableCell>{record.fuel_type}</TableCell>
-                          <TableCell className="max-w-xs truncate">{record.fuel_type}</TableCell>
-                          <TableCell className="text-right">
-                            {record.total_cost > 10000 ? (
-                              <Badge variant="destructive">
-                                ${record.total_cost.toLocaleString()}
-                              </Badge>
-                            ) : (
-                              <span>${record.total_cost.toLocaleString()}</span>
-                            )}
-                          </TableCell>
-                          <TableCell>{record.supplier || '-'}</TableCell>
-                          <TableCell className="max-w-xs truncate">{record.remarks || '-'}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+          {/* Cost by Rig */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Cost Distribution by Rig</CardTitle>
+              <CardDescription>Fuel costs across all rigs</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={analytics?.rigBreakdown || []}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="value" fill={COLORS[3]} name="Cost ($)" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Yearly Comparison */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Yearly Comparison</CardTitle>
+              <CardDescription>Year-over-year performance</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={analytics?.yearlyComparison || []}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="year" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="consumed" fill={COLORS[0]} name="Consumed (L)" />
+                  <Bar dataKey="cost" fill={COLORS[1]} name="Cost ($)" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Detailed Data Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Detailed Fuel Records</CardTitle>
+            <CardDescription>All fuel consumption records with filters applied</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Rig</TableHead>
+                    <TableHead>Year</TableHead>
+                    <TableHead>Month</TableHead>
+                    <TableHead className="text-right">Opening Stock (L)</TableHead>
+                    <TableHead className="text-right">Received (L)</TableHead>
+                    <TableHead className="text-right">Consumed (L)</TableHead>
+                    <TableHead className="text-right">Closing Balance (L)</TableHead>
+                    <TableHead className="text-right">Cost ($)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {analytics?.records.slice(0, 50).map((record) => (
+                    <TableRow key={record.id}>
+                      <TableCell className="font-medium">{record.rig}</TableCell>
+                      <TableCell>{record.year}</TableCell>
+                      <TableCell>{record.month}</TableCell>
+                      <TableCell className="text-right">{record.opening_stock?.toLocaleString() || 0}</TableCell>
+                      <TableCell className="text-right">{record.total_received?.toLocaleString() || 0}</TableCell>
+                      <TableCell className="text-right">{record.total_consumed?.toLocaleString() || 0}</TableCell>
+                      <TableCell className="text-right">{record.closing_balance?.toLocaleString() || 0}</TableCell>
+                      <TableCell className="text-right font-semibold">${record.fuel_cost?.toLocaleString() || 0}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {analytics && analytics.records.length > 50 && (
+                <div className="text-center text-sm text-muted-foreground mt-4">
+                  Showing first 50 of {analytics.records.length} records. Use filters to refine results.
                 </div>
-                {analytics && analytics.records.length > 50 && (
-                  <p className="text-sm text-muted-foreground mt-4">
-                    Showing first 50 of {analytics.records.length} records. Use filters to narrow down results.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );
