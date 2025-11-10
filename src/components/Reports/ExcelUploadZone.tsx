@@ -170,16 +170,8 @@ export const ExcelUploadZone = ({
           console.log('[ExcelUploadZone] Custom mapping:', customMapping);
         }
         
-        // Apply reporting date to fuel data that doesn't have dates
-        if (reportType === 'fuel') {
-          mappedDataRaw.forEach((row: any) => {
-            if (row && (!row.date || row.date === null)) {
-              row.date = reportingDate;
-            }
-          });
-        }
-        
-        // Filter out rows missing required fields or with null dates
+        // No reporting date for fuel in the new schema
+        // Filter out rows missing required fields
         let mappedData;
         if (reportType === 'billing_npt') {
           mappedData = mappedDataRaw.filter((row: any) => 
@@ -187,7 +179,7 @@ export const ExcelUploadZone = ({
           );
         } else if (reportType === 'fuel') {
           mappedData = mappedDataRaw.filter((row: any) => 
-            row && row.rig && row.date && row.total_cost !== null
+            row && row.rig && row.year && row.month && (row.fuel_cost !== null && row.fuel_cost !== undefined)
           );
         } else if (reportType === 'npt_root_cause') {
           mappedData = mappedDataRaw.filter((row: any) => 
