@@ -228,6 +228,19 @@ export async function saveWellTrackerData(data: any) {
 }
 
 /**
+ * Validate required fields before inserting data
+ */
+function validateRequiredFields(data: any, requiredFields: string[], tableName: string): void {
+  const missing = requiredFields.filter(field => 
+    data[field] === null || data[field] === undefined || data[field] === ''
+  );
+  if (missing.length > 0) {
+    console.error(`[${tableName}] Missing required fields:`, missing, 'Data:', data);
+    throw new Error(`Missing required fields for ${tableName}: ${missing.join(', ')}`);
+  }
+}
+
+/**
  * Save utilization data with client and status extraction
  */
 export async function saveUtilizationData(data: any) {
@@ -245,7 +258,7 @@ export async function saveUtilizationData(data: any) {
   
   if (!client && comment) {
     // Look for patterns like "Working with [Client]" or "worked with [Client]"
-    const workingWithMatch = comment.match(/working with\s+([^,]+)/i);
+    const workingWithMatch = comment.match(/(?:working|worked)\s+with\s+([^,]+)/i);
     if (workingWithMatch) {
       client = workingWithMatch[1].trim();
     }
@@ -255,11 +268,12 @@ export async function saveUtilizationData(data: any) {
   const utilizationRate = parseNumeric(data.utilization || data.utilizationRate || data.utilization_rate || data['% utilization']);
   let status = data.status;
   
-  if (!status) {
+  if (!status || status === '') {
     // If utilization is 0 or null/undefined, mark as Inactive
-    // If comment contains "N/A" or "NA", mark as Inactive
-    // Otherwise, mark as Active
-    if (utilizationRate === null || utilizationRate === 0) {
+    // If comment contains "N/A" or "NA" or "stacked", mark accordingly
+    if (comment.toUpperCase().includes('STACKED') || comment.toUpperCase().includes('STACK')) {
+      status = 'Stacked';
+    } else if (utilizationRate === null || utilizationRate === 0) {
       status = 'Inactive';
     } else if (comment && (comment.toUpperCase().includes('N/A') || comment.toUpperCase().includes('NA'))) {
       status = 'Inactive';
@@ -268,7 +282,7 @@ export async function saveUtilizationData(data: any) {
     }
   }
 
-  return insertData('utilization', {
+  const utilizationData = {
     rig: data.rig,
     month: data.month,
     year: parseInt(data.year || new Date().getFullYear()),
@@ -280,7 +294,12 @@ export async function saveUtilizationData(data: any) {
     npt_type: data.nptType || data.npt_type || data['npt type'] || null,
     working_days: parseNumeric(data.workingDays || data.totalWorkingDays || data.working_days || data['total working days']),
     monthly_total_days: parseNumeric(data.monthlyTotalDays || data.monthly_total_days || data['monthly total days']),
-  });
+  };
+
+  // Validate required fields before insertion
+  validateRequiredFields(utilizationData, ['rig', 'month', 'year', 'status'], 'utilization');
+
+  return insertData('utilization', utilizationData);
 }
 
 /**

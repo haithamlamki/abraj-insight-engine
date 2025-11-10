@@ -166,7 +166,7 @@ export const ExcelUploadZone = ({
         }
 
         if (onDataParsed) {
-          onDataParsed(allRows);
+          onDataParsed(mappedData);
         }
 
         const correctionMsg = autoCorrect && infos.length > 0 
@@ -402,12 +402,58 @@ export const ExcelUploadZone = ({
 
           {uploadedFile && uploadStatus === "success" && parsedData.length > 0 && (
             <div className="space-y-4">
-              <div className="p-4 bg-success/10 border border-success rounded-lg">
-                <p className="font-medium text-success">File validated successfully</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {parsedData.length} records ready to import to database
-                </p>
+              {/* Validation Preview */}
+              <div className="p-4 bg-success/10 border border-success rounded-lg space-y-3">
+                <div>
+                  <p className="font-medium text-success">File validated successfully</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {parsedData.length} records ready to import to database
+                  </p>
+                </div>
+                
+                {/* Preview of first 3 rows with key fields */}
+                {reportType === 'utilization' && parsedData.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">Preview (first 3 rows):</p>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="text-xs">
+                            <TableHead className="h-8">Rig</TableHead>
+                            <TableHead className="h-8">Month</TableHead>
+                            <TableHead className="h-8">Year</TableHead>
+                            <TableHead className="h-8">Client</TableHead>
+                            <TableHead className="h-8">Status</TableHead>
+                            <TableHead className="h-8">Util %</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {parsedData.slice(0, 3).map((row, idx) => (
+                            <TableRow key={idx} className="text-xs">
+                              <TableCell className="py-2">{row.rig}</TableCell>
+                              <TableCell className="py-2">{row.month}</TableCell>
+                              <TableCell className="py-2">{row.year}</TableCell>
+                              <TableCell className="py-2">{row.client || '-'}</TableCell>
+                              <TableCell className="py-2">
+                                <span className={cn(
+                                  "px-2 py-0.5 rounded text-xs",
+                                  row.status === 'Active' && "bg-green-100 text-green-700",
+                                  row.status === 'Inactive' && "bg-gray-100 text-gray-700",
+                                  row.status === 'Stacked' && "bg-yellow-100 text-yellow-700"
+                                )}>
+                                  {row.status}
+                                </span>
+                              </TableCell>
+                              <TableCell className="py-2">{row.utilization_rate ?? '-'}%</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                )}
               </div>
+              
               <Button 
                 className="w-full" 
                 onClick={handleImportData}

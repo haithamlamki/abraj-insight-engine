@@ -167,7 +167,7 @@ export function composeDateFromYMD(
 
 /**
  * Extract client name and status from comment field
- * Handles patterns like "PDO", "OXY", "CCED", "Stacked", etc.
+ * Handles patterns like "Working with PDO", "worked with OXY", "Stacked", etc.
  */
 export function extractClientAndStatus(comment: string): { client: string | null; status: string } {
   if (!comment || typeof comment !== 'string') {
@@ -176,31 +176,53 @@ export function extractClientAndStatus(comment: string): { client: string | null
   
   const commentUpper = comment.toUpperCase().trim();
   
-  // Check for stacked status
+  // Check for stacked status first
   if (commentUpper.includes('STACKED') || commentUpper.includes('STACK')) {
     return { client: null, status: 'Stacked' };
   }
   
-  // Client patterns (order matters - check longer names first)
-  const clientPatterns: { [key: string]: RegExp } = {
-    'PETROGAS': /PETROGAS/i,
-    'K.S.C': /K\.?S\.?C/i,
-    'MEDCO': /MEDCO/i,
-    'CCED': /CCED/i,
-    'PDO': /\bPDO\b/i,
-    'OXY': /\bOXY\b/i,
-    'OQ': /\bOQ\b/i,
-    'BP': /\bBP\b/i,
-  };
+  // Check for inactive indicators
+  if (commentUpper === 'N/A' || commentUpper === 'NA' || commentUpper.includes('INACTIVE')) {
+    return { client: null, status: 'Inactive' };
+  }
   
-  // Try to match client patterns
-  for (const [clientName, pattern] of Object.entries(clientPatterns)) {
-    if (pattern.test(comment)) {
-      return { client: clientName, status: 'Active' };
+  let extractedClient: string | null = null;
+  
+  // First try to extract from "Working with [Client]" or "worked with [Client]" patterns
+  const workingWithMatch = comment.match(/(?:working|worked)\s+with\s+([a-zA-Z0-9.\s]+?)(?:\s*[,.]|$)/i);
+  if (workingWithMatch) {
+    extractedClient = workingWithMatch[1].trim().toUpperCase();
+  }
+  
+  // If no "working with" pattern, try direct client name matching
+  if (!extractedClient) {
+    // Client patterns (order matters - check longer names first)
+    const clientPatterns: { [key: string]: RegExp } = {
+      'PETROGAS': /PETROGAS/i,
+      'OMAN OIL': /OMAN\s+OIL/i,
+      'TETHYS': /TETHYS/i,
+      'K.S.C': /K\.?S\.?C/i,
+      'MEDCO': /MEDCO/i,
+      'CCED': /CCED/i,
+      'PDO': /\bPDO\b/i,
+      'OXY': /\bOXY\b/i,
+      'OQ': /\bOQ\b/i,
+      'BP': /\bBP\b/i,
+    };
+    
+    // Try to match client patterns
+    for (const [clientName, pattern] of Object.entries(clientPatterns)) {
+      if (pattern.test(comment)) {
+        extractedClient = clientName;
+        break;
+      }
     }
   }
   
-  return { client: null, status: 'Active' };
+  // Determine status: Active if client found, otherwise Active by default
+  const status = extractedClient ? 'Active' : 'Active';
+  
+  return { client: extractedClient, status };
 }
 
 /**
@@ -1080,7 +1102,7 @@ export function mapExcelToDbFields(data: any, type: string): any {
         value = value !== null && value !== undefined && String(value).trim() !== '' ? parseInt(String(value).trim()) : null;
       } else if (dbField === 'rig') {
         value = value !== null && value !== undefined ? String(value).trim() : '';
-      } else if (dbField === 'npt_type' || dbField === 'comment' || dbField === 'month') {
+      } else if (dbField === 'npt_type' || dbField === 'comment' || dbField === 'month' || dbField === 'client' || dbField === 'status') {
         value = value !== null && value !== undefined ? String(value).trim() : null;
       }
     } else if (type === 'billing_npt') {
@@ -1176,10 +1198,28 @@ export function mapExcelToDbFields(data: any, type: string): any {
   }
   
   // Extract client and status from comment for utilization data
-  if (type === 'utilization' && mapped.comment) {
-    const { client, status } = extractClientAndStatus(mapped.comment);
-    if (client && !mapped.client) mapped.client = client;
-    if (status && !mapped.status) mapped.status = status;
+  if (type === 'utilization') {
+    // Extract from comment if available
+    if (mapped.comment) {
+      const { client, status } = extractClientAndStatus(mapped.comment);
+      if (client && !mapped.client) mapped.client = client;
+      if (status && !mapped.status) mapped.status = status;
+    }
+    
+    // Ensure status has a fallback value based on utilization_rate
+    if (!mapped.status || mapped.status === null || mapped.status === '') {
+      const utilRate = mapped.utilization_rate;
+      if (utilRate === null || utilRate === 0) {
+        mapped.status = 'Inactive';
+      } else {
+        mapped.status = 'Active';
+      }
+    }
+    
+    // Ensure status is never null
+    if (!mapped.status) {
+      mapped.status = 'Active';
+    }
   }
   
   return mapped;
