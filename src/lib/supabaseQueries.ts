@@ -15,17 +15,36 @@ export async function insertData(table: string, data: any) {
 }
 
 /**
- * Generic bulk insert function for any table
+ * Generic bulk insert/upsert function for any table
  */
 export async function bulkInsertData(table: string, dataArray: any[]) {
   const chunkSize = 500;
   const results: any[] = [];
+
+  // Determine conflict target for upsert if the table has a known unique constraint
+  const conflictTargetMap: Record<string, string> = {
+    billing_npt_summary: 'year,month,rig',
+  };
+  const conflictTarget = conflictTargetMap[table];
+
   for (let i = 0; i < dataArray.length; i += chunkSize) {
     const chunk = dataArray.slice(i, i + chunkSize);
-    const { data, error } = await (supabase as any)
-      .from(table)
-      .insert(chunk)
-      .select();
+
+    let resp;
+    if (conflictTarget) {
+      // Use upsert to update existing rows instead of failing on duplicates
+      resp = await (supabase as any)
+        .from(table)
+        .upsert(chunk, { onConflict: conflictTarget })
+        .select();
+    } else {
+      resp = await (supabase as any)
+        .from(table)
+        .insert(chunk)
+        .select();
+    }
+
+    const { data, error } = resp;
     if (error) throw error;
     if (data) results.push(...data);
   }
