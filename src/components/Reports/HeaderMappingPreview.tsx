@@ -89,6 +89,20 @@ const reportTypeFields: { [key: string]: { field: string; required: boolean; lab
     { field: 'oper_closed', required: false, label: 'OPER Closed' },
     { field: 'compliance_rate', required: false, label: 'Compliance Rate' },
   ],
+  rig_moves: [
+    { field: 'rig', required: true, label: 'Rig' },
+    { field: 'move_date', required: true, label: 'Move Date' },
+    { field: 'distance_km', required: false, label: 'Distance (KM)' },
+    { field: 'budgeted_time_hours', required: false, label: 'Budgeted Time (hrs)' },
+    { field: 'actual_time_hours', required: false, label: 'Actual Time (hrs)' },
+    { field: 'budgeted_cost', required: false, label: 'Budgeted Cost ($)' },
+    { field: 'actual_cost', required: false, label: 'Actual Cost ($)' },
+    { field: 'variance_cost', required: false, label: 'Variance Cost ($)' },
+    { field: 'profit_loss', required: false, label: 'Profit/Loss ($)' },
+    { field: 'from_location', required: false, label: 'From Location' },
+    { field: 'to_location', required: false, label: 'To Location' },
+    { field: 'remarks', required: false, label: 'Remarks' },
+  ],
 };
 
 const STORAGE_KEY_PREFIX = 'header_mapping_';

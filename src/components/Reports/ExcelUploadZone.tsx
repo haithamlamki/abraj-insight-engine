@@ -185,6 +185,10 @@ export const ExcelUploadZone = ({
           mappedData = mappedDataRaw.filter((row: any) => 
             row && row.rig_number && row.month && (row.year !== null && row.year !== undefined && row.year !== '')
           );
+        } else if (reportType === 'rig_moves') {
+          mappedData = mappedDataRaw.filter((row: any) => 
+            row && row.rig && row.move_date
+          );
         } else {
           mappedData = mappedDataRaw.filter((row: any) => 
             row && row.rig && row.month && (row.year !== null && row.year !== undefined && row.year !== '')

@@ -1011,18 +1011,15 @@ function getByNormalized(row: any, normalizedKey: string): any {
  * Map Excel column names to database field names
  */
 export function mapExcelToDbFields(data: any, type: string, customMapping?: { [dbField: string]: string }): any {
-  // If custom mapping is provided, use it directly
+  // Build initial mapped object either from custom mapping or defaults
+  let mapped: any = {};
   if (customMapping && Object.keys(customMapping).length > 0) {
-    const mapped: any = {};
     Object.entries(customMapping).forEach(([dbField, excelHeader]) => {
       if (data[excelHeader] !== undefined) {
         mapped[dbField] = data[excelHeader];
       }
     });
-    return mapped;
-  }
-
-  // Otherwise use default mapping logic
+  } else {
   const mappings: { [key: string]: { [key: string]: string } } = {
     revenue: {
       'Rig': 'rig',
@@ -1126,16 +1123,27 @@ export function mapExcelToDbFields(data: any, type: string, customMapping?: { [d
     rig_moves: {
       'Rig': 'rig',
       'Move Date': 'move_date',
+      'Date': 'move_date',
       'From Location': 'from_location',
       'To Location': 'to_location',
       'Distance (km)': 'distance_km',
+      'Rig Move Distance (KM)': 'distance_km',
       'Budgeted Time (hrs)': 'budgeted_time_hours',
+      'Budgeted rig move time, Hrs': 'budgeted_time_hours',
       'Actual Time (hrs)': 'actual_time_hours',
+      'Actual Rig move time/Hrs': 'actual_time_hours',
       'Budgeted Cost': 'budgeted_cost',
+      'Rig move budgeted cost $': 'budgeted_cost',
       'Actual Cost': 'actual_cost',
+      'Rig move Total  cost US$': 'actual_cost',
+      'Rig move Total cost US$': 'actual_cost',
       'Variance Cost': 'variance_cost',
+      'Varinace': 'variance_cost',
       'Profit/Loss': 'profit_loss',
+      'Actual Profit/loss': 'profit_loss',
+      "Comment's": 'remarks',
       'Remarks': 'remarks',
+      'Rig Mover Company': 'remarks',
     },
     utilization: {
       'Year': 'year',
