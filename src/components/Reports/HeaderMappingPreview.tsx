@@ -45,6 +45,7 @@ const reportTypeFields: { [key: string]: { field: string; required: boolean; lab
     { field: 'rig_number', required: true, label: 'Rig Number' },
     { field: 'month', required: true, label: 'Month' },
     { field: 'year', required: true, label: 'Year' },
+    { field: 'date', required: true, label: 'Day' },
     { field: 'npt_type', required: false, label: 'NPT Type' },
     { field: 'system', required: false, label: 'System' },
     { field: 'root_cause', required: false, label: 'Root Cause' },

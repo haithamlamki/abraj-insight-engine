@@ -682,15 +682,16 @@ export function validateNPTRootCauseData(data: any[]): ValidationError[] {
       });
     }
     
-    // Date is optional for NPT Root Cause - it will be composed from Year/Month/Day during mapping
-    // Only warn if missing
+    // If Date missing, we will default to 1 (day of month) during mapping to satisfy NOT NULL constraint
     if (!date && date !== 0) {
       errors.push({
         row: index + 2,
         column: 'Date',
-        message: 'Date will be composed from Year and Month',
+        message: 'Date missing – will default to day 1',
         value: date,
         severity: 'info',
+        autoFixable: true,
+        suggestedFix: 'Set Date to 1'
       });
     }
     
@@ -1401,6 +1402,13 @@ export function mapExcelToDbFields(data: any, type: string, customMapping?: { [d
     }
   }
   
+  // Ensure required fields for npt_root_cause
+  if (type === 'npt_root_cause') {
+    // Default missing day to 1 to satisfy NOT NULL integer requirement
+    if (mapped.date === null || mapped.date === undefined || mapped.date === '') {
+      mapped.date = 1;
+    }
+  }
   // Extract client and status from comment for utilization data
   if (type === 'utilization') {
     // Extract from comment if available
