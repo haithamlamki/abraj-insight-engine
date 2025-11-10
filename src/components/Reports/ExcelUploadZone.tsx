@@ -147,6 +147,10 @@ export const ExcelUploadZone = ({
           mappedData = mappedDataRaw.filter((row: any) => 
             row && row.rig && row.date && row.total_cost !== null
           );
+        } else if (reportType === 'npt_root_cause') {
+          mappedData = mappedDataRaw.filter((row: any) => 
+            row && row.rig_number && row.month && (row.year !== null && row.year !== undefined && row.year !== '')
+          );
         } else {
           mappedData = mappedDataRaw.filter((row: any) => 
             row && row.rig && row.month && (row.year !== null && row.year !== undefined && row.year !== '')
@@ -178,8 +182,10 @@ export const ExcelUploadZone = ({
       }
     } catch (error) {
       setUploadStatus("error");
-      setErrorMessage('Failed to parse Excel file. Please ensure it matches the template format.');
-      toast.error("Failed to parse the Excel file");
+      console.error('Excel parse error:', error);
+      const msg = (error as any)?.message ? String((error as any).message) : String(error);
+      setErrorMessage(`Failed to parse Excel file: ${msg}`);
+      toast.error(`Failed to parse the Excel file: ${msg}`);
     } finally {
       setUploading(false);
     }
