@@ -300,17 +300,72 @@ export function validateUtilizationData(data: any[]): ValidationError[] {
 }
 
 /**
- * Check if a row is completely blank
+ * Check if a row is completely blank or has only insignificant data
  */
 export function isBlankRow(row: any): boolean {
   if (!row || typeof row !== 'object') return true;
   
   const values = Object.values(row);
-  return values.every(val => 
-    val === null || 
-    val === undefined || 
-    String(val).trim() === ''
-  );
+  // A row is blank if all values are null, undefined, empty string, or whitespace
+  const hasAnyContent = values.some(val => {
+    if (val === null || val === undefined) return false;
+    const str = String(val).trim();
+    // Ignore common Excel artifacts like single quotes, spaces, etc.
+    return str !== '' && str !== "'" && str !== '""' && str !== 'null' && str !== 'undefined';
+  });
+  
+  return !hasAnyContent;
+}
+
+/**
+ * Check if a row has the minimum required fields for a given type
+ */
+export function hasRequiredFields(row: any, type: string): boolean {
+  if (isBlankRow(row)) return false;
+  
+  // Define required fields per type
+  const requiredFieldsByType: { [key: string]: string[][] } = {
+    billing_npt_summary: [
+      ['Rig', 'rig', 'Rig Number', 'Rig No', 'Rig No.'],
+      ['Year', 'year'],
+      ['Month', 'month', 'Mont', 'Mounth', 'Months']
+    ],
+    utilization: [
+      ['Rig', 'rig'],
+      ['Year', 'year'],
+      ['month']
+    ],
+    revenue: [
+      ['Rig', 'rig'],
+      ['Year', 'year'],
+      ['Month', 'month', 'Months']
+    ],
+    ytd: [
+      ['Rig', 'rig'],
+      ['Year', 'year'],
+      ['Month', 'month', 'Months']
+    ],
+    work_orders: [
+      ['Rig', 'rig'],
+      ['Year', 'year'],
+      ['Month', 'month']
+    ],
+    billing_npt: [
+      ['Rig', 'rig', 'Rig Number', 'Rig Numb'],
+      ['Year', 'year']
+    ],
+  };
+  
+  const requiredFields = requiredFieldsByType[type];
+  if (!requiredFields) return true; // If no required fields defined, allow the row
+  
+  // Check if row has at least one variant of each required field group
+  return requiredFields.every(fieldGroup => {
+    return fieldGroup.some(fieldName => {
+      const value = row[fieldName];
+      return value !== null && value !== undefined && String(value).trim() !== '';
+    });
+  });
 }
 
 /**
