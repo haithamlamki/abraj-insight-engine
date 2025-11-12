@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { parseExcelFile, mapExcelToDbFields, validateBillingNptData, validateBillingNPTSummaryData, validateNPTRootCauseData, validateRevenueData, validateWorkOrdersData, ValidationError } from "@/lib/excelParser";
 import { downloadTemplate } from "@/lib/excelTemplates";
+import { validateRecords, getValidationSchema } from '@/lib/validationSchemas';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useBulkSaveReportData } from "@/hooks/useReportData";
 import { Switch } from "@/components/ui/switch";
@@ -196,7 +197,30 @@ export const ExcelUploadZone = ({
         }
         
         console.log(`[ExcelUploadZone] Rows found: ${rawParsedData.length}, Rows valid: ${mappedData.length}`);
-        setParsedData(mappedData);
+        
+        // Validate data using Zod schema if available
+        const schema = getValidationSchema(reportType);
+        let finalValidData = mappedData;
+        let schemaValidationErrors: { record: any; errors: string[]; index: number }[] = [];
+        
+        if (schema) {
+          const { valid, invalid } = validateRecords(mappedData, schema);
+          finalValidData = valid;
+          schemaValidationErrors = invalid;
+          
+          if (invalid.length > 0) {
+            console.warn(`[ExcelUploadZone] Schema validation: ${invalid.length} invalid records`, invalid);
+            const errorSummary = invalid.slice(0, 3).map(err => 
+              `Row ${err.index}: ${err.errors.join(', ')}`
+            ).join('\n');
+            toast.warning(
+              `${invalid.length} سجل لم يجتاز التحقق وسيتم تجاهله. أول الأخطاء:\n${errorSummary}`,
+              { duration: 6000 }
+            );
+          }
+        }
+        
+        setParsedData(finalValidData);
 
         // Track auto-corrections
         if (autoCorrect && (warnings.length > 0 || infos.length > 0)) {
@@ -210,13 +234,16 @@ export const ExcelUploadZone = ({
         }
 
         if (onDataParsed) {
-          onDataParsed(mappedData);
+          onDataParsed(finalValidData);
         }
 
         const correctionMsg = autoCorrect && infos.length > 0 
           ? ` (${infos.length} auto-corrections applied)` 
           : '';
-        toast.success(`Parsed ${mappedData.length} valid records from ${rawParsedData.length} rows${correctionMsg}`);
+        const validationMsg = schemaValidationErrors.length > 0 
+          ? ` (${schemaValidationErrors.length} records excluded)` 
+          : '';
+        toast.success(`تم معالجة ${finalValidData.length} سجل صحيح من ${rawParsedData.length} صف${correctionMsg}${validationMsg}`);
       }
     } catch (error) {
       setUploadStatus("error");
