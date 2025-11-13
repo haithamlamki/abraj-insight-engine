@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Download, FileSpreadsheet, Loader2 } from "lucide-react";
+import { ArrowUpDown, Download, FileSpreadsheet, Loader2, RotateCcw } from "lucide-react";
 import { useInfiniteReportData } from "@/hooks/useInfiniteReportData";
 import { DateRangeFilter } from "./DateRangeFilter";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -13,6 +13,7 @@ interface Column {
   key: string;
   label: string;
   sortable?: boolean;
+  defaultWidth?: number;
 }
 
 interface DataTableWithDBProps {
@@ -33,6 +34,20 @@ export const DataTableWithDB = ({
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  
+  // Column resizing state
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
+    const stored = localStorage.getItem(`table-column-widths-${reportType}`);
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch {
+        return {};
+      }
+    }
+    return {};
+  });
+  const [resizing, setResizing] = useState<{ key: string; startX: number; startWidth: number } | null>(null);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -85,6 +100,48 @@ export const DataTableWithDB = ({
       setSortColumn(columnKey);
       setSortDirection("asc");
     }
+  };
+
+  // Column resizing handlers
+  const handleResizeStart = (e: React.MouseEvent, columnKey: string) => {
+    e.preventDefault();
+    const currentWidth = columnWidths[columnKey] || columns.find(c => c.key === columnKey)?.defaultWidth || 150;
+    setResizing({ key: columnKey, startX: e.clientX, startWidth: currentWidth });
+  };
+
+  useEffect(() => {
+    if (!resizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const diff = e.clientX - resizing.startX;
+      const newWidth = Math.max(80, resizing.startWidth + diff);
+      setColumnWidths(prev => {
+        const updated = { ...prev, [resizing.key]: newWidth };
+        localStorage.setItem(`table-column-widths-${reportType}`, JSON.stringify(updated));
+        return updated;
+      });
+    };
+
+    const handleMouseUp = () => {
+      setResizing(null);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [resizing, reportType]);
+
+  const resetColumnWidths = () => {
+    setColumnWidths({});
+    localStorage.removeItem(`table-column-widths-${reportType}`);
+  };
+
+  const getColumnWidth = (column: Column) => {
+    return columnWidths[column.key] || column.defaultWidth || 150;
   };
 
   const filteredAndSortedData = useMemo(() => {
@@ -189,6 +246,10 @@ export const DataTableWithDB = ({
               </CardDescription>
             </div>
             <div className="flex flex-wrap gap-2">
+              <Button onClick={resetColumnWidths} variant="outline" size="sm" title="Reset column widths">
+                <RotateCcw className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Reset Columns</span>
+              </Button>
               <Button onClick={handleExportCSV} variant="outline" size="sm" disabled={isLoading || !filteredAndSortedData.length}>
                 <Download className="h-4 w-4 mr-2" />
                 <span className="hidden sm:inline">CSV</span>
@@ -226,25 +287,36 @@ export const DataTableWithDB = ({
             </div>
           ) : (
             <ScrollArea className="h-[600px] rounded-md border" ref={scrollRef}>
-              <table className="w-full min-w-[600px]">
+              <table className="w-full min-w-[600px]" style={{ tableLayout: 'fixed' }}>
                 <thead className="sticky top-0 bg-background z-10">
                   <tr className="border-b bg-muted/50">
                     {columns.map((column) => (
                       <th
                         key={column.key}
-                        className="p-3 text-left font-medium text-sm"
+                        className="p-3 text-left font-medium text-sm relative group"
+                        style={{ width: `${getColumnWidth(column)}px` }}
                       >
-                        {column.sortable ? (
-                          <button
-                            onClick={() => handleSort(column.key)}
-                            className="flex items-center gap-2 hover:text-foreground transition-colors"
-                          >
-                            {column.label}
-                            <ArrowUpDown className="h-4 w-4" />
-                          </button>
-                        ) : (
-                          column.label
-                        )}
+                        <div className="flex items-center justify-between">
+                          {column.sortable ? (
+                            <button
+                              onClick={() => handleSort(column.key)}
+                              className="flex items-center gap-2 hover:text-foreground transition-colors"
+                            >
+                              {column.label}
+                              <ArrowUpDown className="h-4 w-4" />
+                            </button>
+                          ) : (
+                            <span>{column.label}</span>
+                          )}
+                        </div>
+                        <div
+                          className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary opacity-0 group-hover:opacity-100 transition-opacity"
+                          onMouseDown={(e) => handleResizeStart(e, column.key)}
+                          style={{
+                            backgroundColor: resizing?.key === column.key ? 'hsl(var(--primary))' : undefined,
+                            opacity: resizing?.key === column.key ? 1 : undefined,
+                          }}
+                        />
                       </th>
                     ))}
                   </tr>
@@ -253,8 +325,14 @@ export const DataTableWithDB = ({
                   {filteredAndSortedData.map((row, index) => (
                     <tr key={row.id || index} className="border-b hover:bg-muted/50 transition-colors">
                       {columns.map((column) => (
-                        <td key={column.key} className="p-3 text-sm">
-                          {row[column.key]}
+                        <td 
+                          key={column.key} 
+                          className="p-3 text-sm overflow-hidden text-ellipsis"
+                          style={{ width: `${getColumnWidth(column)}px` }}
+                        >
+                          <div className="overflow-hidden text-ellipsis whitespace-nowrap" title={String(row[column.key] || '')}>
+                            {row[column.key]}
+                          </div>
                         </td>
                       ))}
                     </tr>
