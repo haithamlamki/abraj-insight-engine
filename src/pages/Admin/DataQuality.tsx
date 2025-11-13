@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -12,7 +13,7 @@ import {
 import { 
   TrendingUp, TrendingDown, FileCheck, AlertCircle, 
   CheckCircle2, XCircle, FileSpreadsheet, Clipboard,
-  Activity, BarChart3
+  Activity, BarChart3, Database
 } from "lucide-react";
 import {
   useImportStatistics,
@@ -97,14 +98,24 @@ export default function DataQuality() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 p-6">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Data Quality Dashboard</h1>
-            <p className="text-muted-foreground mt-1">
-              Monitor import statistics, validation errors, and data quality trends
+            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+              <BarChart3 className="h-8 w-8" />
+              Data Quality Dashboard
+            </h1>
+            <p className="text-muted-foreground">
+              Monitor data import quality and identify common validation issues
             </p>
           </div>
+          <Button asChild>
+            <a href="/admin/bulk-editor">
+              <Database className="mr-2 h-4 w-4" />
+              Bulk Data Editor
+            </a>
+          </Button>
+        </div>
           <div className="flex gap-2">
             <Select value={timeRange.toString()} onValueChange={(v) => setTimeRange(parseInt(v))}>
               <SelectTrigger className="w-[140px]">

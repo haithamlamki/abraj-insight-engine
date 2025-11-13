@@ -24,6 +24,7 @@ import {
   Wallet,
   FileText,
   LayoutDashboard,
+  Database,
 } from "lucide-react";
 import {
   Sidebar,
@@ -118,6 +119,7 @@ const adminMenuItems = [
       { title: "Budget Analytics", url: "/admin/analytics", icon: BarChart3 },
       { title: "Audit Trail", url: "/admin/audit-trail", icon: FileText },
       { title: "Data Quality", url: "/admin/data-quality", icon: BarChart3 },
+      { title: "Bulk Data Editor", url: "/admin/bulk-editor", icon: Database },
     ],
   },
 ];
