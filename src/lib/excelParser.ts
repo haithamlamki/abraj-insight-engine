@@ -226,6 +226,59 @@ export function extractClientAndStatus(comment: string): { client: string | null
 }
 
 /**
+ * Check if a row should be skipped (all required fields are empty)
+ * @param row - Mapped data row
+ * @param reportType - Report type identifier
+ * @returns true if row should be skipped, false otherwise
+ */
+export function shouldSkipEmptyRow(row: any, reportType: string): boolean {
+  if (!row) return true;
+  
+  // Define required fields for each report type
+  const requiredFieldsByType: { [key: string]: string[] } = {
+    npt_root_cause: ['rig_number', 'year', 'month', 'date', 'hrs', 'npt_type', 'system'],
+    billing_npt: ['rig', 'date', 'year', 'month'],
+    billing_npt_summary: ['rig', 'year', 'month'],
+    revenue: ['rig', 'year', 'month'],
+    utilization: ['rig', 'year', 'month'],
+    fuel: ['rig', 'year', 'month', 'fuel_cost'],
+    rig_moves: ['rig', 'move_date'],
+    work_orders: ['rig', 'work_order_number'],
+    stock: ['item_name', 'rig'],
+    well_tracker: ['well_name', 'rig'],
+    customer_satisfaction: ['rig', 'year', 'month'],
+  };
+  
+  const requiredFields = requiredFieldsByType[reportType];
+  if (!requiredFields) return false; // Unknown report type, don't skip
+  
+  // Check if ALL required fields are empty/null/undefined
+  const allFieldsEmpty = requiredFields.every(field => {
+    const value = row[field];
+    return value === null || value === undefined || value === '' || 
+           (typeof value === 'string' && value.trim() === '');
+  });
+  
+  return allFieldsEmpty;
+}
+
+/**
+ * Filter out empty template rows from data array
+ * @param data - Array of mapped data rows
+ * @param reportType - Report type identifier
+ * @returns Filtered data and count of skipped rows
+ */
+export function filterEmptyRows(data: any[], reportType: string): { 
+  filteredData: any[]; 
+  skippedCount: number; 
+} {
+  const filteredData = data.filter(row => !shouldSkipEmptyRow(row, reportType));
+  const skippedCount = data.length - filteredData.length;
+  
+  return { filteredData, skippedCount };
+}
+
+/**
  * Validate utilization data with enhanced checks
  */
 export function validateUtilizationData(data: any[]): ValidationError[] {

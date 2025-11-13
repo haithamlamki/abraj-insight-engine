@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, FileSpreadsheet, Download, CheckCircle2, AlertCircle, Info, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { parseExcelFile, mapExcelToDbFields, validateBillingNptData, validateBillingNPTSummaryData, validateNPTRootCauseData, validateRevenueData, validateWorkOrdersData, ValidationError } from "@/lib/excelParser";
+import { parseExcelFile, mapExcelToDbFields, validateBillingNptData, validateBillingNPTSummaryData, validateNPTRootCauseData, validateRevenueData, validateWorkOrdersData, ValidationError, filterEmptyRows } from "@/lib/excelParser";
 import { downloadTemplate } from "@/lib/excelTemplates";
 import { validateRecords, getValidationSchema } from '@/lib/validationSchemas';
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -176,32 +176,16 @@ export const ExcelUploadZone = ({
           console.log('[ExcelUploadZone] Custom mapping:', customMapping);
         }
         
-        // No reporting date for fuel in the new schema
-        // Filter out rows missing required fields
-        let mappedData;
-        if (reportType === 'billing_npt') {
-          mappedData = mappedDataRaw.filter((row: any) => 
-            row && row.rig && row.date !== null && row.date !== undefined
-          );
-        } else if (reportType === 'fuel') {
-          mappedData = mappedDataRaw.filter((row: any) => 
-            row && row.rig && row.year && row.month && (row.fuel_cost !== null && row.fuel_cost !== undefined)
-          );
-        } else if (reportType === 'npt_root_cause') {
-          mappedData = mappedDataRaw.filter((row: any) => 
-            row && row.rig_number && row.month && (row.year !== null && row.year !== undefined && row.year !== '')
-          );
-        } else if (reportType === 'rig_moves') {
-          mappedData = mappedDataRaw.filter((row: any) => 
-            row && row.rig && row.move_date
-          );
-        } else {
-          mappedData = mappedDataRaw.filter((row: any) => 
-            row && row.rig && row.month && (row.year !== null && row.year !== undefined && row.year !== '')
-          );
+        // Automatically filter out empty template rows
+        const { filteredData: mappedData, skippedCount } = filterEmptyRows(mappedDataRaw, reportType);
+        
+        // Notify user about skipped rows
+        if (skippedCount > 0) {
+          console.log(`[ExcelUploadZone] Automatically skipped ${skippedCount} empty template rows`);
+          toast.info(`Skipped ${skippedCount} empty template row${skippedCount > 1 ? 's' : ''}`);
         }
         
-        console.log(`[ExcelUploadZone] Rows found: ${rawParsedData.length}, Rows valid: ${mappedData.length}`);
+        console.log(`[ExcelUploadZone] Rows found: ${rawParsedData.length}, Rows valid: ${mappedData.length}, Rows skipped: ${skippedCount}`);
         
         // Validate data using Zod schema if available
         const schema = getValidationSchema(reportType);

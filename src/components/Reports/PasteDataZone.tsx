@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Clipboard, CheckCircle2, AlertCircle, Info } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { mapExcelToDbFields } from "@/lib/excelParser";
+import { mapExcelToDbFields, ValidationError, exportValidationErrorsToExcel, filterEmptyRows } from "@/lib/excelParser";
 import { validateRecords, getValidationSchema } from '@/lib/validationSchemas';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useBulkSaveReportData } from "@/hooks/useReportData";
@@ -141,9 +141,18 @@ export const PasteDataZone = ({
     
     try {
       // Map each row using the confirmed header mapping
-      const mappedData = rawParsedData.map(row => 
+      const mappedDataRaw = rawParsedData.map(row => 
         mapExcelToDbFields(row, reportType, headerMapping)
       );
+      
+      // Automatically filter out empty template rows
+      const { filteredData: mappedData, skippedCount } = filterEmptyRows(mappedDataRaw, reportType);
+      
+      // Notify user about skipped rows
+      if (skippedCount > 0) {
+        console.log(`[PasteDataZone] Automatically skipped ${skippedCount} empty template rows`);
+        toast.info(`Skipped ${skippedCount} empty template row${skippedCount > 1 ? 's' : ''}`);
+      }
       
       if (mappedData.length === 0) {
         throw new Error('No valid data after mapping headers');
