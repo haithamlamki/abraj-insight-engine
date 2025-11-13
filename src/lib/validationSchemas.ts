@@ -96,6 +96,63 @@ export const billingNPTSchema = z.object({
 });
 
 /**
+ * Validation schema for Stock Levels data
+ */
+export const stockLevelsSchema = z.object({
+  rig: z.string().min(1, "اسم الحفارة مطلوب"),
+  item_name: z.string().min(1, "اسم الصنف مطلوب"),
+  category: z.string().optional().nullable(),
+  unit: z.string().optional().nullable(),
+  current_qty: z.number().int().min(0, "الكمية الحالية يجب أن تكون رقم موجب").optional().nullable(),
+  target_qty: z.number().int().min(0, "الكمية المستهدفة يجب أن تكون رقم موجب").optional().nullable(),
+  status: z.string().optional().nullable(),
+  last_reorder_date: z.string().optional().nullable().or(z.date()),
+});
+
+/**
+ * Validation schema for Well Tracker data
+ */
+export const wellTrackerSchema = z.object({
+  rig: z.string().min(1, "اسم الحفارة مطلوب"),
+  well_name: z.string().min(1, "اسم البئر مطلوب"),
+  start_date: z.string().min(1, "تاريخ البداية مطلوب").or(z.date()),
+  end_date: z.string().optional().nullable().or(z.date()),
+  target_depth: z.number().min(0, "العمق المستهدف يجب أن يكون رقم موجب").optional().nullable(),
+  actual_depth: z.number().min(0, "العمق الفعلي يجب أن يكون رقم موجب").optional().nullable(),
+  status: z.string().optional().nullable(),
+  operator: z.string().optional().nullable(),
+  location: z.string().optional().nullable(),
+});
+
+/**
+ * Validation schema for Work Orders data
+ */
+export const workOrdersSchema = z.object({
+  rig: z.string().min(1, "اسم الحفارة مطلوب"),
+  year: z.number().int().min(2000).max(2100, "السنة غير صحيحة"),
+  month: z.string().min(1, "الشهر مطلوب"),
+  elec_open: z.number().int().min(0, "عدد الأوامر المفتوحة يجب أن يكون رقم موجب").optional().nullable(),
+  elec_closed: z.number().int().min(0, "عدد الأوامر المغلقة يجب أن يكون رقم موجب").optional().nullable(),
+  mech_open: z.number().int().min(0, "عدد الأوامر المفتوحة يجب أن يكون رقم موجب").optional().nullable(),
+  mech_closed: z.number().int().min(0, "عدد الأوامر المغلقة يجب أن يكون رقم موجب").optional().nullable(),
+  oper_open: z.number().int().min(0, "عدد الأوامر المفتوحة يجب أن يكون رقم موجب").optional().nullable(),
+  oper_closed: z.number().int().min(0, "عدد الأوامر المغلقة يجب أن يكون رقم موجب").optional().nullable(),
+  compliance_rate: z.number().min(0).max(100, "نسبة الالتزام يجب أن تكون بين 0-100").optional().nullable(),
+});
+
+/**
+ * Validation schema for Customer Satisfaction data
+ */
+export const customerSatisfactionSchema = z.object({
+  rig: z.string().min(1, "اسم الحفارة مطلوب"),
+  year: z.number().int().min(2000).max(2100, "السنة غير صحيحة"),
+  month: z.string().min(1, "الشهر مطلوب"),
+  satisfaction_score: z.number().min(0).max(10, "درجة الرضا يجب أن تكون بين 0-10").optional().nullable(),
+  feedback: z.string().optional().nullable(),
+  client: z.string().optional().nullable(),
+});
+
+/**
  * Validate an array of records against a schema
  */
 export function validateRecords<T>(
@@ -128,6 +185,10 @@ export function getValidationSchema(reportType: string): z.ZodType<any> | null {
     revenue: revenueSchema,
     utilization: utilizationSchema,
     billing_npt: billingNPTSchema,
+    stock: stockLevelsSchema,
+    well_tracker: wellTrackerSchema,
+    work_orders: workOrdersSchema,
+    customer_satisfaction: customerSatisfactionSchema,
   };
 
   return schemas[reportType] || null;
