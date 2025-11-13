@@ -1061,6 +1061,148 @@ function getByNormalized(row: any, normalizedKey: string): any {
 }
 
 /**
+ * Apply type conversion to a single value based on field name and report type
+ */
+function applyTypeConversion(value: any, dbField: string, type: string): any {
+  // Parse numeric/typed fields based on type
+  if (type === 'revenue' || type === 'ytd') {
+    if ([
+      'dayrate_actual', 'dayrate_budget', 'working_days', 
+      'revenue_actual', 'revenue_budget', 'variance',
+      'fuel_charge', 'npt_repair', 'npt_zero'
+    ].includes(dbField)) {
+      return parseNumeric(value);
+    } else if (dbField === 'year') {
+      return value !== null && value !== undefined && String(value).trim() !== '' ? parseInt(String(value).trim()) : null;
+    } else if (dbField === 'rig') {
+      return value !== null && value !== undefined ? String(value).trim() : '';
+    } else if (['month', 'comments', 'client'].includes(dbField)) {
+      return value !== null && value !== undefined ? String(value).trim() : null;
+    }
+  } else if (type === 'utilization') {
+    if ([
+      'utilization_rate', 'allowable_npt', 'working_days', 'monthly_total_days'
+    ].includes(dbField)) {
+      return parseNumeric(value);
+    } else if (dbField === 'year') {
+      return value !== null && value !== undefined && String(value).trim() !== '' ? parseInt(String(value).trim()) : null;
+    } else if (dbField === 'rig') {
+      return value !== null && value !== undefined ? String(value).trim() : '';
+    } else if (['npt_type', 'comment', 'month', 'client', 'status'].includes(dbField)) {
+      return value !== null && value !== undefined ? String(value).trim() : null;
+    }
+  } else if (type === 'billing_npt') {
+    if (dbField === 'npt_hours') {
+      return parseNumeric(value);
+    } else if (dbField === 'year') {
+      return value !== null && value !== undefined && String(value).trim() !== '' ? parseInt(String(value).trim()) : null;
+    } else if (dbField === 'date') {
+      return null; // Will be composed from Y+M+D later
+    } else if (dbField === 'billable') {
+      const s = String(value || '').toLowerCase();
+      return s === 'yes' || s === 'y' || s === 'true' || s === '1' || s === 'billable';
+    } else if ([
+      'rig','month','npt_type','system','parent_equipment_failure','part_equipment_failure','contractual_process','department_responsibility','immediate_cause','root_cause','corrective_action','future_action','action_party','notification_number','failure_investigation_reports','comments','equipment_failure'
+    ].includes(dbField)) {
+      return value !== null && value !== undefined ? String(value).trim() : null;
+    }
+  } else if (type === 'npt_root_cause') {
+    // CRITICAL: Always convert rig_number to string explicitly
+    if (dbField === 'rig_number') {
+      return value !== null && value !== undefined && value !== '' ? String(value).trim() : null;
+    } else if (dbField === 'hrs') {
+      return parseNumeric(value);
+    } else if (dbField === 'year') {
+      return value !== null && value !== undefined && String(value).trim() !== '' ? parseInt(String(value).trim()) : null;
+    } else if (dbField === 'date') {
+      return value !== null && value !== undefined && String(value).trim() !== '' ? parseInt(String(value).trim()) : null;
+    } else if ([
+      'month', 'npt_type', 'system', 'parent_equipment_failure',
+      'part_equipment_failure', 'contractual_process', 'department_responsibility',
+      'immediate_cause_of_failure', 'root_cause', 'immediate_corrective_action',
+      'future_action_improvement', 'action_party', 'notification_number',
+      'failure_investigation_reports'
+    ].includes(dbField)) {
+      return value !== null && value !== undefined ? String(value).trim() : null;
+    }
+  } else if (type === 'fuel' || type === 'rig_moves' || type === 'well_tracker' || type === 'stock' || type === 'ytd') {
+    // Don't parse date fields directly - they will be composed from Y+M+D later
+    if (dbField === 'date' || dbField === 'move_date' || dbField === 'start_date' || dbField === 'end_date' || dbField === 'last_reorder_date') {
+      return null;
+    }
+  }
+  
+  // Return value as-is if no specific conversion applies
+  return value;
+}
+
+/**
+ * Apply post-mapping transformations like date composition and month conversion
+ */
+function applyPostMappingTransformations(mapped: any, type: string, originalData: any): any {
+  // Universal date composition for ALL types with Year+Month+Date columns
+  const dateCompositionTypes = ['billing_npt', 'fuel', 'rig_moves', 'well_tracker', 'stock', 'ytd'];
+  if (dateCompositionTypes.includes(type)) {
+    const yearVal = mapped.year ?? (originalData['Year'] ?? originalData['year']);
+    const monthVal = originalData['Month'] ?? originalData['month'] ?? originalData['Mont'];
+    const dayVal = originalData['Date'] ?? originalData['date'] ?? originalData['Day'];
+    
+    const composed = composeDateFromYMD(yearVal, monthVal, dayVal);
+    if (composed.date) {
+      mapped.date = composed.date;
+      // Extract year and month from the composed date if not already set
+      if (!mapped.year && composed.date) {
+        mapped.year = parseInt(composed.date.substring(0, 4));
+      }
+      if (!mapped.month && composed.date) {
+        mapped.month = composed.date.substring(5, 7);
+      }
+    }
+  }
+  
+  // Convert month name to number if needed (for specific types)
+  const typesWithMonthField = ['revenue', 'work_orders', 'customer_satisfaction', 'utilization', 'ytd', 'billing_npt_summary', 'npt_root_cause'];
+  if (typesWithMonthField.includes(type) && mapped.month) {
+    const monthResult = convertMonthToNumber(mapped.month);
+    if (monthResult.month) {
+      mapped.month = String(monthResult.month);
+    }
+  }
+  
+  // Ensure required fields for npt_root_cause
+  if (type === 'npt_root_cause') {
+    // Default missing day to 1 to satisfy NOT NULL integer requirement
+    if (mapped.date === null || mapped.date === undefined || mapped.date === '') {
+      mapped.date = 1;
+    }
+  }
+  
+  // Extract client and status from comment for utilization data
+  if (type === 'utilization') {
+    if (mapped.comment) {
+      const extracted = extractClientAndStatus(mapped.comment);
+      if (!mapped.client && extracted.client) {
+        mapped.client = extracted.client;
+      }
+      if (extracted.status) {
+        mapped.status = extracted.status;
+      }
+    }
+  }
+  
+  // Revenue-specific: prefer 'Total Rev' for revenue_actual if both exist
+  if (type === 'revenue') {
+    if (originalData['Total Rev'] !== null && originalData['Total Rev'] !== undefined && originalData['Total Rev'] !== '') {
+      mapped.revenue_actual = parseNumeric(originalData['Total Rev']);
+    } else if (originalData['Actual'] !== null && originalData['Actual'] !== undefined && originalData['Actual'] !== '' && !mapped.revenue_actual) {
+      mapped.revenue_actual = parseNumeric(originalData['Actual']);
+    }
+  }
+  
+  return mapped;
+}
+
+/**
  * Map Excel column names to database field names
  */
 export function mapExcelToDbFields(data: any, type: string, customMapping?: { [dbField: string]: string }): any {
@@ -1300,15 +1442,22 @@ export function mapExcelToDbFields(data: any, type: string, customMapping?: { [d
     },
   };
   
-  // If custom mapping is provided, use it directly
+  // If custom mapping is provided, map the fields but still apply type conversion
   if (customMapping && Object.keys(customMapping).length > 0) {
     const mapped: any = {};
     Object.entries(customMapping).forEach(([dbField, excelHeader]) => {
       if (data[excelHeader] !== undefined) {
-        mapped[dbField] = data[excelHeader];
+        let value = data[excelHeader];
+        
+        // Apply type conversion based on field name and type
+        value = applyTypeConversion(value, dbField, type);
+        
+        mapped[dbField] = value;
       }
     });
-    return mapped;
+    
+    // Apply post-mapping transformations
+    return applyPostMappingTransformations(mapped, type, data);
   }
 
   // Use default mapping logic
@@ -1327,101 +1476,9 @@ export function mapExcelToDbFields(data: any, type: string, customMapping?: { [d
     if (!dbField) return;
 
     let value = data[key];
-
-    // Parse numeric/typed fields based on type
-    if (type === 'revenue' || type === 'ytd') {
-      // Parse numeric fields for revenue
-      if ([
-        'dayrate_actual', 'dayrate_budget', 'working_days', 
-        'revenue_actual', 'revenue_budget', 'variance',
-        'fuel_charge', 'npt_repair', 'npt_zero'
-      ].includes(dbField)) {
-        value = parseNumeric(value);
-      } else if (dbField === 'year') {
-        value = value !== null && value !== undefined && String(value).trim() !== '' ? parseInt(String(value).trim()) : null;
-      } else if (dbField === 'rig') {
-        value = value !== null && value !== undefined ? String(value).trim() : '';
-      } else if (['month', 'comments', 'client'].includes(dbField)) {
-        value = value !== null && value !== undefined ? String(value).trim() : null;
-      }
-    } else if (type === 'utilization') {
-      if (
-        dbField === 'utilization_rate' ||
-        dbField === 'allowable_npt' ||
-        dbField === 'working_days' ||
-        dbField === 'monthly_total_days'
-      ) {
-        value = parseNumeric(value);
-      } else if (dbField === 'year') {
-        value = value !== null && value !== undefined && String(value).trim() !== '' ? parseInt(String(value).trim()) : null;
-      } else if (dbField === 'rig') {
-        value = value !== null && value !== undefined ? String(value).trim() : '';
-      } else if (dbField === 'npt_type' || dbField === 'comment' || dbField === 'month' || dbField === 'client' || dbField === 'status') {
-        value = value !== null && value !== undefined ? String(value).trim() : null;
-      }
-    } else if (type === 'billing_npt') {
-      if (dbField === 'npt_hours') {
-        value = parseNumeric(value);
-      } else if (dbField === 'year') {
-        value = value !== null && value !== undefined && String(value).trim() !== '' ? parseInt(String(value).trim()) : null;
-      } else if (dbField === 'date') {
-        // Don't parse Date field directly - it will be composed from Y+M+D later
-        value = null;
-      } else if (dbField === 'billable') {
-        const s = String(value || '').toLowerCase();
-        value = s === 'yes' || s === 'y' || s === 'true' || s === '1' || s === 'billable';
-      } else if ([
-        'rig','month','npt_type','system','parent_equipment_failure','part_equipment_failure','contractual_process','department_responsibility','immediate_cause','root_cause','corrective_action','future_action','action_party','notification_number','failure_investigation_reports','comments','equipment_failure'
-      ].includes(dbField)) {
-        value = value !== null && value !== undefined ? String(value).trim() : null;
-      }
-    } else if (type === 'fuel') {
-      if (dbField === 'total_cost' || dbField === 'fuel_consumed' || dbField === 'unit_price') {
-        value = parseNumeric(value);
-      } else if (dbField === 'date') {
-        value = parseDate(value);
-      } else if (dbField === 'rig') {
-        // Extract rig number from WBS Element format (e.g., "R.R201.01.04.02" -> "R201")
-        const wbsMatch = String(value || '').match(/R\.R(\d+)\./);
-        value = wbsMatch ? `ADC-${wbsMatch[1]}` : String(value || '').trim();
-      } else {
-        value = value !== null && value !== undefined ? String(value).trim() : null;
-      }
-    } else if (type === 'billing_npt_summary') {
-      if ([
-        'opr_rate', 'reduce_rate', 'repair_rate', 'zero_rate', 
-        'special_rate', 'rig_move', 'rig_move_reduce', 'a_maint', 'a_maint_zero', 'total', 'total_npt'
-      ].includes(dbField)) {
-        value = parseNumeric(value);
-      } else if (dbField === 'year') {
-        value = value !== null && value !== undefined && String(value).trim() !== '' ? parseInt(String(value).trim()) : null;
-      } else if (dbField === 'rig') {
-        value = value !== null && value !== undefined ? String(value).trim() : '';
-      } else if (dbField === 'month') {
-        value = value !== null && value !== undefined ? String(value).trim() : null;
-      }
-    } else if (type === 'npt_root_cause') {
-      if (dbField === 'hrs') {
-        value = parseNumeric(value);
-      } else if (dbField === 'year') {
-        value = value !== null && value !== undefined && String(value).trim() !== '' ? parseInt(String(value).trim()) : null;
-      } else if (dbField === 'date') {
-        value = value !== null && value !== undefined && String(value).trim() !== '' ? parseInt(String(value).trim()) : null;
-      } else if ([
-        'rig_number', 'month', 'npt_type', 'system', 'parent_equipment_failure',
-        'part_equipment_failure', 'contractual_process', 'department_responsibility',
-        'immediate_cause_of_failure', 'root_cause', 'immediate_corrective_action',
-        'future_action_improvement', 'action_party', 'notification_number',
-        'failure_investigation_reports'
-      ].includes(dbField)) {
-        value = value !== null && value !== undefined ? String(value).trim() : null;
-      }
-    } else if (type === 'fuel' || type === 'rig_moves' || type === 'well_tracker' || type === 'stock' || type === 'ytd') {
-      // Don't parse date fields directly - they will be composed from Y+M+D later
-      if (dbField === 'date' || dbField === 'move_date' || dbField === 'start_date' || dbField === 'end_date' || dbField === 'last_reorder_date') {
-        value = null;
-      }
-    }
+    
+    // Apply type conversion
+    value = applyTypeConversion(value, dbField, type);
 
     mapped[dbField] = value;
   });
