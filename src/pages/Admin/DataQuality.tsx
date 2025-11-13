@@ -21,6 +21,7 @@ import {
   useDataQualityKPIs,
 } from "@/hooks/useDataQualityStats";
 import { format } from "date-fns";
+import DataCleaningSuggestions from "@/components/Admin/DataCleaningSuggestions";
 
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
@@ -150,13 +151,19 @@ export default function DataQuality() {
           })}
         </div>
 
-        <Tabs defaultValue="trends" className="space-y-4">
+        <Tabs defaultValue="suggestions" className="space-y-4">
           <TabsList>
+            <TabsTrigger value="suggestions">AI Suggestions</TabsTrigger>
             <TabsTrigger value="trends">Trends</TabsTrigger>
             <TabsTrigger value="errors">Validation Errors</TabsTrigger>
             <TabsTrigger value="logs">Recent Imports</TabsTrigger>
             <TabsTrigger value="distribution">Distribution</TabsTrigger>
           </TabsList>
+
+          {/* AI Suggestions Tab */}
+          <TabsContent value="suggestions" className="space-y-4">
+            <DataCleaningSuggestions commonErrors={commonErrors || []} />
+          </TabsContent>
 
           {/* Trends Tab */}
           <TabsContent value="trends" className="space-y-4">
