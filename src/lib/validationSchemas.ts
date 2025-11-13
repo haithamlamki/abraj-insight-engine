@@ -156,6 +156,55 @@ export const billingNPTSchema = z.object({
 });
 
 /**
+ * Validation schema for NPT Root Cause data
+ */
+export const nptRootCauseSchema = z.object({
+  // Required fields (core data)
+  rig_number: z.string().min(1, "Rig Number is required"),
+  year: z.number().int().min(2000).max(2100, "Year must be between 2000-2100"),
+  month: z.string().min(1, "Month is required"),
+  date: z.number().int().min(1).max(31, "Date must be between 1-31"),
+  hrs: z.number().min(0, "Hours must be a positive number").max(24, "Hours per event should typically not exceed 24"),
+  npt_type: z.string().min(1, "NPT type is required"),
+  system: z.string().min(1, "System is required"),
+  
+  // Optional tracking fields (all nullable)
+  parent_equipment_failure: z.string().optional().nullable(),
+  part_equipment_failure: z.string().optional().nullable(),
+  contractual_process: z.string().optional().nullable(),
+  department_responsibility: z.string().optional().nullable(),
+  immediate_cause_of_failure: z.string().optional().nullable(),
+  root_cause: z.string().optional().nullable(),
+  immediate_corrective_action: z.string().optional().nullable(),
+  future_action_improvement: z.string().optional().nullable(),
+  action_party: z.string().optional().nullable(),
+  notification_number: z.string().optional().nullable(),
+  failure_investigation_reports: z.string().optional().nullable(),
+}).refine((data) => {
+  // Warning: High-hour events should have root cause analysis documented
+  if (data.hrs > 6 && (!data.root_cause || data.root_cause.trim() === '')) {
+    return false;
+  }
+  return true;
+}, {
+  message: "WARNING: Events over 6 hours should have Root Cause documented for proper analysis",
+  path: ["root_cause"],
+}).refine((data) => {
+  // Warning: Equipment failures should have N2 notification number
+  const hasEquipmentFailure = (data.parent_equipment_failure && data.parent_equipment_failure.trim() !== '') || 
+                              (data.part_equipment_failure && data.part_equipment_failure.trim() !== '');
+  const hasNotificationNumber = data.notification_number && data.notification_number.trim() !== '';
+  
+  if (hasEquipmentFailure && !hasNotificationNumber) {
+    return false;
+  }
+  return true;
+}, {
+  message: "WARNING: Equipment failures should have a Notification Number (N2) for tracking",
+  path: ["notification_number"],
+});
+
+/**
  * Validation schema for Stock Levels data
  */
 export const stockLevelsSchema = z.object({
@@ -272,6 +321,7 @@ export function getValidationSchema(reportType: string): z.ZodType<any> | null {
     revenue: revenueSchema,
     utilization: utilizationSchema,
     billing_npt: billingNPTSchema,
+    npt_root_cause: nptRootCauseSchema,
     stock: stockLevelsSchema,
     well_tracker: wellTrackerSchema,
     work_orders: workOrdersSchema,
