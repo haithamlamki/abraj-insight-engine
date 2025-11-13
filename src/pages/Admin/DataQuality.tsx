@@ -116,27 +116,26 @@ export default function DataQuality() {
             </a>
           </Button>
         </div>
-          <div className="flex gap-2">
-            <Select value={timeRange.toString()} onValueChange={(v) => setTimeRange(parseInt(v))}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7">Last 7 days</SelectItem>
-                <SelectItem value="30">Last 30 days</SelectItem>
-                <SelectItem value="90">Last 90 days</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={groupBy} onValueChange={(v) => setGroupBy(v as 'day' | 'hour')}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="day">Daily</SelectItem>
-                <SelectItem value="hour">Hourly</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="flex gap-2">
+          <Select value={timeRange.toString()} onValueChange={(v) => setTimeRange(parseInt(v))}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7">Last 7 days</SelectItem>
+              <SelectItem value="30">Last 30 days</SelectItem>
+              <SelectItem value="90">Last 90 days</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={groupBy} onValueChange={(v) => setGroupBy(v as 'day' | 'hour')}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="day">Daily</SelectItem>
+              <SelectItem value="hour">Hourly</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* KPI Cards */}
