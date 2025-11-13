@@ -42,6 +42,7 @@ import BudgetManagement from "./pages/Admin/BudgetManagement";
 import UserManagement from "./pages/Admin/UserManagement";
 import BudgetAnalytics from "./pages/Admin/BudgetAnalytics";
 import AuditTrail from "./pages/Admin/AuditTrail";
+import DataQuality from "./pages/Admin/DataQuality";
 
 // Custom Dashboard pages
 import DashboardManager from "./pages/Dashboard/DashboardManager";
@@ -99,6 +100,7 @@ const App = () => (
         <Route path="/admin/users" element={<ProtectedRoute role="admin"><UserManagement /></ProtectedRoute>} />
         <Route path="/admin/analytics" element={<ProtectedRoute role="admin"><BudgetAnalytics /></ProtectedRoute>} />
         <Route path="/admin/audit-trail" element={<ProtectedRoute role="admin"><AuditTrail /></ProtectedRoute>} />
+        <Route path="/admin/data-quality" element={<ProtectedRoute role="admin"><DataQuality /></ProtectedRoute>} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

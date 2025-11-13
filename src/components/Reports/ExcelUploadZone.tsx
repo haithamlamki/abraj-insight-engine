@@ -9,6 +9,7 @@ import { downloadTemplate } from "@/lib/excelTemplates";
 import { validateRecords, getValidationSchema } from '@/lib/validationSchemas';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useBulkSaveReportData } from "@/hooks/useReportData";
+import { logImportStatistics } from "@/lib/importLogger";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -46,6 +47,8 @@ export const ExcelUploadZone = ({
   const [showWarningsDialog, setShowWarningsDialog] = useState(false);
   const [pendingValidData, setPendingValidData] = useState<any[]>([]);
   const [pendingWarnings, setPendingWarnings] = useState<any[]>([]);
+  const [importStartTime, setImportStartTime] = useState<number>(0);
+  const [totalRowsBeforeFilter, setTotalRowsBeforeFilter] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bulkSave = useBulkSaveReportData(reportType);
 
@@ -84,6 +87,7 @@ export const ExcelUploadZone = ({
   };
 
   const handleFileUpload = async (file: File) => {
+    setImportStartTime(Date.now());
     setUploadedFile(file);
     setUploading(true);
     setUploadStatus("idle");
@@ -99,6 +103,7 @@ export const ExcelUploadZone = ({
       // Collect data from ALL sheets
       const sheetNames = Object.keys(result.data);
       const allRows = sheetNames.reduce((acc: any[], name) => acc.concat(result.data[name] || []), [] as any[]);
+      setTotalRowsBeforeFilter(allRows.length);
 
       // Extract headers from first row
       if (allRows.length > 0) {
@@ -317,6 +322,22 @@ export const ExcelUploadZone = ({
 
     try {
       await bulkSave.mutateAsync(parsedData);
+      
+      // Log successful import statistics
+      await logImportStatistics({
+        reportType,
+        importMethod: 'excel',
+        totalRows: totalRowsBeforeFilter,
+        validRows: parsedData.length,
+        errorRows: validationErrors.filter(e => e.severity === 'error' || !e.severity).length,
+        warningRows: validationErrors.filter(e => e.severity === 'warning').length,
+        skippedRows: totalRowsBeforeFilter - parsedData.length,
+        validationErrors: validationErrors,
+        fileName: uploadedFile?.name,
+        success: true,
+        durationMs: Date.now() - importStartTime,
+      });
+      
       setParsedData([]);
       setUploadedFile(null);
       setUploadStatus("idle");
@@ -325,6 +346,21 @@ export const ExcelUploadZone = ({
       }
     } catch (error) {
       console.error('Import error:', error);
+      
+      // Log failed import statistics
+      await logImportStatistics({
+        reportType,
+        importMethod: 'excel',
+        totalRows: totalRowsBeforeFilter,
+        validRows: 0,
+        errorRows: validationErrors.length,
+        warningRows: 0,
+        skippedRows: 0,
+        validationErrors: validationErrors,
+        fileName: uploadedFile?.name,
+        success: false,
+        durationMs: Date.now() - importStartTime,
+      });
     }
   };
 

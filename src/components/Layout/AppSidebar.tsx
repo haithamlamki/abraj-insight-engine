@@ -117,6 +117,7 @@ const adminMenuItems = [
       { title: "User Management", url: "/admin/users", icon: Users },
       { title: "Budget Analytics", url: "/admin/analytics", icon: BarChart3 },
       { title: "Audit Trail", url: "/admin/audit-trail", icon: FileText },
+      { title: "Data Quality", url: "/admin/data-quality", icon: BarChart3 },
     ],
   },
 ];

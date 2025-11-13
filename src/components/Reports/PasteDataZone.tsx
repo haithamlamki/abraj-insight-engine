@@ -9,6 +9,7 @@ import { mapExcelToDbFields, ValidationError, exportValidationErrorsToExcel, fil
 import { validateRecords, getValidationSchema } from '@/lib/validationSchemas';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useBulkSaveReportData } from "@/hooks/useReportData";
+import { logImportStatistics } from "@/lib/importLogger";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -39,6 +40,9 @@ export const PasteDataZone = ({
   const [showWarningsDialog, setShowWarningsDialog] = useState(false);
   const [pendingValidData, setPendingValidData] = useState<any[]>([]);
   const [pendingWarnings, setPendingWarnings] = useState<any[]>([]);
+  const [importStartTime, setImportStartTime] = useState<number>(0);
+  const [totalRowsBeforeFilter, setTotalRowsBeforeFilter] = useState<number>(0);
+  const [validationErrorsList, setValidationErrorsList] = useState<ValidationError[]>([]);
   const bulkSave = useBulkSaveReportData(reportType);
 
   const detectDelimiter = (text: string): string => {
@@ -177,6 +181,16 @@ export const PasteDataZone = ({
         setErrorMessage(`Found ${invalid.length} validation errors. Please fix the data and try again.`);
         setUploadStatus("error");
         
+        // Store validation errors for logging
+        const allValidationErrors: ValidationError[] = invalid.map(item => ({
+          row: item.index,
+          column: '',
+          message: item.errors.join('; '),
+          value: null,
+          severity: 'error' as const,
+        }));
+        setValidationErrorsList(allValidationErrors);
+        
         const errorSummary = invalid.slice(0, 5).map(item => 
           `Row ${item.index}: ${item.errors.join(', ')}`
         ).join('\n');
@@ -184,6 +198,8 @@ export const PasteDataZone = ({
         return;
       }
 
+      // Clear validation errors for successful validation
+      setValidationErrorsList([]);
       await completeSaveProcess(valid, []);
 
     } catch (error: any) {
@@ -236,6 +252,21 @@ export const PasteDataZone = ({
 
     try {
       await bulkSave.mutateAsync(parsedData);
+      
+      // Log successful import statistics
+      await logImportStatistics({
+        reportType,
+        importMethod: 'paste',
+        totalRows: totalRowsBeforeFilter,
+        validRows: parsedData.length,
+        errorRows: validationErrorsList.filter(e => e.severity === 'error').length,
+        warningRows: validationErrorsList.filter(e => e.severity === 'warning').length,
+        skippedRows: totalRowsBeforeFilter - parsedData.length,
+        validationErrors: validationErrorsList,
+        success: true,
+        durationMs: Date.now() - importStartTime,
+      });
+      
       setParsedData([]);
       setPastedText("");
       setUploadStatus("idle");
@@ -243,6 +274,20 @@ export const PasteDataZone = ({
     } catch (error: any) {
       console.error('Import error:', error);
       toast.error(`Import failed: ${error.message}`);
+      
+      // Log failed import statistics
+      await logImportStatistics({
+        reportType,
+        importMethod: 'paste',
+        totalRows: totalRowsBeforeFilter,
+        validRows: 0,
+        errorRows: validationErrorsList.length,
+        warningRows: 0,
+        skippedRows: 0,
+        validationErrors: validationErrorsList,
+        success: false,
+        durationMs: Date.now() - importStartTime,
+      });
     }
   };
 
