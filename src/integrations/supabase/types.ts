@@ -712,6 +712,60 @@ export type Database = {
         }
         Relationships: []
       }
+      import_logs: {
+        Row: {
+          created_at: string | null
+          duration_ms: number | null
+          error_rows: number
+          file_name: string | null
+          id: string
+          import_method: string
+          report_type: string
+          skipped_rows: number
+          success: boolean
+          total_rows: number
+          user_email: string | null
+          user_id: string | null
+          valid_rows: number
+          validation_errors: Json | null
+          warning_rows: number
+        }
+        Insert: {
+          created_at?: string | null
+          duration_ms?: number | null
+          error_rows?: number
+          file_name?: string | null
+          id?: string
+          import_method: string
+          report_type: string
+          skipped_rows?: number
+          success?: boolean
+          total_rows?: number
+          user_email?: string | null
+          user_id?: string | null
+          valid_rows?: number
+          validation_errors?: Json | null
+          warning_rows?: number
+        }
+        Update: {
+          created_at?: string | null
+          duration_ms?: number | null
+          error_rows?: number
+          file_name?: string | null
+          id?: string
+          import_method?: string
+          report_type?: string
+          skipped_rows?: number
+          success?: boolean
+          total_rows?: number
+          user_email?: string | null
+          user_id?: string | null
+          valid_rows?: number
+          validation_errors?: Json | null
+          warning_rows?: number
+        }
+        Relationships: []
+      }
       npt_root_cause: {
         Row: {
           action_party: string | null
@@ -1158,6 +1212,27 @@ export type Database = {
       can_access_rig: {
         Args: { _rig: string; _user_id: string }
         Returns: boolean
+      }
+      get_common_validation_errors: {
+        Args: { days_back?: number; limit_count?: number }
+        Returns: {
+          error_count: number
+          error_message: string
+          report_types: string[]
+        }[]
+      }
+      get_import_statistics: {
+        Args: { days_back?: number; group_by?: string }
+        Returns: {
+          avg_success_rate: number
+          failed_imports: number
+          period: string
+          successful_imports: number
+          total_imports: number
+          total_rows_processed: number
+          total_rows_skipped: number
+          total_rows_valid: number
+        }[]
       }
       get_user_roles: {
         Args: { _user_id: string }
