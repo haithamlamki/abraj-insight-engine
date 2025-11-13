@@ -210,16 +210,24 @@ const NPTRootCause = () => {
                 reportType="npt_root_cause"
                 title="NPT Root Cause Records"
                 columns={[
-                  { key: 'rig_number', label: 'Rig', sortable: true },
+                  { key: 'rig_number', label: 'Rig Number', sortable: true },
                   { key: 'year', label: 'Year', sortable: true },
                   { key: 'month', label: 'Month', sortable: true },
                   { key: 'date', label: 'Date', sortable: true },
                   { key: 'hrs', label: 'Hours', sortable: true },
                   { key: 'npt_type', label: 'NPT Type', sortable: true },
                   { key: 'system', label: 'System', sortable: true },
+                  { key: 'parent_equipment_failure', label: 'Parent Equipment Failure', sortable: true },
+                  { key: 'part_equipment_failure', label: 'Part Equipment Failure', sortable: true },
+                  { key: 'contractual_process', label: 'Contractual Process', sortable: true },
+                  { key: 'department_responsibility', label: 'Department Responsibility', sortable: true },
+                  { key: 'immediate_cause_of_failure', label: 'Immediate Cause of Failure', sortable: true },
                   { key: 'root_cause', label: 'Root Cause', sortable: true },
-                  { key: 'department_responsibility', label: 'Department', sortable: true },
+                  { key: 'immediate_corrective_action', label: 'Immediate Corrective Action', sortable: true },
+                  { key: 'future_action_improvement', label: 'Future Action & Improvement', sortable: true },
                   { key: 'action_party', label: 'Action Party', sortable: true },
+                  { key: 'notification_number', label: 'Notification Number (N2)', sortable: true },
+                  { key: 'failure_investigation_reports', label: 'Failure Investigation Reports', sortable: true },
                 ]}
                 formatRow={(row) => ({
                   ...row,
