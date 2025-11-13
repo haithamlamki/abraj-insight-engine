@@ -14,6 +14,8 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { HeaderMappingPreview } from "./HeaderMappingPreview";
+import { ValidationWarningsDialog } from "./ValidationWarningsDialog";
+import { ZodError } from "zod";
 
 interface ExcelUploadZoneProps {
   title: string;
@@ -41,6 +43,9 @@ export const ExcelUploadZone = ({
   const [showHeaderMapping, setShowHeaderMapping] = useState(false);
   const [detectedHeaders, setDetectedHeaders] = useState<string[]>([]);
   const [rawParsedData, setRawParsedData] = useState<any[]>([]);
+  const [showWarningsDialog, setShowWarningsDialog] = useState(false);
+  const [pendingValidData, setPendingValidData] = useState<any[]>([]);
+  const [pendingWarnings, setPendingWarnings] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bulkSave = useBulkSaveReportData(reportType);
 
@@ -201,49 +206,63 @@ export const ExcelUploadZone = ({
         // Validate data using Zod schema if available
         const schema = getValidationSchema(reportType);
         let finalValidData = mappedData;
-        let schemaValidationErrors: { record: any; errors: string[]; index: number }[] = [];
+        let criticalErrors: { record: any; errors: string[]; index: number }[] = [];
+        let warnings: { record: any; errors: string[]; index: number; severity: 'warning' | 'info' }[] = [];
         
         if (schema) {
           const { valid, invalid } = validateRecords(mappedData, schema);
-          finalValidData = valid;
-          schemaValidationErrors = invalid;
           
-          if (invalid.length > 0) {
-            console.warn(`[ExcelUploadZone] Schema validation: ${invalid.length} invalid records`, invalid);
-            const errorSummary = invalid.slice(0, 3).map(err => 
-              `Row ${err.index}: ${err.errors.join(', ')}`
-            ).join('\n');
-            toast.warning(
-              `${invalid.length} سجل لم يجتاز التحقق وسيتم تجاهله. أول الأخطاء:\n${errorSummary}`,
-              { duration: 6000 }
+          // Separate critical errors from warnings
+          invalid.forEach(item => {
+            const isCritical = item.errors.some(err => 
+              err.includes('مطلوب') || 
+              err.includes('غير صحيحة') ||
+              err.includes('يجب أن يكون') && !err.includes('يرجى المراجعة')
             );
+            
+            if (isCritical) {
+              criticalErrors.push(item);
+            } else {
+              warnings.push({ 
+                ...item, 
+                severity: item.errors.some(e => e.includes('يتجاوز')) ? 'warning' : 'info' 
+              });
+            }
+          });
+          
+          // Only keep valid records for now
+          finalValidData = valid;
+          
+          // Show critical errors
+          if (criticalErrors.length > 0) {
+            console.error(`[ExcelUploadZone] Critical validation errors: ${criticalErrors.length}`, criticalErrors);
+            const errorSummary = criticalErrors.slice(0, 3).map(err => 
+              `الصف ${err.index}: ${err.errors.join(', ')}`
+            ).join('\n');
+            toast.error(
+              `${criticalErrors.length} سجل يحتوي على أخطاء حرجة:\n${errorSummary}`,
+              { duration: 8000 }
+            );
+            setUploadStatus("error");
+            setErrorMessage(`تم العثور على ${criticalErrors.length} خطأ حرج في البيانات`);
+            setUploading(false);
+            return;
+          }
+          
+          // Show warnings dialog if there are warnings
+          if (warnings.length > 0) {
+            console.warn(`[ExcelUploadZone] Validation warnings: ${warnings.length}`, warnings);
+            setPendingValidData(finalValidData);
+            setPendingWarnings(warnings);
+            setShowWarningsDialog(true);
+            setUploading(false);
+            return;
           }
         }
         
-        setParsedData(finalValidData);
+        // If no warnings, proceed directly
+        completeSaveProcess(finalValidData, []);
 
-        // Track auto-corrections
-        if (autoCorrect && (warnings.length > 0 || infos.length > 0)) {
-          const corrections: string[] = [];
-          infos.forEach(info => {
-            if (info.autoFixable && info.suggestedFix) {
-              corrections.push(`Row ${info.row}: ${info.suggestedFix}`);
-            }
-          });
-          setAutoCorrections(corrections);
-        }
-
-        if (onDataParsed) {
-          onDataParsed(finalValidData);
-        }
-
-        const correctionMsg = autoCorrect && infos.length > 0 
-          ? ` (${infos.length} auto-corrections applied)` 
-          : '';
-        const validationMsg = schemaValidationErrors.length > 0 
-          ? ` (${schemaValidationErrors.length} records excluded)` 
-          : '';
-        toast.success(`تم معالجة ${finalValidData.length} سجل صحيح من ${rawParsedData.length} صف${correctionMsg}${validationMsg}`);
       }
     } catch (error) {
       setUploadStatus("error");
@@ -254,6 +273,56 @@ export const ExcelUploadZone = ({
     } finally {
       setUploading(false);
     }
+  };
+
+  const completeSaveProcess = (finalValidData: any[], schemaValidationErrors: any[] = []) => {
+    setParsedData(finalValidData);
+
+    // Track auto-corrections
+    const infos = validationErrors.filter(e => e.severity === 'info');
+    if (autoCorrect && infos.length > 0) {
+      const corrections: string[] = [];
+      infos.forEach(info => {
+        if (info.autoFixable && info.suggestedFix) {
+          corrections.push(`Row ${info.row}: ${info.suggestedFix}`);
+        }
+      });
+      setAutoCorrections(corrections);
+    }
+
+    if (onDataParsed) {
+      onDataParsed(finalValidData);
+    }
+
+    const correctionMsg = autoCorrect && infos.length > 0 
+      ? ` (${infos.length} تصحيح تلقائي)` 
+      : '';
+    const validationMsg = schemaValidationErrors.length > 0 
+      ? ` (${schemaValidationErrors.length} سجل مستبعد)` 
+      : '';
+    toast.success(`تم معالجة ${finalValidData.length} سجل صحيح من ${rawParsedData.length} صف${correctionMsg}${validationMsg}`);
+    setUploadStatus("success");
+    setUploading(false);
+  };
+
+  const handleWarningsContinue = () => {
+    setShowWarningsDialog(false);
+    completeSaveProcess(pendingValidData, []);
+    setPendingValidData([]);
+    setPendingWarnings([]);
+  };
+
+  const handleWarningsCancel = () => {
+    setShowWarningsDialog(false);
+    setUploadStatus("idle");
+    setParsedData([]);
+    setPendingValidData([]);
+    setPendingWarnings([]);
+    setUploadedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    toast.info("تم إلغاء الاستيراد. يرجى مراجعة البيانات وإعادة المحاولة.");
   };
 
   const handleImportData = async () => {
@@ -292,6 +361,16 @@ export const ExcelUploadZone = ({
 
   return (
     <div className="space-y-6">
+      {/* Warnings Dialog */}
+      <ValidationWarningsDialog
+        open={showWarningsDialog}
+        warnings={pendingWarnings}
+        onContinue={handleWarningsContinue}
+        onCancel={handleWarningsCancel}
+        totalRecords={rawParsedData.length}
+        validRecords={pendingValidData.length}
+      />
+
       {/* Header Mapping Step */}
       {showHeaderMapping && (
         <HeaderMappingPreview
