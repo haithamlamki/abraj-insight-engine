@@ -45,14 +45,13 @@ const Index = () => {
               status={dashboardData && dashboardData.avgUtilization >= 85 ? "success" : "warning"}
               icon={TrendingUp}
             />
-            <KPICardWithBudget
+            <KPICard
               title="Total Revenue"
               value={isLoading ? "..." : `$${(dashboardData?.totalRevenue || 0).toLocaleString()}`}
+              subtitle="Current period"
+              trend="up"
+              status="success"
               icon={DollarSign}
-              reportKey="revenue"
-              year={new Date().getFullYear()}
-              month={new Date().getMonth() + 1}
-              metricKey="revenue_omr"
             />
             <KPICard
               title="Open Work Orders"

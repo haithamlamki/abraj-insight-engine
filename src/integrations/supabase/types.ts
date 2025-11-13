@@ -370,6 +370,74 @@ export type Database = {
         }
         Relationships: []
       }
+      dashboard_layouts: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_public: boolean | null
+          is_template: boolean | null
+          layout: Json
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          is_template?: boolean | null
+          layout?: Json
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          is_template?: boolean | null
+          layout?: Json
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      dashboard_shares: {
+        Row: {
+          can_edit: boolean | null
+          created_at: string | null
+          dashboard_id: string
+          id: string
+          shared_with_user_id: string
+        }
+        Insert: {
+          can_edit?: boolean | null
+          created_at?: string | null
+          dashboard_id: string
+          id?: string
+          shared_with_user_id: string
+        }
+        Update: {
+          can_edit?: boolean | null
+          created_at?: string | null
+          dashboard_id?: string
+          id?: string
+          shared_with_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dashboard_shares_dashboard_id_fkey"
+            columns: ["dashboard_id"]
+            isOneToOne: false
+            referencedRelation: "dashboard_layouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dim_date: {
         Row: {
           date_id: string

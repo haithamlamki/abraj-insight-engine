@@ -43,6 +43,10 @@ import UserManagement from "./pages/Admin/UserManagement";
 import BudgetAnalytics from "./pages/Admin/BudgetAnalytics";
 import AuditTrail from "./pages/Admin/AuditTrail";
 
+// Custom Dashboard pages
+import DashboardManager from "./pages/Dashboard/DashboardManager";
+import CustomDashboard from "./pages/Dashboard/CustomDashboard";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -56,6 +60,11 @@ const App = () => (
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            
+              {/* Custom Dashboards */}
+              <Route path="/dashboards" element={<ProtectedRoute><DashboardManager /></ProtectedRoute>} />
+              <Route path="/dashboard/new" element={<ProtectedRoute><CustomDashboard /></ProtectedRoute>} />
+              <Route path="/dashboard/:id" element={<ProtectedRoute><CustomDashboard /></ProtectedRoute>} />
             
               {/* Rig Financials */}
               <Route path="/rig-financials" element={<ProtectedRoute><RigFinancials /></ProtectedRoute>} />

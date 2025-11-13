@@ -23,6 +23,7 @@ import {
   Shield,
   Wallet,
   FileText,
+  LayoutDashboard,
 } from "lucide-react";
 import {
   Sidebar,
@@ -57,6 +58,11 @@ const menuItems = [
     title: "Dashboard",
     url: "/",
     icon: BarChart3,
+  },
+  {
+    title: "Custom Dashboards",
+    url: "/dashboards",
+    icon: LayoutDashboard,
   },
   {
     title: "Rig Financials",

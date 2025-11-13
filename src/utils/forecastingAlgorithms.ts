@@ -159,3 +159,141 @@ export function calculateForecastMetrics(
     trend,
   };
 }
+
+/**
+ * Linear Regression forecast with multiple periods
+ */
+export function linearRegression(data: number[], forecastPeriods: number = 3): number[] {
+  const n = data.length;
+  let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+  
+  for (let i = 0; i < n; i++) {
+    sumX += i;
+    sumY += data[i];
+    sumXY += i * data[i];
+    sumXX += i * i;
+  }
+  
+  const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+  const intercept = (sumY - slope * sumX) / n;
+  
+  const forecast: number[] = [...data];
+  
+  for (let i = 0; i < forecastPeriods; i++) {
+    forecast.push(slope * (n + i) + intercept);
+  }
+  
+  return forecast;
+}
+
+/**
+ * Detect anomalies using Z-score method
+ */
+export function detectAnomalies(
+  data: number[], 
+  threshold: number = 2
+): boolean[] {
+  const mean = data.reduce((a, b) => a + b, 0) / data.length;
+  const variance = data.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / data.length;
+  const stdDev = Math.sqrt(variance);
+  
+  return data.map(value => {
+    const zScore = Math.abs((value - mean) / stdDev);
+    return zScore > threshold;
+  });
+}
+
+/**
+ * Calculate trend direction and strength
+ */
+export function calculateTrend(data: number[]): {
+  direction: "up" | "down" | "stable";
+  strength: number;
+  change: number;
+} {
+  if (data.length < 2) {
+    return { direction: "stable", strength: 0, change: 0 };
+  }
+  
+  const firstHalf = data.slice(0, Math.floor(data.length / 2));
+  const secondHalf = data.slice(Math.floor(data.length / 2));
+  
+  const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
+  const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
+  
+  const change = ((secondAvg - firstAvg) / firstAvg) * 100;
+  const strength = Math.abs(change);
+  
+  let direction: "up" | "down" | "stable" = "stable";
+  if (change > 5) direction = "up";
+  else if (change < -5) direction = "down";
+  
+  return { direction, strength, change };
+}
+
+/**
+ * Generate smart recommendations based on data patterns
+ */
+export function generateRecommendations(data: {
+  nptData: number[];
+  revenueData: number[];
+  utilizationData: number[];
+}): string[] {
+  const recommendations: string[] = [];
+  
+  // NPT Analysis
+  const nptTrend = calculateTrend(data.nptData);
+  const nptAnomalies = detectAnomalies(data.nptData);
+  
+  if (nptTrend.direction === "up" && nptTrend.strength > 10) {
+    recommendations.push(
+      `⚠️ NPT hours increasing by ${nptTrend.change.toFixed(1)}%. Review maintenance schedules and equipment performance.`
+    );
+  }
+  
+  if (nptAnomalies.filter(Boolean).length > 2) {
+    recommendations.push(
+      `🔍 Multiple NPT anomalies detected. Investigate root causes and implement preventive measures.`
+    );
+  }
+  
+  // Revenue Analysis
+  const revenueTrend = calculateTrend(data.revenueData);
+  
+  if (revenueTrend.direction === "down" && revenueTrend.strength > 15) {
+    recommendations.push(
+      `📉 Revenue declining by ${Math.abs(revenueTrend.change).toFixed(1)}%. Consider adjusting pricing strategy or operational costs.`
+    );
+  }
+  
+  if (revenueTrend.direction === "up") {
+    recommendations.push(
+      `✅ Revenue growing by ${revenueTrend.change.toFixed(1)}%. Continue current operational practices.`
+    );
+  }
+  
+  // Utilization Analysis
+  const utilizationTrend = calculateTrend(data.utilizationData);
+  const avgUtilization = data.utilizationData.reduce((a, b) => a + b, 0) / data.utilizationData.length;
+  
+  if (avgUtilization < 70) {
+    recommendations.push(
+      `⚡ Average utilization at ${avgUtilization.toFixed(1)}%. Optimize rig scheduling to improve efficiency.`
+    );
+  }
+  
+  if (utilizationTrend.direction === "down") {
+    recommendations.push(
+      `📊 Utilization declining. Review operational bottlenecks and workforce allocation.`
+    );
+  }
+  
+  // Cross-metric insights
+  if (nptTrend.direction === "up" && revenueTrend.direction === "down") {
+    recommendations.push(
+      `🚨 Critical: Rising NPT correlates with falling revenue. Urgent action required on equipment reliability.`
+    );
+  }
+  
+  return recommendations;
+}
