@@ -16,6 +16,22 @@ export const rigMovesSchema = z.object({
   variance_cost: z.number().optional().nullable(),
   profit_loss: z.number().optional().nullable(),
   remarks: z.string().optional().nullable(),
+}).refine((data) => {
+  if (data.actual_time_hours && data.budgeted_time_hours) {
+    return data.actual_time_hours <= data.budgeted_time_hours * 2;
+  }
+  return true;
+}, {
+  message: "الوقت الفعلي يتجاوز الوقت المخطط بأكثر من 200% - يرجى المراجعة",
+  path: ["actual_time_hours"],
+}).refine((data) => {
+  if (data.actual_cost && data.budgeted_cost) {
+    return data.actual_cost <= data.budgeted_cost * 2;
+  }
+  return true;
+}, {
+  message: "التكلفة الفعلية تتجاوز التكلفة المخططة بأكثر من 200% - يرجى المراجعة",
+  path: ["actual_cost"],
 });
 
 /**
@@ -35,6 +51,19 @@ export const fuelConsumptionSchema = z.object({
   vehicles_consumption: z.number().min(0).optional().nullable(),
   closing_balance: z.number().optional().nullable(),
   fuel_cost: z.number().min(0, "التكلفة يجب أن تكون رقم موجب").optional().nullable(),
+}).refine((data) => {
+  if (data.opening_stock !== null && data.opening_stock !== undefined &&
+      data.total_received !== null && data.total_received !== undefined &&
+      data.total_consumed !== null && data.total_consumed !== undefined &&
+      data.closing_balance !== null && data.closing_balance !== undefined) {
+    const expected = data.opening_stock + data.total_received - data.total_consumed;
+    const tolerance = Math.abs(expected * 0.05); // 5% tolerance
+    return Math.abs(data.closing_balance - expected) <= tolerance;
+  }
+  return true;
+}, {
+  message: "الرصيد الختامي لا يتطابق مع (الرصيد الافتتاحي + المستلم - المستهلك) - يرجى المراجعة",
+  path: ["closing_balance"],
 });
 
 /**
@@ -55,6 +84,18 @@ export const revenueSchema = z.object({
   npt_zero: z.number().optional().nullable(),
   comments: z.string().optional().nullable(),
   client: z.string().optional().nullable(),
+}).refine((data) => {
+  if (data.dayrate_actual !== null && data.dayrate_actual !== undefined &&
+      data.working_days !== null && data.working_days !== undefined &&
+      data.revenue_actual !== null && data.revenue_actual !== undefined) {
+    const expected = data.dayrate_actual * data.working_days;
+    const tolerance = Math.abs(expected * 0.1); // 10% tolerance
+    return Math.abs(data.revenue_actual - expected) <= tolerance;
+  }
+  return true;
+}, {
+  message: "الإيراد الفعلي لا يتطابق مع (معدل اليوم × أيام العمل) - يرجى المراجعة",
+  path: ["revenue_actual"],
 });
 
 /**
@@ -74,6 +115,25 @@ export const utilizationSchema = z.object({
   npt_type: z.string().optional().nullable(),
   comment: z.string().optional().nullable(),
   status: z.string().min(1, "الحالة مطلوبة"),
+}).refine((data) => {
+  if (data.operating_days !== null && data.operating_days !== undefined &&
+      data.npt_days !== null && data.npt_days !== undefined &&
+      data.monthly_total_days !== null && data.monthly_total_days !== undefined) {
+    return (data.operating_days + data.npt_days) <= data.monthly_total_days;
+  }
+  return true;
+}, {
+  message: "مجموع أيام التشغيل وأيام NPT يتجاوز إجمالي أيام الشهر",
+  path: ["operating_days"],
+}).refine((data) => {
+  if (data.npt_days !== null && data.npt_days !== undefined &&
+      data.allowable_npt !== null && data.allowable_npt !== undefined) {
+    return data.npt_days <= data.allowable_npt * 1.5;
+  }
+  return true;
+}, {
+  message: "أيام NPT تتجاوز الحد المسموح به بأكثر من 150% - يرجى المراجعة",
+  path: ["npt_days"],
 });
 
 /**
@@ -107,6 +167,15 @@ export const stockLevelsSchema = z.object({
   target_qty: z.number().int().min(0, "الكمية المستهدفة يجب أن تكون رقم موجب").optional().nullable(),
   status: z.string().optional().nullable(),
   last_reorder_date: z.string().optional().nullable().or(z.date()),
+}).refine((data) => {
+  if (data.current_qty !== null && data.current_qty !== undefined &&
+      data.target_qty !== null && data.target_qty !== undefined) {
+    return data.current_qty <= data.target_qty * 3;
+  }
+  return true;
+}, {
+  message: "الكمية الحالية تتجاوز الكمية المستهدفة بأكثر من 300% - يرجى المراجعة",
+  path: ["current_qty"],
 });
 
 /**
@@ -122,6 +191,24 @@ export const wellTrackerSchema = z.object({
   status: z.string().optional().nullable(),
   operator: z.string().optional().nullable(),
   location: z.string().optional().nullable(),
+}).refine((data) => {
+  if (data.end_date && data.start_date) {
+    const start = new Date(data.start_date);
+    const end = new Date(data.end_date);
+    return end >= start;
+  }
+  return true;
+}, {
+  message: "تاريخ الانتهاء يجب أن يكون بعد أو يساوي تاريخ البداية",
+  path: ["end_date"],
+}).refine((data) => {
+  if (data.actual_depth && data.target_depth) {
+    return data.actual_depth <= data.target_depth * 1.5;
+  }
+  return true;
+}, {
+  message: "العمق الفعلي يتجاوز العمق المستهدف بشكل كبير (أكثر من 150%)",
+  path: ["actual_depth"],
 });
 
 /**
