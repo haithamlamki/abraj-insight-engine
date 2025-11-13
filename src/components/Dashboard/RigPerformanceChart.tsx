@@ -22,7 +22,7 @@ export const RigPerformanceChart = () => {
 
   const handleExport = () => {
     if (!data || data.rigs.length === 0) {
-      toast.error("لا توجد بيانات للتصدير");
+      toast.error("No data to export");
       return;
     }
 
@@ -33,15 +33,15 @@ export const RigPerformanceChart = () => {
       data.rigs.forEach((rig) => {
         rig.monthlyData.forEach((month) => {
           exportData.push({
-            "الأنبوب": rig.rigName,
-            "السنة": rig.year,
-            "الشهر": month.monthName,
-            "الكفاءة %": month.efficiency.toFixed(1),
-            "NPT الفعلي (أيام)": month.actualNPT.toFixed(1),
-            "NPT المسموح (أيام)": month.allowableNPT.toFixed(1),
-            "نسبة الامتثال %": month.complianceRate.toFixed(1),
-            "أيام التشغيل": month.operatingDays,
-            "الحالة": month.status,
+            "Rig": rig.rigName,
+            "Year": rig.year,
+            "Month": month.monthName,
+            "Efficiency %": month.efficiency.toFixed(1),
+            "Actual NPT (days)": month.actualNPT.toFixed(1),
+            "Allowable NPT (days)": month.allowableNPT.toFixed(1),
+            "Compliance Rate %": month.complianceRate.toFixed(1),
+            "Operating Days": month.operatingDays,
+            "Status": month.status,
           });
         });
       });
@@ -51,10 +51,10 @@ export const RigPerformanceChart = () => {
       XLSX.utils.book_append_sheet(wb, ws, "Rig Performance");
       XLSX.writeFile(wb, `Rig_Performance_${selectedYear}.xlsx`);
 
-      toast.success("تم تصدير البيانات بنجاح");
+      toast.success("Data exported successfully");
     } catch (error) {
       console.error("Export error:", error);
-      toast.error("فشل تصدير البيانات");
+      toast.error("Failed to export data");
     }
   };
 
@@ -62,7 +62,7 @@ export const RigPerformanceChart = () => {
     return (
       <Alert variant="destructive">
         <AlertDescription>
-          فشل تحميل بيانات الأداء. يرجى المحاولة مرة أخرى.
+          Failed to load performance data. Please try again.
         </AlertDescription>
       </Alert>
     );
@@ -95,7 +95,7 @@ export const RigPerformanceChart = () => {
           className="gap-2"
         >
           <Download className="h-4 w-4" />
-          تصدير
+          Export
         </Button>
       </div>
 
@@ -109,19 +109,19 @@ export const RigPerformanceChart = () => {
       ) : data && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-card border rounded-lg p-3">
-            <p className="text-xs text-muted-foreground mb-1">إجمالي الأنابيب</p>
+            <p className="text-xs text-muted-foreground mb-1">Total Rigs</p>
             <p className="text-2xl font-bold">{data.summary.totalRigs}</p>
           </div>
           <div className="bg-card border rounded-lg p-3">
-            <p className="text-xs text-muted-foreground mb-1">متوسط الكفاءة</p>
+            <p className="text-xs text-muted-foreground mb-1">Avg Efficiency</p>
             <p className="text-2xl font-bold">{data.summary.avgEfficiency.toFixed(1)}%</p>
           </div>
           <div className="bg-card border rounded-lg p-3">
-            <p className="text-xs text-muted-foreground mb-1">إجمالي NPT</p>
+            <p className="text-xs text-muted-foreground mb-1">Total NPT</p>
             <p className="text-2xl font-bold">{data.summary.totalNPT.toFixed(0)}</p>
           </div>
           <div className="bg-card border rounded-lg p-3">
-            <p className="text-xs text-muted-foreground mb-1">أيام التشغيل</p>
+            <p className="text-xs text-muted-foreground mb-1">Operating Days</p>
             <p className="text-2xl font-bold">{data.summary.totalOperatingDays}</p>
           </div>
         </div>
@@ -131,17 +131,17 @@ export const RigPerformanceChart = () => {
       <Alert>
         <Info className="h-4 w-4" />
         <AlertDescription className="text-xs">
-          عرض أداء جميع الأنابيب على مدار 12 شهر. يمكنك تصفية الأنابيب والتبديل بين المقاييس المختلفة.
-          آخر تحديث: {new Date().toLocaleDateString('ar-SA')}
+          View performance of all rigs across 12 months. You can filter rigs and switch between different metrics.
+          Last updated: {new Date().toLocaleDateString('en-US')}
         </AlertDescription>
       </Alert>
 
       {/* Tabs for different metrics */}
       <Tabs value={metric} onValueChange={(v) => setMetric(v as any)}>
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="efficiency">الكفاءة</TabsTrigger>
+          <TabsTrigger value="efficiency">Efficiency</TabsTrigger>
           <TabsTrigger value="npt">NPT</TabsTrigger>
-          <TabsTrigger value="compliance">الامتثال</TabsTrigger>
+          <TabsTrigger value="compliance">Compliance</TabsTrigger>
         </TabsList>
 
         <TabsContent value={metric} className="mt-4 space-y-4">
@@ -156,7 +156,7 @@ export const RigPerformanceChart = () => {
               
               {/* Rig Metrics Cards */}
               <div className="pt-4 border-t">
-                <h4 className="text-sm font-medium mb-3">ملخص الأنابيب</h4>
+                <h4 className="text-sm font-medium mb-3">Rig Summary</h4>
                 <ScrollArea className="h-[300px]">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pr-4">
                     {displayRigs.map((rig) => (
@@ -170,7 +170,7 @@ export const RigPerformanceChart = () => {
             <Alert>
               <Info className="h-4 w-4" />
               <AlertDescription>
-                لا توجد بيانات متاحة للسنة {selectedYear}. يرجى اختيار سنة أخرى أو إضافة بيانات جديدة.
+                No data available for year {selectedYear}. Please select another year or add new data.
               </AlertDescription>
             </Alert>
           )}

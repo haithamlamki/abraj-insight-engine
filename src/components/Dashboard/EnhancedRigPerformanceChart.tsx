@@ -47,11 +47,11 @@ export function EnhancedRigPerformanceChart({
   const getYAxisLabel = () => {
     switch (metric) {
       case "efficiency":
-        return "الكفاءة (%)";
+        return "Efficiency (%)";
       case "npt":
-        return "NPT (أيام)";
+        return "NPT (days)";
       case "compliance":
-        return "نسبة الامتثال (%)";
+        return "Compliance Rate (%)";
       default:
         return "";
     }
@@ -62,7 +62,7 @@ export function EnhancedRigPerformanceChart({
       case "efficiency":
         return `${value.toFixed(1)}%`;
       case "npt":
-        return `${value.toFixed(1)} يوم`;
+        return `${value.toFixed(1)} days`;
       case "compliance":
         return `${value.toFixed(1)}%`;
       default:

@@ -30,22 +30,22 @@ export function RigMetricsCard({ rig }: RigMetricsCardProps) {
   const getTrendText = () => {
     switch (trend) {
       case "improving":
-        return "تحسن";
+        return "Improving";
       case "declining":
-        return "تدهور";
+        return "Declining";
       default:
-        return "مستقر";
+        return "Stable";
     }
   };
 
   const getComplianceStatus = () => {
     if (annualStats.complianceRate >= 90) {
-      return { icon: CheckCircle, color: "text-success", text: "ممتاز" };
+      return { icon: CheckCircle, color: "text-success", text: "Excellent" };
     }
     if (annualStats.complianceRate >= 70) {
-      return { icon: AlertCircle, color: "text-warning", text: "جيد" };
+      return { icon: AlertCircle, color: "text-warning", text: "Good" };
     }
-    return { icon: AlertCircle, color: "text-destructive", text: "يحتاج تحسين" };
+    return { icon: AlertCircle, color: "text-destructive", text: "Needs Improvement" };
   };
 
   const complianceStatus = getComplianceStatus();
@@ -67,7 +67,7 @@ export function RigMetricsCard({ rig }: RigMetricsCardProps) {
                     </Badge>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>اتجاه الأداء على مدار العام</p>
+                    <p>Performance trend over the year</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -81,13 +81,13 @@ export function RigMetricsCard({ rig }: RigMetricsCardProps) {
 
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
-            <p className="text-muted-foreground text-xs mb-0.5">الكفاءة</p>
+            <p className="text-muted-foreground text-xs mb-0.5">Efficiency</p>
             <p className="font-semibold text-lg">
               {annualStats.avgEfficiency.toFixed(1)}%
             </p>
           </div>
           <div>
-            <p className="text-muted-foreground text-xs mb-0.5">نسبة الامتثال</p>
+            <p className="text-muted-foreground text-xs mb-0.5">Compliance</p>
             <p className="font-semibold text-lg">
               {annualStats.complianceRate.toFixed(1)}%
             </p>
@@ -99,22 +99,22 @@ export function RigMetricsCard({ rig }: RigMetricsCardProps) {
             <Tooltip>
               <TooltipTrigger className="w-full">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-muted-foreground">إجمالي NPT</span>
+                  <span className="text-muted-foreground">Total NPT</span>
                   <span className="font-medium">
-                    {annualStats.totalNPT.toFixed(1)} يوم
+                    {annualStats.totalNPT.toFixed(1)} days
                   </span>
                 </div>
               </TooltipTrigger>
               <TooltipContent>
-                <p>من أصل {annualStats.totalAllowableNPT.toFixed(1)} يوم مسموح</p>
+                <p>Out of {annualStats.totalAllowableNPT.toFixed(1)} days allowable</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
 
           <div className="flex justify-between items-center text-xs">
-            <span className="text-muted-foreground">أيام التشغيل</span>
+            <span className="text-muted-foreground">Operating Days</span>
             <span className="font-medium">
-              {annualStats.totalOperatingDays} يوم
+              {annualStats.totalOperatingDays} days
             </span>
           </div>
         </div>

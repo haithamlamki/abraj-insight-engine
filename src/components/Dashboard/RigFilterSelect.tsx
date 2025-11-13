@@ -47,7 +47,7 @@ export function RigFilterSelect({
       <PopoverTrigger asChild>
         <Button variant="outline" className="gap-2 h-8">
           <Filter className="h-4 w-4" />
-          الأنابيب ({displayCount})
+          Rigs ({displayCount})
           {selectedRigs.length > 0 && selectedRigs.length < allRigs.length && (
             <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
               {selectedRigs.length}
@@ -57,7 +57,7 @@ export function RigFilterSelect({
       </PopoverTrigger>
       <PopoverContent className="w-[280px] p-0" align="start">
         <div className="flex items-center justify-between p-3 border-b">
-          <h4 className="font-medium text-sm">اختر الأنابيب</h4>
+          <h4 className="font-medium text-sm">Select Rigs</h4>
           <div className="flex gap-2">
             <Button
               variant="ghost"
@@ -65,7 +65,7 @@ export function RigFilterSelect({
               onClick={handleSelectAll}
               className="h-7 text-xs"
             >
-              الكل
+              All
             </Button>
             <Button
               variant="ghost"
