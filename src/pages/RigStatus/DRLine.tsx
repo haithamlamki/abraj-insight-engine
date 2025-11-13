@@ -1,6 +1,7 @@
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
 import { DataEntryForm } from "@/components/Reports/DataEntryForm";
 import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
+import { PasteDataZone } from "@/components/Reports/PasteDataZone";
 import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
@@ -90,6 +91,12 @@ const DRLine = () => {
         <ExcelUploadZone
           title="Upload DR Line Report"
           templateName="dr_line_template.xlsx"
+          reportType="dr_line"
+        />
+      }
+      pasteContent={
+        <PasteDataZone
+          title="Paste DR Line Data"
           reportType="dr_line"
         />
       }
