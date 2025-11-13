@@ -75,7 +75,7 @@ const Index = () => {
 
           <ChartCard
             title="Rig Performance Trend"
-            description="6-month efficiency trend vs target"
+            description="12-month comprehensive performance analysis"
           >
             <RigPerformanceChart />
           </ChartCard>
