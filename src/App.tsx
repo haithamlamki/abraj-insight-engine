@@ -41,6 +41,7 @@ import DRLine from "./pages/RigStatus/DRLine";
 import BudgetManagement from "./pages/Admin/BudgetManagement";
 import UserManagement from "./pages/Admin/UserManagement";
 import BudgetAnalytics from "./pages/Admin/BudgetAnalytics";
+import AuditTrail from "./pages/Admin/AuditTrail";
 
 const queryClient = new QueryClient();
 
@@ -88,6 +89,7 @@ const App = () => (
         <Route path="/admin/budgets" element={<ProtectedRoute role="admin"><BudgetManagement /></ProtectedRoute>} />
         <Route path="/admin/users" element={<ProtectedRoute role="admin"><UserManagement /></ProtectedRoute>} />
         <Route path="/admin/analytics" element={<ProtectedRoute role="admin"><BudgetAnalytics /></ProtectedRoute>} />
+        <Route path="/admin/audit-trail" element={<ProtectedRoute role="admin"><AuditTrail /></ProtectedRoute>} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

@@ -22,6 +22,7 @@ import {
   Settings,
   Shield,
   Wallet,
+  FileText,
 } from "lucide-react";
 import {
   Sidebar,
@@ -109,6 +110,7 @@ const adminMenuItems = [
       { title: "Budget Management", url: "/admin/budgets", icon: Wallet },
       { title: "User Management", url: "/admin/users", icon: Users },
       { title: "Budget Analytics", url: "/admin/analytics", icon: BarChart3 },
+      { title: "Audit Trail", url: "/admin/audit-trail", icon: FileText },
     ],
   },
 ];
@@ -227,6 +229,10 @@ export function AppSidebar() {
                     <DropdownMenuItem onClick={() => window.location.href = '/admin/analytics'}>
                       <BarChart3 className="mr-2 h-4 w-4" />
                       <span>Budget Analytics</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => window.location.href = '/admin/audit-trail'}>
+                      <FileText className="mr-2 h-4 w-4" />
+                      <span>Audit Trail</span>
                     </DropdownMenuItem>
                   </>
                 )}
