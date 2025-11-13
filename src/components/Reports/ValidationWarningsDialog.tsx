@@ -7,8 +7,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Info } from "lucide-react";
+import { AlertTriangle, Info, Download } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/hooks/use-toast";
+import { exportValidationErrorsToExcel } from "@/lib/excelParser";
 import {
   Table,
   TableBody,
@@ -33,6 +35,7 @@ interface ValidationWarningsDialogProps {
   onCancel: () => void;
   totalRecords: number;
   validRecords: number;
+  reportType?: string;
 }
 
 export function ValidationWarningsDialog({
@@ -42,9 +45,23 @@ export function ValidationWarningsDialog({
   onCancel,
   totalRecords,
   validRecords,
+  reportType,
 }: ValidationWarningsDialogProps) {
+  const { toast } = useToast();
   const warningCount = warnings.filter(w => w.severity === 'warning').length;
   const infoCount = warnings.filter(w => w.severity === 'info').length;
+
+  const handleDownloadErrors = () => {
+    exportValidationErrorsToExcel(
+      warnings,
+      reportType || 'validation_errors',
+      `${reportType || 'validation'}_errors`
+    );
+    toast({
+      title: "Error Report Downloaded",
+      description: `Downloaded ${warnings.length} validation errors to Excel file.`,
+    });
+  };
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
@@ -55,7 +72,7 @@ export function ValidationWarningsDialog({
             Data Validation Warnings
           </DialogTitle>
           <DialogDescription>
-            Some unusual values were detected in the data. You can continue or cancel to review the data.
+            Some unusual values were detected in the data. You can download the error report to fix issues in your original file, or continue to save the valid records.
           </DialogDescription>
         </DialogHeader>
 
@@ -140,12 +157,20 @@ export function ValidationWarningsDialog({
           </Alert>
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 flex-col sm:flex-row">
           <Button
             variant="outline"
             onClick={onCancel}
           >
             Cancel & Review
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={handleDownloadErrors}
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Download Error Report
           </Button>
           <Button
             onClick={onContinue}

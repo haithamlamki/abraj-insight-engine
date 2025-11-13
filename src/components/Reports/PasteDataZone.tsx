@@ -263,6 +263,7 @@ export const PasteDataZone = ({
           validRecords={pendingValidData.length}
           onContinue={handleWarningsContinue}
           onCancel={handleWarningsCancel}
+          reportType={reportType}
         />
 
         {showHeaderMapping && (

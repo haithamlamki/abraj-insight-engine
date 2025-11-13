@@ -1448,3 +1448,98 @@ export function mapExcelToDbFields(data: any, type: string, customMapping?: { [d
   
   return mapped;
 }
+
+/**
+ * Export validation errors to Excel file for easy review and correction
+ */
+export function exportValidationErrorsToExcel(
+  warnings: Array<{ record: any; errors: string[]; index: number; severity: 'warning' | 'info' }>,
+  reportType: string,
+  fileName: string = 'validation_errors'
+) {
+  // Create worksheet data with headers
+  const wsData = [
+    [
+      'Row Number',
+      'Error Type',
+      'Error Messages',
+      'Rig Number',
+      'Year',
+      'Month',
+      'Date',
+      'Hours',
+      'NPT Type',
+      'System',
+      'Current Values (JSON)'
+    ]
+  ];
+
+  // Add each error as a row
+  warnings.forEach(warning => {
+    wsData.push([
+      warning.index,
+      warning.severity === 'warning' ? 'WARNING' : 'INFO',
+      warning.errors.join(' | '),
+      warning.record?.rig_number || warning.record?.rig || '',
+      warning.record?.year || '',
+      warning.record?.month || '',
+      warning.record?.date || '',
+      warning.record?.hrs || warning.record?.hours || '',
+      warning.record?.npt_type || '',
+      warning.record?.system || '',
+      JSON.stringify(warning.record)
+    ]);
+  });
+
+  // Create workbook and worksheet
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+  // Set column widths for better readability
+  ws['!cols'] = [
+    { wch: 12 },  // Row Number
+    { wch: 12 },  // Error Type
+    { wch: 50 },  // Error Messages
+    { wch: 12 },  // Rig Number
+    { wch: 8 },   // Year
+    { wch: 10 },  // Month
+    { wch: 8 },   // Date
+    { wch: 10 },  // Hours
+    { wch: 15 },  // NPT Type
+    { wch: 20 },  // System
+    { wch: 40 }   // Current Values
+  ];
+
+  // Add worksheet to workbook
+  XLSX.utils.book_append_sheet(wb, ws, 'Validation Errors');
+
+  // Add instructions sheet
+  const instructionsData = [
+    ['Validation Error Report - Instructions'],
+    [''],
+    ['This report contains all validation errors found in your uploaded file.'],
+    [''],
+    ['How to fix the errors:'],
+    ['1. Review the "Error Messages" column to understand what needs to be fixed'],
+    ['2. Check the row number in your original Excel file'],
+    ['3. Fix the missing or invalid values in your original file'],
+    ['4. Re-upload the corrected file'],
+    [''],
+    ['Common Issues:'],
+    ['• Missing Required Fields: Ensure Rig Number, Year, Month, and Hours are filled'],
+    ['• Invalid Year: Must be between 2000-2100'],
+    ['• Invalid Month: Use month names (Jan, Feb, etc.) or numbers (1-12)'],
+    ['• Invalid Hours: Must be a positive number, typically ≤24 per event'],
+    ['• Invalid Date: Must be between 1-31'],
+    [''],
+    ['For detailed help, contact support or check the documentation.']
+  ];
+
+  const instructionsWs = XLSX.utils.aoa_to_sheet(instructionsData);
+  instructionsWs['!cols'] = [{ wch: 80 }];
+  XLSX.utils.book_append_sheet(wb, instructionsWs, 'Instructions');
+
+  // Generate and download file
+  const timestamp = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, `${fileName}_${timestamp}.xlsx`);
+}

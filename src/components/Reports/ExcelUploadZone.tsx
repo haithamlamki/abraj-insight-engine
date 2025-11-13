@@ -369,6 +369,7 @@ export const ExcelUploadZone = ({
         onCancel={handleWarningsCancel}
         totalRecords={rawParsedData.length}
         validRecords={pendingValidData.length}
+        reportType={reportType}
       />
 
       {/* Header Mapping Step */}
