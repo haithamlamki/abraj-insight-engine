@@ -2,12 +2,15 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Download, FileSpreadsheet, Loader2, RotateCcw } from "lucide-react";
+import { ArrowUpDown, Download, FileSpreadsheet, Loader2, RotateCcw, Columns3 } from "lucide-react";
 import { useInfiniteReportData } from "@/hooks/useInfiniteReportData";
 import { DateRangeFilter } from "./DateRangeFilter";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import * as XLSX from "xlsx";
 
 interface Column {
@@ -53,6 +56,19 @@ export const DataTableWithDB = ({
     return {};
   });
   const [resizing, setResizing] = useState<{ key: string; startX: number; startWidth: number } | null>(null);
+  
+  // Column visibility state
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(() => {
+    const stored = localStorage.getItem(`table-visible-columns-${reportType}`);
+    if (stored) {
+      try {
+        return new Set(JSON.parse(stored));
+      } catch {
+        return new Set(columns.map(col => col.key));
+      }
+    }
+    return new Set(columns.map(col => col.key));
+  });
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -167,6 +183,25 @@ export const DataTableWithDB = ({
     return columnWidths[column.key] || column.defaultWidth || 150;
   };
 
+  const toggleColumnVisibility = (columnKey: string) => {
+    setVisibleColumns(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(columnKey)) {
+        // Don't allow hiding the last visible column
+        if (newSet.size === 1) return prev;
+        newSet.delete(columnKey);
+      } else {
+        newSet.add(columnKey);
+      }
+      localStorage.setItem(`table-visible-columns-${reportType}`, JSON.stringify([...newSet]));
+      return newSet;
+    });
+  };
+
+  const visibleColumnsArray = useMemo(() => {
+    return columns.filter(col => visibleColumns.has(col.key));
+  }, [columns, visibleColumns]);
+
   const filteredAndSortedData = useMemo(() => {
     if (!rawData) return [];
     
@@ -214,9 +249,9 @@ export const DataTableWithDB = ({
 
   const handleExportCSV = () => {
     const csv = [
-      columns.map(col => col.label).join(","),
+      visibleColumnsArray.map(col => col.label).join(","),
       ...filteredAndSortedData.map(row =>
-        columns.map(col => row[col.key]).join(",")
+        visibleColumnsArray.map(col => row[col.key]).join(",")
       )
     ].join("\n");
 
@@ -232,7 +267,7 @@ export const DataTableWithDB = ({
     const worksheet = XLSX.utils.json_to_sheet(
       filteredAndSortedData.map(row => {
         const obj: any = {};
-        columns.forEach(col => {
+        visibleColumnsArray.forEach(col => {
           obj[col.label] = row[col.key];
         });
         return obj;
@@ -279,6 +314,37 @@ export const DataTableWithDB = ({
                   <SelectItem value="spacious">Spacious</SelectItem>
                 </SelectContent>
               </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" title="Toggle columns">
+                    <Columns3 className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Columns</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-4" align="end">
+                  <div className="space-y-3">
+                    <h4 className="font-medium text-sm">Toggle Columns</h4>
+                    <div className="space-y-2">
+                      {columns.map((column) => (
+                        <div key={column.key} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`col-${column.key}`}
+                            checked={visibleColumns.has(column.key)}
+                            onCheckedChange={() => toggleColumnVisibility(column.key)}
+                            disabled={visibleColumns.size === 1 && visibleColumns.has(column.key)}
+                          />
+                          <Label
+                            htmlFor={`col-${column.key}`}
+                            className="text-sm font-normal cursor-pointer flex-1"
+                          >
+                            {column.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
               <Button onClick={resetColumnWidths} variant="outline" size="sm" title="Reset column widths">
                 <RotateCcw className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Reset Columns</span>
@@ -323,7 +389,7 @@ export const DataTableWithDB = ({
               <table className="w-full min-w-[600px]" style={{ tableLayout: 'fixed' }}>
                 <thead className="sticky top-0 bg-background z-10">
                   <tr className="border-b bg-muted/50">
-                    {columns.map((column) => (
+                    {visibleColumnsArray.map((column) => (
                       <th
                         key={column.key}
                         className={`${densityClasses.cell} text-left font-medium relative group`}
@@ -357,7 +423,7 @@ export const DataTableWithDB = ({
                 <tbody>
                   {filteredAndSortedData.map((row, index) => (
                     <tr key={row.id || index} className="border-b hover:bg-muted/50 transition-colors">
-                      {columns.map((column) => (
+                      {visibleColumnsArray.map((column) => (
                         <td 
                           key={column.key} 
                           className={`${densityClasses.cell} ${densityClasses.row} overflow-hidden text-ellipsis`}
