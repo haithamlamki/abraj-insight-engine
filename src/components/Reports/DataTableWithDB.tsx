@@ -7,6 +7,7 @@ import { useInfiniteReportData } from "@/hooks/useInfiniteReportData";
 import { DateRangeFilter } from "./DateRangeFilter";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import * as XLSX from "xlsx";
 
 interface Column {
@@ -34,6 +35,10 @@ export const DataTableWithDB = ({
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  const [density, setDensity] = useState<"compact" | "comfortable" | "spacious">(() => {
+    const stored = localStorage.getItem(`table-density-${reportType}`);
+    return (stored as "compact" | "comfortable" | "spacious") || "comfortable";
+  });
   
   // Column resizing state
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
@@ -139,6 +144,24 @@ export const DataTableWithDB = ({
     setColumnWidths({});
     localStorage.removeItem(`table-column-widths-${reportType}`);
   };
+
+  const handleDensityChange = (newDensity: "compact" | "comfortable" | "spacious") => {
+    setDensity(newDensity);
+    localStorage.setItem(`table-density-${reportType}`, newDensity);
+  };
+
+  const getDensityClasses = () => {
+    switch (density) {
+      case "compact":
+        return { row: "text-xs", cell: "p-2" };
+      case "comfortable":
+        return { row: "text-sm", cell: "p-3" };
+      case "spacious":
+        return { row: "text-base", cell: "p-4" };
+    }
+  };
+
+  const densityClasses = getDensityClasses();
 
   const getColumnWidth = (column: Column) => {
     return columnWidths[column.key] || column.defaultWidth || 150;
@@ -246,6 +269,16 @@ export const DataTableWithDB = ({
               </CardDescription>
             </div>
             <div className="flex flex-wrap gap-2">
+              <Select value={density} onValueChange={handleDensityChange}>
+                <SelectTrigger className="w-[140px] h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="compact">Compact</SelectItem>
+                  <SelectItem value="comfortable">Comfortable</SelectItem>
+                  <SelectItem value="spacious">Spacious</SelectItem>
+                </SelectContent>
+              </Select>
               <Button onClick={resetColumnWidths} variant="outline" size="sm" title="Reset column widths">
                 <RotateCcw className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Reset Columns</span>
@@ -293,7 +326,7 @@ export const DataTableWithDB = ({
                     {columns.map((column) => (
                       <th
                         key={column.key}
-                        className="p-3 text-left font-medium text-sm relative group"
+                        className={`${densityClasses.cell} text-left font-medium relative group`}
                         style={{ width: `${getColumnWidth(column)}px` }}
                       >
                         <div className="flex items-center justify-between">
@@ -327,7 +360,7 @@ export const DataTableWithDB = ({
                       {columns.map((column) => (
                         <td 
                           key={column.key} 
-                          className="p-3 text-sm overflow-hidden text-ellipsis"
+                          className={`${densityClasses.cell} ${densityClasses.row} overflow-hidden text-ellipsis`}
                           style={{ width: `${getColumnWidth(column)}px` }}
                         >
                           <div className="overflow-hidden text-ellipsis whitespace-nowrap" title={String(row[column.key] || '')}>
