@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Download, FileSpreadsheet, Loader2, RotateCcw, Columns3 } from "lucide-react";
+import { ArrowUpDown, Download, FileSpreadsheet, Loader2, RotateCcw, Columns3, Save, BookmarkPlus, Trash2 } from "lucide-react";
 import { useInfiniteReportData } from "@/hooks/useInfiniteReportData";
 import { DateRangeFilter } from "./DateRangeFilter";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -11,6 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 import * as XLSX from "xlsx";
 
 interface Column {
@@ -18,6 +21,18 @@ interface Column {
   label: string;
   sortable?: boolean;
   defaultWidth?: number;
+}
+
+interface SavedView {
+  id: string;
+  name: string;
+  visibleColumns: string[];
+  columnWidths: Record<string, number>;
+  sortColumn: string | null;
+  sortDirection: "asc" | "desc";
+  density: "compact" | "comfortable" | "spacious";
+  startDate: string | null;
+  endDate: string | null;
 }
 
 interface DataTableWithDBProps {
@@ -33,6 +48,7 @@ export const DataTableWithDB = ({
   title = "Recent Entries",
   formatRow 
 }: DataTableWithDBProps) => {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -69,6 +85,22 @@ export const DataTableWithDB = ({
     }
     return new Set(columns.map(col => col.key));
   });
+  
+  // Saved views state
+  const [savedViews, setSavedViews] = useState<SavedView[]>(() => {
+    const stored = localStorage.getItem(`table-saved-views-${reportType}`);
+    if (stored) {
+      try {
+        return JSON.parse(stored);
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
+  const [currentViewId, setCurrentViewId] = useState<string | null>(null);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [viewName, setViewName] = useState("");
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -202,6 +234,80 @@ export const DataTableWithDB = ({
     return columns.filter(col => visibleColumns.has(col.key));
   }, [columns, visibleColumns]);
 
+  const saveCurrentView = () => {
+    if (!viewName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a name for the view",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newView: SavedView = {
+      id: Date.now().toString(),
+      name: viewName.trim(),
+      visibleColumns: [...visibleColumns],
+      columnWidths,
+      sortColumn,
+      sortDirection,
+      density,
+      startDate: startDate?.toISOString() || null,
+      endDate: endDate?.toISOString() || null,
+    };
+
+    const updatedViews = [...savedViews, newView];
+    setSavedViews(updatedViews);
+    localStorage.setItem(`table-saved-views-${reportType}`, JSON.stringify(updatedViews));
+    setCurrentViewId(newView.id);
+    setSaveDialogOpen(false);
+    setViewName("");
+    
+    toast({
+      title: "View saved",
+      description: `"${newView.name}" has been saved successfully`,
+    });
+  };
+
+  const loadView = (view: SavedView) => {
+    setVisibleColumns(new Set(view.visibleColumns));
+    setColumnWidths(view.columnWidths);
+    setSortColumn(view.sortColumn);
+    setSortDirection(view.sortDirection);
+    setDensity(view.density);
+    setStartDate(view.startDate ? new Date(view.startDate) : null);
+    setEndDate(view.endDate ? new Date(view.endDate) : null);
+    setCurrentViewId(view.id);
+    
+    // Update localStorage for individual settings
+    localStorage.setItem(`table-visible-columns-${reportType}`, JSON.stringify(view.visibleColumns));
+    localStorage.setItem(`table-column-widths-${reportType}`, JSON.stringify(view.columnWidths));
+    localStorage.setItem(`table-density-${reportType}`, view.density);
+    
+    toast({
+      title: "View loaded",
+      description: `"${view.name}" has been applied`,
+    });
+  };
+
+  const deleteView = (viewId: string) => {
+    const viewToDelete = savedViews.find(v => v.id === viewId);
+    const updatedViews = savedViews.filter(v => v.id !== viewId);
+    setSavedViews(updatedViews);
+    localStorage.setItem(`table-saved-views-${reportType}`, JSON.stringify(updatedViews));
+    
+    if (currentViewId === viewId) {
+      setCurrentViewId(null);
+    }
+    
+    toast({
+      title: "View deleted",
+      description: `"${viewToDelete?.name}" has been deleted`,
+    });
+  };
+
+  const currentView = savedViews.find(v => v.id === currentViewId);
+
   const filteredAndSortedData = useMemo(() => {
     if (!rawData) return [];
     
@@ -304,6 +410,78 @@ export const DataTableWithDB = ({
               </CardDescription>
             </div>
             <div className="flex flex-wrap gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <BookmarkPlus className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">
+                      {currentView ? currentView.name : "Views"}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[200px]">
+                  <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+                    <DialogTrigger asChild>
+                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                        <Save className="h-4 w-4 mr-2" />
+                        Save Current View
+                      </DropdownMenuItem>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Save View</DialogTitle>
+                        <DialogDescription>
+                          Save your current column configuration, filters, and preferences
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="py-4">
+                        <Label htmlFor="view-name">View Name</Label>
+                        <Input
+                          id="view-name"
+                          value={viewName}
+                          onChange={(e) => setViewName(e.target.value)}
+                          placeholder="e.g., Monthly Analysis"
+                          className="mt-2"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              saveCurrentView();
+                            }
+                          }}
+                        />
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={saveCurrentView}>Save View</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                  {savedViews.length > 0 && <DropdownMenuSeparator />}
+                  {savedViews.map((view) => (
+                    <DropdownMenuItem
+                      key={view.id}
+                      className="flex items-center justify-between"
+                      onSelect={() => loadView(view)}
+                    >
+                      <span className={currentViewId === view.id ? "font-medium" : ""}>
+                        {view.name}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 ml-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteView(view.id);
+                        }}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Select value={density} onValueChange={handleDensityChange}>
                 <SelectTrigger className="w-[140px] h-9">
                   <SelectValue />
