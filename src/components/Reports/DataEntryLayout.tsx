@@ -10,8 +10,8 @@ interface DataEntryLayoutProps {
   description: string;
   breadcrumbs: { label: string; href?: string }[];
   viewContent: ReactNode;
-  entryContent: ReactNode;
-  uploadContent: ReactNode;
+  entryContent?: ReactNode;
+  uploadContent?: ReactNode;
   pasteContent?: ReactNode;
 }
 
@@ -52,10 +52,15 @@ export const DataEntryLayout = ({
         </div>
 
         <Tabs defaultValue="view" className="w-full">
-          <TabsList className={cn("grid w-full max-w-2xl", pasteContent ? "grid-cols-4" : "grid-cols-3")}>
+          <TabsList className={cn("grid w-full max-w-2xl", 
+            pasteContent && entryContent && uploadContent ? "grid-cols-4" : 
+            [entryContent, uploadContent, pasteContent].filter(Boolean).length === 2 ? "grid-cols-3" :
+            [entryContent, uploadContent, pasteContent].filter(Boolean).length === 1 ? "grid-cols-2" :
+            "grid-cols-1"
+          )}>
             <TabsTrigger value="view">View Report</TabsTrigger>
-            <TabsTrigger value="entry">Manual Entry</TabsTrigger>
-            <TabsTrigger value="upload">Upload Excel</TabsTrigger>
+            {entryContent && <TabsTrigger value="entry">Manual Entry</TabsTrigger>}
+            {uploadContent && <TabsTrigger value="upload">Upload Excel</TabsTrigger>}
             {pasteContent && <TabsTrigger value="paste">Copy/Paste</TabsTrigger>}
           </TabsList>
           
@@ -63,13 +68,17 @@ export const DataEntryLayout = ({
             {viewContent}
           </TabsContent>
           
-          <TabsContent value="entry" className="space-y-6 mt-6">
-            {entryContent}
-          </TabsContent>
+          {entryContent && (
+            <TabsContent value="entry" className="space-y-6 mt-6">
+              {entryContent}
+            </TabsContent>
+          )}
           
-          <TabsContent value="upload" className="space-y-6 mt-6">
-            {uploadContent}
-          </TabsContent>
+          {uploadContent && (
+            <TabsContent value="upload" className="space-y-6 mt-6">
+              {uploadContent}
+            </TabsContent>
+          )}
           
           {pasteContent && (
             <TabsContent value="paste" className="space-y-6 mt-6">
