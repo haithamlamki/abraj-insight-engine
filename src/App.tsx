@@ -41,6 +41,7 @@ import DRLine from "./pages/RigStatus/DRLine";
 
 // Admin pages
 import BudgetManagement from "./pages/Admin/BudgetManagement";
+import BudgetConfiguration from "./pages/Admin/BudgetConfiguration";
 import UserManagement from "./pages/Admin/UserManagement";
 import BudgetAnalytics from "./pages/Admin/BudgetAnalytics";
 import AuditTrail from "./pages/Admin/AuditTrail";
@@ -101,13 +102,14 @@ const App = () => (
               <Route path="/rig-status/work-orders" element={<ProtectedRoute><WorkOrders /></ProtectedRoute>} />
               <Route path="/rig-status/dr-line" element={<ProtectedRoute><DRLine /></ProtectedRoute>} />
               
-              {/* Admin routes */}
-        <Route path="/admin/budgets" element={<ProtectedRoute role="admin"><BudgetManagement /></ProtectedRoute>} />
-        <Route path="/admin/users" element={<ProtectedRoute role="admin"><UserManagement /></ProtectedRoute>} />
-        <Route path="/admin/analytics" element={<ProtectedRoute role="admin"><BudgetAnalytics /></ProtectedRoute>} />
-        <Route path="/admin/audit-trail" element={<ProtectedRoute role="admin"><AuditTrail /></ProtectedRoute>} />
-        <Route path="/admin/data-quality" element={<ProtectedRoute role="admin"><DataQuality /></ProtectedRoute>} />
-        <Route path="/admin/bulk-editor" element={<ProtectedRoute role="admin"><BulkDataEditor /></ProtectedRoute>} />
+              {/* Admin Routes */}
+              <Route path="/admin/budgets" element={<ProtectedRoute role="admin"><BudgetManagement /></ProtectedRoute>} />
+              <Route path="/admin/budget-config" element={<ProtectedRoute role="admin"><BudgetConfiguration /></ProtectedRoute>} />
+              <Route path="/admin/users" element={<ProtectedRoute role="admin"><UserManagement /></ProtectedRoute>} />
+              <Route path="/admin/analytics" element={<ProtectedRoute role="admin"><BudgetAnalytics /></ProtectedRoute>} />
+              <Route path="/admin/audit-trail" element={<ProtectedRoute role="admin"><AuditTrail /></ProtectedRoute>} />
+              <Route path="/admin/data-quality" element={<ProtectedRoute role="admin"><DataQuality /></ProtectedRoute>} />
+              <Route path="/admin/bulk-editor" element={<ProtectedRoute role="admin"><BulkDataEditor /></ProtectedRoute>} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
