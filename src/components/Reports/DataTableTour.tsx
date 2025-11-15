@@ -37,6 +37,16 @@ export const DataTableTour = ({ reportType, run, setRun }: DataTableTourProps) =
       placement: 'bottom',
     },
     {
+      target: '[data-tour="smart-filters"]',
+      content: (
+        <div>
+          <h4 className="font-semibold mb-2">Smart Filters</h4>
+          <p>One-click access to intelligent filters tailored to your data type, including time ranges, performance thresholds, and more.</p>
+        </div>
+      ),
+      placement: 'bottom',
+    },
+    {
       target: '[data-tour="filter-button"]',
       content: 'Apply advanced filters to narrow down your data by specific criteria.',
       placement: 'bottom',

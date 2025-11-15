@@ -27,6 +27,7 @@ import { DataEntryForm } from "./DataEntryForm";
 import { ExcelUploadZone } from "./ExcelUploadZone";
 import { DataEntryOptionsDialog } from "./DataEntryOptionsDialog";
 import { DataTableTour } from "./DataTableTour";
+import { SmartFilterPanel } from "./SmartFilterPanel";
 import { useDataTableTour } from "@/hooks/useDataTableTour";
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
@@ -127,6 +128,7 @@ export const DataTableWithDB = ({
     const stored = localStorage.getItem(`filter-templates-${reportType}`);
     return stored ? JSON.parse(stored) : {};
   });
+  const [smartFilterLabels, setSmartFilterLabels] = useState<string[]>([]);
   
   // Export state
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
@@ -395,6 +397,48 @@ export const DataTableWithDB = ({
     });
   };
 
+
+  const handleSmartFilterApply = (filterConfig: any) => {
+    if (filterConfig.type === 'dateRange') {
+      setStartDate(filterConfig.startDate);
+      setEndDate(filterConfig.endDate);
+      setSmartFilterLabels(prev => {
+        const newLabels = prev.filter(l => !l.includes('Last') && !l.includes('This') && !l.includes('Year'));
+        return [...newLabels, filterConfig.label];
+      });
+    } else if (filterConfig.type === 'advanced' && filterConfig.conditions) {
+      // Convert to advanced filter format
+      const newGroup: FilterGroup = {
+        id: Date.now().toString(),
+        logic: 'AND',
+        conditions: filterConfig.conditions.map((cond: any, idx: number) => ({
+          id: `${Date.now()}-${idx}`,
+          field: cond.field,
+          operator: cond.operator,
+          value: cond.value
+        }))
+      };
+      setAdvancedFilters(prev => [...prev, newGroup]);
+      setSmartFilterLabels(prev => [...prev, filterConfig.label]);
+    }
+
+    toast({
+      title: "Smart filter applied",
+      description: `${filterConfig.label} has been applied to your data`,
+    });
+  };
+
+  const handleClearAllFilters = () => {
+    setAdvancedFilters([]);
+    setSmartFilterLabels([]);
+    setStartDate(null);
+    setEndDate(null);
+    setSearchTerm("");
+    toast({
+      title: "Filters cleared",
+      description: "All filters have been removed",
+    });
+  };
 
   const handleDensityChange = (newDensity: "compact" | "comfortable" | "spacious") => {
     setDensity(newDensity);
@@ -1086,6 +1130,21 @@ export const DataTableWithDB = ({
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
+                <div data-tour="smart-filters">
+                  <SmartFilterPanel
+                    reportType={reportType}
+                    onFilterApply={handleSmartFilterApply}
+                    activeFilters={smartFilterLabels.length + advancedFilters.length}
+                    onClearAll={handleClearAllFilters}
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Quick access to intelligent, context-aware filters for common scenarios</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <Button
                   data-tour="filter-button"
                   variant="outline"
@@ -1109,9 +1168,30 @@ export const DataTableWithDB = ({
           </div>
 
           {/* Active Filters Display */}
-          {advancedFilters.length > 0 && (
+          {(advancedFilters.length > 0 || smartFilterLabels.length > 0) && (
             <div className="flex flex-wrap gap-2 items-center">
               <span className="text-sm text-muted-foreground">Active filters:</span>
+              {smartFilterLabels.map((label, idx) => (
+                <Badge key={`smart-${idx}`} variant="default" className="gap-1">
+                  {label}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 w-4 p-0 hover:bg-transparent"
+                    onClick={() => {
+                      const newLabels = smartFilterLabels.filter((_, i) => i !== idx);
+                      setSmartFilterLabels(newLabels);
+                      // If it was a date filter, clear the dates
+                      if (label.includes('Last') || label.includes('This') || label.includes('Year')) {
+                        setStartDate(null);
+                        setEndDate(null);
+                      }
+                    }}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              ))}
               {advancedFilters.map((group, groupIdx) => (
                 <Badge key={group.id} variant="secondary" className="gap-1">
                   Group {groupIdx + 1} ({group.logic})
@@ -1130,7 +1210,7 @@ export const DataTableWithDB = ({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setAdvancedFilters([])}
+                onClick={handleClearAllFilters}
               >
                 Clear all filters
               </Button>
