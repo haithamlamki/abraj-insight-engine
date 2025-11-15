@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Loader2, Send, X, Lightbulb } from 'lucide-react';
+import { Sparkles, Loader2, Send, X, Lightbulb, Mic, MicOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -32,7 +32,48 @@ export const NaturalLanguageFilter = ({
   const [query, setQuery] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastFilter, setLastFilter] = useState<string | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
+
+  // Initialize speech recognition
+  useEffect(() => {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.lang = 'en-US';
+
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setQuery(transcript);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+        toast({
+          title: "Voice input error",
+          description: event.error === 'no-speech' 
+            ? "No speech detected. Please try again." 
+            : "Failed to recognize speech. Please try again.",
+          variant: "destructive"
+        });
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, [toast]);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -107,6 +148,38 @@ export const NaturalLanguageFilter = ({
     setQuery(example);
   };
 
+  const toggleVoiceInput = () => {
+    if (!recognitionRef.current) {
+      toast({
+        title: "Not supported",
+        description: "Voice input is not supported in your browser. Please use Chrome, Edge, or Safari.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+        toast({
+          title: "Listening...",
+          description: "Speak your filter query now",
+        });
+      } catch (error) {
+        console.error('Failed to start speech recognition:', error);
+        toast({
+          title: "Error",
+          description: "Failed to start voice input. Please try again.",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
   return (
     <Card className="p-4 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
       <div className="space-y-4">
@@ -140,16 +213,32 @@ export const NaturalLanguageFilter = ({
         )}
 
         <form onSubmit={handleSubmit} className="flex gap-2">
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="e.g., show last month high performers..."
-            disabled={isProcessing}
-            className="flex-1"
-          />
+          <div className="flex-1 flex gap-2">
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="e.g., show last month high performers..."
+              disabled={isProcessing || isListening}
+              className="flex-1"
+            />
+            <Button
+              type="button"
+              onClick={toggleVoiceInput}
+              disabled={isProcessing}
+              size="sm"
+              variant={isListening ? "default" : "outline"}
+              className={isListening ? "animate-pulse" : ""}
+            >
+              {isListening ? (
+                <MicOff className="h-4 w-4" />
+              ) : (
+                <Mic className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
           <Button 
             type="submit" 
-            disabled={isProcessing || !query.trim()}
+            disabled={isProcessing || !query.trim() || isListening}
             size="sm"
           >
             {isProcessing ? (
