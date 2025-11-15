@@ -119,6 +119,7 @@ const adminMenuItems = [
     icon: Shield,
     items: [
       { title: "Budget Management", url: "/admin/budgets", icon: Wallet },
+      { title: "Budget Configuration", url: "/admin/budget-config", icon: Settings },
       { title: "User Management", url: "/admin/users", icon: Users },
       { title: "Budget Analytics", url: "/admin/analytics", icon: BarChart3 },
       { title: "Audit Trail", url: "/admin/audit-trail", icon: FileText },
