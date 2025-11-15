@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Download, FileSpreadsheet, Loader2, RotateCcw, Columns3, Save, BookmarkPlus, Trash2, Edit2, X, Filter } from "lucide-react";
+import { ArrowUpDown, Download, FileSpreadsheet, Loader2, RotateCcw, Columns3, Save, BookmarkPlus, Trash2, Edit2, X, Filter, Maximize2 } from "lucide-react";
 import { useInfiniteReportData } from "@/hooks/useInfiniteReportData";
 import { DateRangeFilter } from "./DateRangeFilter";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -225,6 +225,51 @@ export const DataTableWithDB = ({
   const resetColumnWidths = () => {
     setColumnWidths({});
     localStorage.removeItem(`table-column-widths-${reportType}`);
+    toast({
+      title: "Columns reset",
+      description: "Column widths have been reset to default",
+    });
+  };
+
+  const autoSizeColumns = () => {
+    const newWidths: Record<string, number> = {};
+    const sampleSize = Math.min(100, filteredAndSortedData.length); // Sample first 100 rows
+    const minWidth = 100;
+    const maxWidth = 400;
+    const padding = 40; // Extra padding for cell padding and sort icons
+
+    visibleColumnsArray.forEach(column => {
+      // Measure header length
+      const headerLength = column.label.length * 8 + padding;
+      
+      // Measure content length from sample
+      let maxContentLength = 0;
+      for (let i = 0; i < sampleSize; i++) {
+        const value = filteredAndSortedData[i]?.[column.key];
+        const stringValue = value != null ? String(value) : '';
+        const contentLength = stringValue.length * 8; // Approximate 8px per character
+        maxContentLength = Math.max(maxContentLength, contentLength);
+      }
+
+      // Take the larger of header or content, with min/max constraints
+      const optimalWidth = Math.max(
+        minWidth,
+        Math.min(
+          maxWidth,
+          Math.max(headerLength, maxContentLength + padding)
+        )
+      );
+
+      newWidths[column.key] = optimalWidth;
+    });
+
+    setColumnWidths(newWidths);
+    localStorage.setItem(`table-column-widths-${reportType}`, JSON.stringify(newWidths));
+    
+    toast({
+      title: "Columns auto-sized",
+      description: "Column widths optimized based on content",
+    });
   };
 
   // Bulk selection handlers
@@ -814,9 +859,19 @@ export const DataTableWithDB = ({
               </Popover>
               <Button onClick={resetColumnWidths} variant="outline" size="sm" title="Reset column widths">
                 <RotateCcw className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Reset Columns</span>
+                <span className="hidden sm:inline">Reset</span>
               </Button>
               <Button 
+                onClick={autoSizeColumns} 
+                variant="outline" 
+                size="sm" 
+                title="Auto-size columns based on content"
+                disabled={isLoading || !filteredAndSortedData.length}
+              >
+                <Maximize2 className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Auto-size</span>
+              </Button>
+              <Button
                 onClick={() => setExportDialogOpen(true)} 
                 variant="outline" 
                 size="sm" 
