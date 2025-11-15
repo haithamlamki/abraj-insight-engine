@@ -24,9 +24,11 @@ import {
   Sparkles, 
   Save,
   Loader2,
-  Brain
+  Brain,
+  Bell
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BudgetAlertsPanel } from "@/components/Budget/BudgetAlertsPanel";
 
 interface SmartBudgetSettingsProps {
   open: boolean;
@@ -53,6 +55,7 @@ export function SmartBudgetSettings({
   const [varianceThreshold, setVarianceThreshold] = useState([10]);
   const [budgetGrowth, setBudgetGrowth] = useState([5]);
   const [generatingSuggestions, setGeneratingSuggestions] = useState(false);
+  const [alertsOpen, setAlertsOpen] = useState(false);
 
   // Fetch reports
   const { data: reports } = useQuery({
@@ -276,6 +279,13 @@ export function SmartBudgetSettings({
           </DialogDescription>
         </DialogHeader>
 
+        <div className="flex justify-end mb-4">
+          <Button variant="outline" size="sm" onClick={() => setAlertsOpen(true)}>
+            <Bell className="h-4 w-4 mr-2" />
+            Manage Alerts
+          </Button>
+        </div>
+
         <Tabs value={selectedReport} onValueChange={setSelectedReport} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="all">All Reports</TabsTrigger>
@@ -456,6 +466,11 @@ export function SmartBudgetSettings({
             </TabsContent>
           ))}
         </Tabs>
+
+        <BudgetAlertsPanel 
+          open={alertsOpen}
+          onOpenChange={setAlertsOpen}
+        />
       </DialogContent>
     </Dialog>
   );
