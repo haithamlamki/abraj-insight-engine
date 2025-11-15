@@ -47,8 +47,18 @@ export const DataTableTour = ({ reportType, run, setRun }: DataTableTourProps) =
       placement: 'bottom',
     },
     {
+      target: 'button:has(svg.lucide-sparkles)',
+      content: (
+        <div>
+          <h4 className="font-semibold mb-2">Natural Language Filters (Ask AI)</h4>
+          <p>Type queries in plain English like "show last month high performers" and AI will convert them into filters automatically!</p>
+        </div>
+      ),
+      placement: 'bottom',
+    },
+    {
       target: '[data-tour="filter-button"]',
-      content: 'Apply advanced filters to narrow down your data by specific criteria.',
+      content: 'Create complex filters with multiple conditions using the advanced filter builder.',
       placement: 'bottom',
     },
     {
