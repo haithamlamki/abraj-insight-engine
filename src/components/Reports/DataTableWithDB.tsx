@@ -688,7 +688,7 @@ export const DataTableWithDB = ({
   }
 
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -833,15 +833,15 @@ export const DataTableWithDB = ({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="overflow-x-auto">
+      <CardContent className="p-0">
         <Tabs defaultValue="view-data" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-3 mb-0 rounded-none border-b">
             <TabsTrigger value="view-data">View Data</TabsTrigger>
             <TabsTrigger value="manual-entry">Manual Entry</TabsTrigger>
             <TabsTrigger value="upload-excel">Upload Excel</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="view-data" className="space-y-4">
+          <TabsContent value="view-data" className="space-y-0 m-0 p-6">
             {/* Bulk Actions Bar */}
             {selectedRows.size > 0 && (
             <div className="flex items-center justify-between p-3 bg-primary/10 border border-primary/20 rounded-lg">
@@ -943,11 +943,11 @@ export const DataTableWithDB = ({
               {searchTerm ? 'No matching records found' : 'No data available yet'}
             </div>
           ) : (
-            <ScrollArea className="h-[600px] rounded-md border" ref={scrollRef}>
-              <table className="w-full" style={{ tableLayout: 'auto' }}>
-                <thead className="sticky top-0 bg-background z-10">
-                  <tr className="border-b bg-muted/50">
-                    <th className={`${densityClasses.cell} w-[50px]`}>
+            <div className="w-full overflow-x-auto max-h-[600px] overflow-y-auto border rounded-md" ref={scrollRef}>
+              <table className="w-full border-collapse">
+                <thead className="sticky top-0 bg-background z-10 border-b">
+                  <tr className="bg-muted/50">
+                    <th className={`${densityClasses.cell} w-[50px] border-r`}>
                       <Checkbox
                         checked={selectedRows.size === filteredAndSortedData.length && filteredAndSortedData.length > 0}
                         onCheckedChange={handleSelectAll}
@@ -956,10 +956,10 @@ export const DataTableWithDB = ({
                     {visibleColumnsArray.map((column) => (
                       <th
                         key={column.key}
-                        className={`${densityClasses.cell} text-left font-medium relative group`}
+                        className={`${densityClasses.cell} text-left font-medium relative group border-r`}
                         style={{ 
-                          width: columnWidths[column.key] ? `${columnWidths[column.key]}px` : 'auto',
-                          minWidth: '120px'
+                          width: columnWidths[column.key] ? `${columnWidths[column.key]}px` : `${100 / visibleColumnsArray.length}%`,
+                          minWidth: '100px'
                         }}
                       >
                         <div className="flex items-center justify-between">
@@ -990,7 +990,7 @@ export const DataTableWithDB = ({
                 <tbody>
                   {filteredAndSortedData.map((row, index) => (
                     <tr key={row.id || index} className="border-b hover:bg-muted/50 transition-colors">
-                      <td className={`${densityClasses.cell}`}>
+                      <td className={`${densityClasses.cell} border-r`}>
                         <Checkbox
                           checked={selectedRows.has(row.id)}
                           onCheckedChange={() => handleSelectRow(row.id)}
@@ -999,11 +999,10 @@ export const DataTableWithDB = ({
                       {visibleColumnsArray.map((column) => (
                         <td 
                           key={column.key} 
-                          className={`${densityClasses.cell} ${densityClasses.row}`}
+                          className={`${densityClasses.cell} ${densityClasses.row} border-r`}
                           style={{ 
-                            width: columnWidths[column.key] ? `${columnWidths[column.key]}px` : 'auto',
-                            minWidth: '120px',
-                            maxWidth: columnWidths[column.key] ? `${columnWidths[column.key]}px` : 'none'
+                            width: columnWidths[column.key] ? `${columnWidths[column.key]}px` : `${100 / visibleColumnsArray.length}%`,
+                            minWidth: '100px'
                           }}
                         >
                           <div className="overflow-hidden text-ellipsis whitespace-nowrap" title={String(row[column.key] || '')}>
@@ -1024,7 +1023,7 @@ export const DataTableWithDB = ({
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                 </div>
               )}
-            </ScrollArea>
+            </div>
           )}
 
           {/* Delete Confirmation Dialog */}
@@ -1057,7 +1056,7 @@ export const DataTableWithDB = ({
         </AlertDialog>
           </TabsContent>
 
-          <TabsContent value="manual-entry">
+          <TabsContent value="manual-entry" className="p-6">
             <DataEntryForm
               title={`Add ${title} Record`}
               fields={columns
@@ -1076,7 +1075,7 @@ export const DataTableWithDB = ({
             />
           </TabsContent>
 
-          <TabsContent value="upload-excel">
+          <TabsContent value="upload-excel" className="p-6">
             <ExcelUploadZone
               title={`Upload ${title} Data`}
               templateName={reportType}
