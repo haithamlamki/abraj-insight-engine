@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
 import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
@@ -6,11 +7,28 @@ import { Fuel as FuelIcon, TrendingDown, Gauge, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useFuelAnalytics } from "@/hooks/useFuelAnalytics";
+import { useReportFilters } from "@/hooks/useReportFilters";
+import { QuickNavigationBar } from "@/components/QuickNavigationBar";
+import { RelatedReportsPanel } from "@/components/RelatedReportsPanel";
 
 const Fuel = () => {
   const navigate = useNavigate();
   const currentYear = new Date().getFullYear();
-  const { data: analytics, isLoading } = useFuelAnalytics({ year: currentYear });
+  const [filters, setFilters] = useState<any>({ year: currentYear });
+  const { data: analytics, isLoading } = useFuelAnalytics(filters);
+
+  // Cross-report filter integration
+  const { filters: crossReportFilters, updateFilters: updateCrossFilters } = useReportFilters('fuel');
+  
+  useEffect(() => {
+    if (Object.keys(crossReportFilters).length > 0) {
+      setFilters(prev => ({ ...prev, ...crossReportFilters }));
+    }
+  }, []);
+
+  useEffect(() => {
+    updateCrossFilters(filters);
+  }, [filters]);
 
 
   const tableColumns = [
@@ -33,6 +51,12 @@ const Fuel = () => {
       ]}
       viewContent={
         <div className="space-y-6">
+          {/* Smart Navigation */}
+          <QuickNavigationBar 
+            currentReport="fuel" 
+            currentFilters={filters}
+          />
+
           <div className="flex justify-end">
             <Button 
               onClick={() => navigate('/rig-consumption/fuel-analytics')}
@@ -81,6 +105,13 @@ const Fuel = () => {
               fuelCost: `$${row.fuel_cost?.toLocaleString() || '0'}`,
               closingBalance: row.closing_balance?.toLocaleString() || '0'
             })}
+          />
+
+          {/* Related Reports Navigation */}
+          <RelatedReportsPanel 
+            currentReport="fuel"
+            currentFilters={filters}
+            variant="full"
           />
         </div>
       }

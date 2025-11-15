@@ -1,9 +1,11 @@
+import { useEffect } from "react";
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
 import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { useReportData } from "@/hooks/useReportData";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useUtilizationFilters } from "@/hooks/useUtilizationFilters";
+import { useUtilizationFilters, UtilizationFilters } from "@/hooks/useUtilizationFilters";
 import { useUtilizationAnalytics } from "@/hooks/useUtilizationAnalytics";
+import { useReportFilters } from "@/hooks/useReportFilters";
 import { KPICardsGrid } from "@/components/Utilization/KPICardsGrid";
 import { UtilizationFilterPanel } from "@/components/Utilization/UtilizationFilterPanel";
 import { ActiveFiltersBar } from "@/components/Utilization/ActiveFiltersBar";
@@ -12,11 +14,41 @@ import { RigPerformanceTable } from "@/components/Utilization/RigPerformanceTabl
 import { UtilizationTrendChart } from "@/components/Utilization/UtilizationTrendChart";
 import { UtilizationHeatmap } from "@/components/Utilization/UtilizationHeatmap";
 import { UtilizationAnalytics } from "@/components/Reports/UtilizationAnalytics";
+import { QuickNavigationBar } from "@/components/QuickNavigationBar";
+import { RelatedReportsPanel } from "@/components/RelatedReportsPanel";
 
 const Utilization = () => {
   const { data: rawData = [] } = useReportData("utilization");
   const { filters, updateFilters, filterOptions, filteredData, clearFilters, applyQuickFilter, activeFilterCount, totalRecords, filteredRecords } = useUtilizationFilters(rawData);
   const { kpis, clientDistribution, rigPerformance, timeSeriesData, heatmapData } = useUtilizationAnalytics(filteredData);
+
+  // Cross-report filter integration
+  const { filters: crossReportFilters, updateFilters: updateCrossFilters } = useReportFilters('utilization');
+  
+  useEffect(() => {
+    if (Object.keys(crossReportFilters).length > 0) {
+      const mappedFilters: UtilizationFilters = {
+        years: crossReportFilters.year ? [crossReportFilters.year.toString()] : [],
+        months: crossReportFilters.month ? [crossReportFilters.month] : [],
+        clients: crossReportFilters.client ? [crossReportFilters.client] : [],
+        rigs: crossReportFilters.rigs || (crossReportFilters.rig ? [crossReportFilters.rig] : []),
+        status: crossReportFilters.status ? [crossReportFilters.status] : [],
+        utilizationRange: [0, 100],
+      };
+      updateFilters(mappedFilters);
+    }
+  }, []);
+
+  useEffect(() => {
+    const mappedFilters = {
+      rigs: filters.rigs,
+      year: filters.years[0] ? parseInt(filters.years[0]) : undefined,
+      month: filters.months[0],
+      client: filters.clients[0],
+      status: filters.status[0],
+    };
+    updateCrossFilters(mappedFilters);
+  }, [filters]);
 
   const handleRemoveFilter = (category: any, value: string) => {
     if (category === 'utilizationRange') {
@@ -52,6 +84,12 @@ const Utilization = () => {
       ]}
       viewContent={
         <div className="space-y-6">
+          {/* Smart Navigation */}
+          <QuickNavigationBar 
+            currentReport="utilization" 
+            currentFilters={filters}
+          />
+
           <Tabs defaultValue="dashboard" className="w-full">
             <TabsList className="grid w-full max-w-md grid-cols-3">
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
@@ -99,6 +137,19 @@ const Utilization = () => {
                   />
                 </div>
               </div>
+
+              {/* Related Reports Navigation */}
+              <RelatedReportsPanel 
+                currentReport="utilization"
+                currentFilters={{ 
+                  rigs: filters.rigs,
+                  year: filters.years[0] ? parseInt(filters.years[0]) : undefined,
+                  month: filters.months[0],
+                  client: filters.clients[0],
+                  status: filters.status[0],
+                }}
+                variant="full"
+              />
             </TabsContent>
 
             <TabsContent value="analytics" className="space-y-6">
