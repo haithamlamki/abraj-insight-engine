@@ -360,10 +360,6 @@ export const DataTableWithDB = ({
 
   const densityClasses = getDensityClasses();
 
-  const getColumnWidth = (column: Column) => {
-    return columnWidths[column.key] || column.defaultWidth || 150;
-  };
-
   const toggleColumnVisibility = (columnKey: string) => {
     setVisibleColumns(prev => {
       const newSet = new Set(prev);
@@ -837,7 +833,7 @@ export const DataTableWithDB = ({
           </div>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-x-auto">
         <Tabs defaultValue="view-data" className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="view-data">View Data</TabsTrigger>
@@ -948,7 +944,7 @@ export const DataTableWithDB = ({
             </div>
           ) : (
             <ScrollArea className="h-[600px] rounded-md border" ref={scrollRef}>
-              <table className="w-full min-w-[600px]" style={{ tableLayout: 'fixed' }}>
+              <table className="w-full" style={{ tableLayout: 'auto' }}>
                 <thead className="sticky top-0 bg-background z-10">
                   <tr className="border-b bg-muted/50">
                     <th className={`${densityClasses.cell} w-[50px]`}>
@@ -961,7 +957,10 @@ export const DataTableWithDB = ({
                       <th
                         key={column.key}
                         className={`${densityClasses.cell} text-left font-medium relative group`}
-                        style={{ width: `${getColumnWidth(column)}px` }}
+                        style={{ 
+                          width: columnWidths[column.key] ? `${columnWidths[column.key]}px` : 'auto',
+                          minWidth: '120px'
+                        }}
                       >
                         <div className="flex items-center justify-between">
                           {column.sortable ? (
@@ -1000,8 +999,12 @@ export const DataTableWithDB = ({
                       {visibleColumnsArray.map((column) => (
                         <td 
                           key={column.key} 
-                          className={`${densityClasses.cell} ${densityClasses.row} overflow-hidden text-ellipsis`}
-                          style={{ width: `${getColumnWidth(column)}px` }}
+                          className={`${densityClasses.cell} ${densityClasses.row}`}
+                          style={{ 
+                            width: columnWidths[column.key] ? `${columnWidths[column.key]}px` : 'auto',
+                            minWidth: '120px',
+                            maxWidth: columnWidths[column.key] ? `${columnWidths[column.key]}px` : 'none'
+                          }}
                         >
                           <div className="overflow-hidden text-ellipsis whitespace-nowrap" title={String(row[column.key] || '')}>
                             {row[column.key]}
