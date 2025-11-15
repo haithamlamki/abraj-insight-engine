@@ -1,13 +1,16 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend } from "recharts";
+import { ChartFilterIndicator } from "@/components/Reports/ChartFilterIndicator";
 
 interface NPTTrendChartProps {
   data: any[];
   onMonthClick?: (month: string) => void;
+  activeFilterCount?: number;
+  totalRecords?: number;
 }
 
-export function NPTTrendChart({ data, onMonthClick }: NPTTrendChartProps) {
+export function NPTTrendChart({ data, onMonthClick, activeFilterCount = 0, totalRecords }: NPTTrendChartProps) {
   const years = data.length > 0 
     ? Object.keys(data[0]).filter(key => key.startsWith('year')).map(key => key.replace('year', ''))
     : [];
@@ -17,8 +20,17 @@ export function NPTTrendChart({ data, onMonthClick }: NPTTrendChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>NPT Trend Over Time</CardTitle>
-        <CardDescription>Monthly NPT hours by year - click to filter</CardDescription>
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle>NPT Trend Over Time</CardTitle>
+            <CardDescription>Monthly NPT hours by year - click to filter</CardDescription>
+          </div>
+          <ChartFilterIndicator 
+            activeFilterCount={activeFilterCount}
+            displayedRecords={data.length}
+            totalRecords={totalRecords}
+          />
+        </div>
       </CardHeader>
       <CardContent>
         <ChartContainer config={{}} className="h-[400px]">

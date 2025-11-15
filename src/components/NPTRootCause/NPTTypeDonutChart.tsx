@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
+import { ChartFilterIndicator } from "@/components/Reports/ChartFilterIndicator";
 
 interface NPTTypeDonutChartProps {
   data: Array<{
@@ -9,9 +10,11 @@ interface NPTTypeDonutChartProps {
     percentage: number;
   }>;
   onTypeClick?: (type: string) => void;
+  activeFilterCount?: number;
+  totalRecords?: number;
 }
 
-export function NPTTypeDonutChart({ data, onTypeClick }: NPTTypeDonutChartProps) {
+export function NPTTypeDonutChart({ data, onTypeClick, activeFilterCount = 0, totalRecords }: NPTTypeDonutChartProps) {
   const COLORS = [
     'hsl(var(--chart-1))',
     'hsl(var(--chart-2))',
@@ -23,8 +26,17 @@ export function NPTTypeDonutChart({ data, onTypeClick }: NPTTypeDonutChartProps)
   return (
     <Card>
       <CardHeader>
-        <CardTitle>NPT by Type</CardTitle>
-        <CardDescription>Click a segment to filter</CardDescription>
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle>NPT by Type</CardTitle>
+            <CardDescription>Click a segment to filter</CardDescription>
+          </div>
+          <ChartFilterIndicator 
+            activeFilterCount={activeFilterCount}
+            displayedRecords={data.length}
+            totalRecords={totalRecords}
+          />
+        </div>
       </CardHeader>
       <CardContent>
         <ChartContainer config={{}} className="h-[300px]">

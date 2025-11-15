@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell } from "recharts";
+import { ChartFilterIndicator } from "@/components/Reports/ChartFilterIndicator";
 
 interface RigRankingChartProps {
   data: Array<{
@@ -10,9 +11,11 @@ interface RigRankingChartProps {
     avgHours: number;
   }>;
   onRigClick?: (rig: string) => void;
+  activeFilterCount?: number;
+  totalRecords?: number;
 }
 
-export function RigRankingChart({ data, onRigClick }: RigRankingChartProps) {
+export function RigRankingChart({ data, onRigClick, activeFilterCount = 0, totalRecords }: RigRankingChartProps) {
   const topRigs = data.slice(0, 10);
   
   const getColor = (index: number) => {
@@ -30,8 +33,17 @@ export function RigRankingChart({ data, onRigClick }: RigRankingChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Top 10 Rigs by NPT Hours</CardTitle>
-        <CardDescription>Click a bar to filter by rig</CardDescription>
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle>Top 10 Rigs by NPT Hours</CardTitle>
+            <CardDescription>Click a bar to filter by rig</CardDescription>
+          </div>
+          <ChartFilterIndicator 
+            activeFilterCount={activeFilterCount}
+            displayedRecords={data.length}
+            totalRecords={totalRecords}
+          />
+        </div>
       </CardHeader>
       <CardContent>
         <ChartContainer config={{}} className="h-[400px]">
