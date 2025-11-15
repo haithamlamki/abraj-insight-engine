@@ -142,6 +142,48 @@ export function useMISData(filters: MISFilters = {}) {
         ...utilization.filter(u => u.status === "Active").map(u => u.rig)
       ]).size;
 
+      // Get current month and previous month
+      const currentDate = new Date();
+      const currentMonth = currentDate.toLocaleString('default', { month: 'short' });
+      const lastMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1).toLocaleString('default', { month: 'short' });
+      const currentYear = currentDate.getFullYear();
+
+      // Last Month Revenue - revenue from previous month
+      const lastMonthRevenue = revenue
+        .filter(r => r.month === lastMonth && r.year === currentYear)
+        .reduce((sum, r) => sum + (Number(r.revenue_actual) || 0), 0);
+
+      // YTD Revenue - all revenue for current year
+      const ytdRevenue = revenue
+        .filter(r => r.year === currentYear)
+        .reduce((sum, r) => sum + (Number(r.revenue_actual) || 0), 0);
+
+      // Month NPT - NPT for selected month or current month
+      const selectedMonthForNPT = month || currentMonth;
+      const monthNPT = billingNpt
+        .filter(n => n.month === selectedMonthForNPT)
+        .reduce((sum, n) => sum + (Number(n.npt_hours) || 0), 0);
+
+      // Month Stock Level - count of low and critical stock items
+      const monthStockLevel = criticalStock + lowStock;
+
+      // Month Rig Move Income - profit/loss from rig moves for selected month
+      const selectedMonthForMoves = month || currentMonth;
+      const monthRigMoveIncome = rigMoves
+        .filter(rm => {
+          const moveDate = new Date(rm.move_date);
+          const moveMonth = moveDate.toLocaleString('default', { month: 'short' });
+          return moveMonth === selectedMonthForMoves;
+        })
+        .reduce((sum, rm) => sum + (Number(rm.profit_loss) || 0), 0);
+
+      // Month Rig Utilization - average utilization for selected month
+      const selectedMonthForUtil = month || currentMonth;
+      const monthUtilData = utilization.filter(u => u.month === selectedMonthForUtil);
+      const monthRigUtilization = monthUtilData.length > 0
+        ? monthUtilData.reduce((sum, u) => sum + (Number(u.utilization_rate) || 0), 0) / monthUtilData.length
+        : 0;
+
       return {
         kpis: {
           totalRevenue,
@@ -163,6 +205,12 @@ export function useMISData(filters: MISFilters = {}) {
           activeWells,
           completedWells,
           activeRigs,
+          lastMonthRevenue,
+          ytdRevenue,
+          monthNPT,
+          monthStockLevel,
+          monthRigMoveIncome,
+          monthRigUtilization,
         },
         data: {
           revenue,

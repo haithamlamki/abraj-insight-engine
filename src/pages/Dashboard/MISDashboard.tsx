@@ -478,6 +478,64 @@ export default function MISDashboard() {
           </div>
         </div>
 
+        {/* New Monthly KPIs */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Last Month Revenue</p>
+                <p className="text-2xl font-bold">${((kpis?.lastMonthRevenue || 0) / 1000).toFixed(0)}K</p>
+              </div>
+              <DollarSign className="h-8 w-8 text-primary" />
+            </div>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">YTD Revenue</p>
+                <p className="text-2xl font-bold">${((kpis?.ytdRevenue || 0) / 1000000).toFixed(2)}M</p>
+              </div>
+              <DollarSign className="h-8 w-8 text-primary" />
+            </div>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Month NPT</p>
+                <p className="text-2xl font-bold">{(kpis?.monthNPT || 0).toFixed(0)}</p>
+              </div>
+              <Clock className="h-8 w-8 text-destructive" />
+            </div>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Month Stock Alert</p>
+                <p className="text-2xl font-bold">{kpis?.monthStockLevel || 0}</p>
+              </div>
+              <AlertTriangle className="h-8 w-8 text-warning" />
+            </div>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Month Rig Move Income</p>
+                <p className="text-2xl font-bold">${((kpis?.monthRigMoveIncome || 0) / 1000).toFixed(0)}K</p>
+              </div>
+              <MapPin className="h-8 w-8 text-primary" />
+            </div>
+          </Card>
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Month Rig Utilization</p>
+                <p className="text-2xl font-bold">{(kpis?.monthRigUtilization || 0).toFixed(1)}%</p>
+              </div>
+              <Gauge className="h-8 w-8 text-primary" />
+            </div>
+          </Card>
+        </div>
+
         {/* Secondary KPIs - Now Clickable */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <Card 
