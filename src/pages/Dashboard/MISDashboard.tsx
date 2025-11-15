@@ -15,12 +15,12 @@ const COLORS = ["hsl(var(--primary))", "hsl(var(--secondary))", "hsl(var(--accen
 export default function MISDashboard() {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
-  const [selectedMonth, setSelectedMonth] = useState<string>("");
+  const [selectedMonth, setSelectedMonth] = useState<string>("all");
   const [selectedRigs, setSelectedRigs] = useState<string[]>([]);
 
   const { data: misData, isLoading } = useMISData({
     year: selectedYear,
-    month: selectedMonth || undefined,
+    month: selectedMonth === "all" ? undefined : selectedMonth,
     rigs: selectedRigs.length > 0 ? selectedRigs : undefined,
   });
 
@@ -119,7 +119,7 @@ export default function MISDashboard() {
                 <SelectValue placeholder="All Months" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Months</SelectItem>
+                <SelectItem value="all">All Months</SelectItem>
                 {MONTHS.map(m => (
                   <SelectItem key={m} value={m}>{m}</SelectItem>
                 ))}
