@@ -2,27 +2,52 @@ import { useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/Layout/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useMISData } from "@/hooks/useMISData";
 import { KPICard } from "@/components/Dashboard/KPICard";
 import { ChartCard } from "@/components/Dashboard/ChartCard";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { TrendingUp, TrendingDown, DollarSign, Clock, AlertTriangle, CheckCircle2, Gauge, Fuel, MapPin, Target } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, Clock, AlertTriangle, CheckCircle2, Gauge, Fuel, MapPin, Target, X, Filter } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const COLORS = ["hsl(var(--primary))", "hsl(var(--secondary))", "hsl(var(--accent))", "hsl(var(--muted))"];
+
+interface DrillDownFilter {
+  type: 'rig' | 'npt_type' | 'status' | 'client' | null;
+  value: string | null;
+}
 
 export default function MISDashboard() {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [selectedMonth, setSelectedMonth] = useState<string>("all");
   const [selectedRigs, setSelectedRigs] = useState<string[]>([]);
+  const [drillDown, setDrillDown] = useState<DrillDownFilter>({ type: null, value: null });
+
+  // Apply drill-down filter to selectedRigs
+  const effectiveRigs = useMemo(() => {
+    if (drillDown.type === 'rig' && drillDown.value) {
+      return [drillDown.value];
+    }
+    return selectedRigs.length > 0 ? selectedRigs : undefined;
+  }, [drillDown, selectedRigs]);
 
   const { data: misData, isLoading } = useMISData({
     year: selectedYear,
     month: selectedMonth === "all" ? undefined : selectedMonth,
-    rigs: selectedRigs.length > 0 ? selectedRigs : undefined,
+    rigs: effectiveRigs,
   });
+
+  // Handle drill-down actions
+  const handleDrillDown = (type: DrillDownFilter['type'], value: string) => {
+    setDrillDown({ type, value });
+  };
+
+  const clearDrillDown = () => {
+    setDrillDown({ type: null, value: null });
+  };
 
   const kpis = misData?.kpis;
   const data = misData?.data;
@@ -36,11 +61,38 @@ export default function MISDashboard() {
     return Array.from(rigs).sort();
   }, [data]);
 
+  // Apply drill-down filters to data
+  const filteredData = useMemo(() => {
+    if (!data || !drillDown.type || !drillDown.value) return data;
+
+    const filtered = { ...data };
+    
+    if (drillDown.type === 'rig') {
+      filtered.revenue = data.revenue.filter(r => r.rig === drillDown.value);
+      filtered.utilization = data.utilization.filter(u => u.rig === drillDown.value);
+      filtered.billingNpt = data.billingNpt.filter(n => n.rig === drillDown.value);
+      filtered.workOrders = data.workOrders.filter(w => w.rig === drillDown.value);
+      filtered.fuel = data.fuel.filter(f => f.rig === drillDown.value);
+      filtered.stock = data.stock.filter(s => s.rig === drillDown.value);
+      filtered.satisfaction = data.satisfaction.filter(s => s.rig === drillDown.value);
+      filtered.rigMoves = data.rigMoves.filter(m => m.rig === drillDown.value);
+      filtered.wells = data.wells.filter(w => w.rig === drillDown.value);
+    } else if (drillDown.type === 'npt_type') {
+      filtered.billingNpt = data.billingNpt.filter(n => n.npt_type === drillDown.value);
+    } else if (drillDown.type === 'status') {
+      filtered.utilization = data.utilization.filter(u => u.status === drillDown.value);
+    }
+
+    return filtered;
+  }, [data, drillDown]);
+
+  const displayData = filteredData || data;
+
   // Revenue by Rig
   const revenueByRig = useMemo(() => {
-    if (!data?.revenue) return [];
+    if (!displayData?.revenue) return [];
     const rigMap = new Map<string, number>();
-    data.revenue.forEach(r => {
+    displayData.revenue.forEach(r => {
       const current = rigMap.get(r.rig) || 0;
       rigMap.set(r.rig, current + (Number(r.revenue_actual) || 0));
     });
@@ -48,13 +100,13 @@ export default function MISDashboard() {
       .map(([rig, revenue]) => ({ rig, revenue }))
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 10);
-  }, [data]);
+  }, [displayData]);
 
   // NPT by Type
   const nptByType = useMemo(() => {
-    if (!data?.billingNpt) return [];
+    if (!displayData?.billingNpt) return [];
     const typeMap = new Map<string, number>();
-    data.billingNpt.forEach(n => {
+    displayData.billingNpt.forEach(n => {
       const type = n.npt_type || "Unknown";
       const current = typeMap.get(type) || 0;
       typeMap.set(type, current + (Number(n.npt_hours) || 0));
@@ -62,13 +114,13 @@ export default function MISDashboard() {
     return Array.from(typeMap.entries())
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
-  }, [data]);
+  }, [displayData]);
 
   // Utilization Trend by Month
   const utilizationTrend = useMemo(() => {
-    if (!data?.utilization) return [];
+    if (!displayData?.utilization) return [];
     const monthMap = new Map<string, { sum: number; count: number }>();
-    data.utilization.forEach(u => {
+    displayData.utilization.forEach(u => {
       const month = u.month;
       const current = monthMap.get(month) || { sum: 0, count: 0 };
       monthMap.set(month, {
@@ -82,7 +134,7 @@ export default function MISDashboard() {
         ? (monthMap.get(month)!.sum / monthMap.get(month)!.count)
         : 0,
     }));
-  }, [data]);
+  }, [displayData]);
 
   if (isLoading) {
     return (
@@ -102,6 +154,24 @@ export default function MISDashboard() {
           <div>
             <h1 className="text-3xl font-bold text-foreground">MIS Dashboard</h1>
             <p className="text-muted-foreground">Management Information System - Integrated View</p>
+            
+            {/* Active Drill-Down Filter */}
+            {drillDown.type && drillDown.value && (
+              <div className="flex items-center gap-2 mt-2">
+                <Badge variant="secondary" className="flex items-center gap-2">
+                  <Filter className="h-3 w-3" />
+                  <span className="capitalize">{drillDown.type}: {drillDown.value}</span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-4 w-4 p-0 hover:bg-transparent"
+                    onClick={clearDrillDown}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              </div>
+            )}
           </div>
           <div className="flex gap-4">
             <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(Number(v))}>
@@ -128,37 +198,51 @@ export default function MISDashboard() {
           </div>
         </div>
 
-        {/* Top KPIs */}
+        {/* Top KPIs - Now Clickable */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <KPICard
-            title="Total Revenue"
-            value={`$${((kpis?.totalRevenue || 0) / 1000000).toFixed(2)}M`}
-            change={kpis?.revenueVariancePercent || 0}
-            trend={kpis && kpis.revenueVariance >= 0 ? "up" : "down"}
-          />
-          <KPICard
-            title="Fleet Utilization"
-            value={`${(kpis?.avgUtilization || 0).toFixed(1)}%`}
-            change={0}
-            trend="up"
-          />
-          <KPICard
-            title="Total NPT Hours"
-            value={(kpis?.totalNPT || 0).toFixed(0)}
-            change={0}
-            trend="down"
-          />
-          <KPICard
-            title="Active Rigs"
-            value={kpis?.activeRigs || 0}
-            change={0}
-            trend="neutral"
-          />
+          <div className="cursor-pointer transition-transform hover:scale-105">
+            <KPICard
+              title="Total Revenue"
+              value={`$${((kpis?.totalRevenue || 0) / 1000000).toFixed(2)}M`}
+              change={kpis?.revenueVariancePercent || 0}
+              trend={kpis && kpis.revenueVariance >= 0 ? "up" : "down"}
+            />
+          </div>
+          <div className="cursor-pointer transition-transform hover:scale-105">
+            <KPICard
+              title="Fleet Utilization"
+              value={`${(kpis?.avgUtilization || 0).toFixed(1)}%`}
+              change={0}
+              trend="up"
+            />
+          </div>
+          <div className="cursor-pointer transition-transform hover:scale-105">
+            <KPICard
+              title="Total NPT Hours"
+              value={(kpis?.totalNPT || 0).toFixed(0)}
+              change={0}
+              trend="down"
+            />
+          </div>
+          <div className="cursor-pointer transition-transform hover:scale-105">
+            <KPICard
+              title="Active Rigs"
+              value={kpis?.activeRigs || 0}
+              change={0}
+              trend="neutral"
+            />
+          </div>
         </div>
 
-        {/* Secondary KPIs */}
+        {/* Secondary KPIs - Now Clickable */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-          <Card className="p-4">
+          <Card 
+            className="p-4 cursor-pointer transition-transform hover:scale-105 hover:shadow-lg"
+            onClick={() => {
+              // Filter to show work orders data
+              clearDrillDown();
+            }}
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Open Work Orders</p>
@@ -167,7 +251,13 @@ export default function MISDashboard() {
               <AlertTriangle className="h-8 w-8 text-destructive" />
             </div>
           </Card>
-          <Card className="p-4">
+          <Card 
+            className="p-4 cursor-pointer transition-transform hover:scale-105 hover:shadow-lg"
+            onClick={() => {
+              // Filter to show critical stock
+              clearDrillDown();
+            }}
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Critical Stock</p>
@@ -176,7 +266,9 @@ export default function MISDashboard() {
               <AlertTriangle className="h-8 w-8 text-destructive" />
             </div>
           </Card>
-          <Card className="p-4">
+          <Card 
+            className="p-4 cursor-pointer transition-transform hover:scale-105 hover:shadow-lg"
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Satisfaction</p>
@@ -185,7 +277,9 @@ export default function MISDashboard() {
               <CheckCircle2 className="h-8 w-8 text-primary" />
             </div>
           </Card>
-          <Card className="p-4">
+          <Card 
+            className="p-4 cursor-pointer transition-transform hover:scale-105 hover:shadow-lg"
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Fuel Cost</p>
@@ -194,7 +288,9 @@ export default function MISDashboard() {
               <Fuel className="h-8 w-8 text-accent" />
             </div>
           </Card>
-          <Card className="p-4">
+          <Card 
+            className="p-4 cursor-pointer transition-transform hover:scale-105 hover:shadow-lg"
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Active Wells</p>
@@ -207,7 +303,7 @@ export default function MISDashboard() {
 
         {/* Charts Row 1 */}
         <div className="grid gap-6 md:grid-cols-2">
-          <ChartCard title="Revenue by Rig" description="Top 10 performing rigs">
+          <ChartCard title="Revenue by Rig" description="Top 10 performing rigs - Click to drill down">
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={revenueByRig}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -220,12 +316,17 @@ export default function MISDashboard() {
                     borderRadius: "8px"
                   }}
                 />
-                <Bar dataKey="revenue" fill="hsl(var(--primary))" />
+                <Bar 
+                  dataKey="revenue" 
+                  fill="hsl(var(--primary))"
+                  cursor="pointer"
+                  onClick={(data: any) => handleDrillDown('rig', data.rig)}
+                />
               </BarChart>
             </ResponsiveContainer>
           </ChartCard>
 
-          <ChartCard title="NPT by Type" description="Distribution of non-productive time">
+          <ChartCard title="NPT by Type" description="Distribution of non-productive time - Click to drill down">
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -237,9 +338,14 @@ export default function MISDashboard() {
                   outerRadius={100}
                   fill="hsl(var(--primary))"
                   dataKey="value"
+                  cursor="pointer"
+                  onClick={(entry: any) => handleDrillDown('npt_type', entry.name)}
                 >
                   {nptByType.slice(0, 6).map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={COLORS[index % COLORS.length]}
+                    />
                   ))}
                 </Pie>
                 <Tooltip 
@@ -294,8 +400,12 @@ export default function MISDashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data?.rigMoves.slice(0, 5).map((move) => (
-                  <TableRow key={move.id}>
+                {displayData?.rigMoves.slice(0, 5).map((move) => (
+                  <TableRow 
+                    key={move.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleDrillDown('rig', move.rig)}
+                  >
                     <TableCell className="font-medium">{move.rig}</TableCell>
                     <TableCell>{new Date(move.move_date).toLocaleDateString()}</TableCell>
                     <TableCell className="text-sm">{move.from_location} → {move.to_location}</TableCell>
@@ -320,11 +430,15 @@ export default function MISDashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data?.wells
+                {displayData?.wells
                   .filter(w => w.status === "Active" || w.status === "Drilling")
                   .slice(0, 5)
                   .map((well) => (
-                    <TableRow key={well.id}>
+                    <TableRow 
+                      key={well.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleDrillDown('rig', well.rig)}
+                    >
                       <TableCell className="font-medium">{well.rig}</TableCell>
                       <TableCell>{well.well_name}</TableCell>
                       <TableCell>
