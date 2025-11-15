@@ -19,7 +19,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               <p className="text-sm text-muted-foreground">Real-time operational metrics and KPIs</p>
             </div>
           </header>
-          <main className="flex-1 container mx-auto py-6 px-4">
+          <main className="flex-1 w-full mx-auto py-6 px-4 max-w-[98vw]">
             {children}
           </main>
         </SidebarInset>
