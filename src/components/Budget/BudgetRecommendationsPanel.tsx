@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -13,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useBudgetRecommendations } from "@/hooks/useBudgetRecommendations";
+import { BudgetComparisonView } from "./BudgetComparisonView";
 import { 
   Sparkles, 
   TrendingUp, 
@@ -22,7 +24,8 @@ import {
   CheckCircle2,
   Lightbulb,
   BarChart3,
-  Activity
+  Activity,
+  GitCompare
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -135,7 +138,19 @@ export function BudgetRecommendationsPanel() {
       </Card>
 
       {recommendations && (
-        <div className="space-y-4">
+        <Tabs defaultValue="overview" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="overview">
+              <Lightbulb className="h-4 w-4 mr-2" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="comparison">
+              <GitCompare className="h-4 w-4 mr-2" />
+              Comparison
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-4">
           {/* Overview Card */}
           <Card>
             <CardHeader>
@@ -291,7 +306,17 @@ export function BudgetRecommendationsPanel() {
               </p>
             </CardContent>
           </Card>
-        </div>
+          </TabsContent>
+
+          <TabsContent value="comparison" className="space-y-4">
+            <BudgetComparisonView
+              reportType={recommendations.reportType}
+              rigCode={recommendations.rigCode !== 'all' ? recommendations.rigCode : undefined}
+              recommendedValues={recommendations.recommendations.recommendedValues}
+              varianceThreshold={recommendations.recommendations.varianceThreshold}
+            />
+          </TabsContent>
+        </Tabs>
       )}
     </div>
   );
