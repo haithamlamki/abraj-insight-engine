@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
 import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { EnhancedKPICard } from "@/components/Revenue/EnhancedKPICard";
 import { useReportData } from "@/hooks/useReportData";
 import { useBillingNPTFilters } from "@/hooks/useBillingNPTFilters";
 import { useBillingNPTAnalytics } from "@/hooks/useBillingNPTAnalytics";
+import { useReportFilters } from "@/hooks/useReportFilters";
 import { OperationalRateChart } from "@/components/BillingNPT/OperationalRateChart";
 import { NPTCategoryChart } from "@/components/BillingNPT/NPTCategoryChart";
 import { RigEfficiencyChart } from "@/components/BillingNPT/RigEfficiencyChart";
@@ -13,6 +14,8 @@ import { NPTCorrelationChart } from "@/components/BillingNPT/NPTCorrelationChart
 import { BillingNPTFilterPanel } from "@/components/BillingNPT/BillingNPTFilterPanel";
 import { ActiveFiltersBar } from "@/components/BillingNPT/ActiveFiltersBar";
 import { AIInsightsPanel } from "@/components/BillingNPT/AIInsightsPanel";
+import { QuickNavigationBar } from "@/components/QuickNavigationBar";
+import { RelatedReportsPanel } from "@/components/RelatedReportsPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUp, AlertTriangle, FileText, Target, Percent, TrendingDown, Activity } from "lucide-react";
 import { HourBreakdownChart } from "@/components/BillingNPT/HourBreakdownChart";
@@ -21,6 +24,19 @@ import { NPTHeatmap } from "@/components/BillingNPT/NPTHeatmap";
 const BillingNPTSummary = () => {
   const { data: summaryData = [] } = useReportData('billing_npt_summary');
   const { filters, updateFilters, clearFilters, applyQuickFilter, hasActiveFilters } = useBillingNPTFilters();
+  
+  // Cross-report filter integration
+  const { filters: crossReportFilters, updateFilters: updateCrossFilters } = useReportFilters('billing_npt');
+  
+  useEffect(() => {
+    if (Object.keys(crossReportFilters).length > 0) {
+      updateFilters(crossReportFilters);
+    }
+  }, []);
+
+  useEffect(() => {
+    updateCrossFilters(filters);
+  }, [filters]);
   
   const analytics = useBillingNPTAnalytics(summaryData, filters);
 
@@ -80,6 +96,12 @@ const BillingNPTSummary = () => {
       ]}
       viewContent={
         <div className="space-y-6">
+          {/* Smart Navigation */}
+          <QuickNavigationBar 
+            currentReport="billing_npt" 
+            currentFilters={filters}
+          />
+
           <Tabs defaultValue="dashboard" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
@@ -216,7 +238,15 @@ const BillingNPTSummary = () => {
                 onCellClick={handleHeatmapClick}
               />
 
+              {/* AI Insights Panel */}
               <AIInsightsPanel filters={filters} />
+
+              {/* Related Reports Navigation */}
+              <RelatedReportsPanel 
+                currentReport="billing_npt"
+                currentFilters={filters}
+                variant="full"
+              />
             </TabsContent>
 
             <TabsContent value="data" className="space-y-6 mt-6">

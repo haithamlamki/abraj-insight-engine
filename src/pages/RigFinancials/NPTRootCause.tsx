@@ -3,6 +3,7 @@ import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { useNPTRootCauseData } from "@/hooks/useNPTRootCauseData";
 import { useNPTFilters } from "@/hooks/useNPTFilters";
 import { useNPTAnalytics } from "@/hooks/useNPTAnalytics";
+import { useReportFilters } from "@/hooks/useReportFilters";
 import { NPTFilterPanel } from "@/components/NPTRootCause/NPTFilterPanel";
 import { NPTKPICards } from "@/components/NPTRootCause/NPTKPICards";
 import { NPTTrendChart } from "@/components/NPTRootCause/NPTTrendChart";
@@ -13,17 +14,32 @@ import { RootCauseParetoChart } from "@/components/NPTRootCause/RootCauseParetoC
 import { NPTHeatmap } from "@/components/BillingNPT/NPTHeatmap";
 import { BillingNPTAnalytics } from "@/components/Reports/BillingNPTAnalytics";
 import { BillingNPTFilters, FilterState } from "@/components/Reports/BillingNPTFilters";
+import { QuickNavigationBar } from "@/components/QuickNavigationBar";
+import { RelatedReportsPanel } from "@/components/RelatedReportsPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 const NPTRootCause = () => {
   const { data } = useNPTRootCauseData();
   const { filters, updateFilters, clearFilters, hasActiveFilters, availableOptions } = useNPTFilters(data);
   const analytics = useNPTAnalytics(data, filters);
+
+  // Cross-report filter integration
+  const { filters: crossReportFilters, updateFilters: updateCrossFilters } = useReportFilters('npt_root_cause');
+  
+  useEffect(() => {
+    if (Object.keys(crossReportFilters).length > 0) {
+      updateFilters(crossReportFilters);
+    }
+  }, []);
+
+  useEffect(() => {
+    updateCrossFilters(filters);
+  }, [filters]);
 
   // Billing NPT data
   const [billingFilters, setBillingFilters] = useState<FilterState>({
@@ -220,6 +236,13 @@ const NPTRootCause = () => {
               ) : (
                 <BillingNPTAnalytics data={filteredBillingData} />
               )}
+
+              {/* Related Reports Navigation */}
+              <RelatedReportsPanel 
+                currentReport="npt_root_cause"
+                currentFilters={filters}
+                variant="full"
+              />
             </TabsContent>
 
             <TabsContent value="analysis" className="space-y-6 mt-6">

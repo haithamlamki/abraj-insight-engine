@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/Layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,8 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Download, TrendingUp, DollarSign, Factory, Search, Filter, BarChart3 } from "lucide-react";
 import { useFuelAnalytics, FuelFilters } from "@/hooks/useFuelAnalytics";
+import { useReportFilters } from "@/hooks/useReportFilters";
 import { ChartCard } from "@/components/Dashboard/ChartCard";
 import { KPICard } from "@/components/Dashboard/KPICard";
+import { QuickNavigationBar } from "@/components/QuickNavigationBar";
+import { RelatedReportsPanel } from "@/components/RelatedReportsPanel";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Treemap } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +35,19 @@ const FuelAnalytics = () => {
   });
   const [costRange, setCostRange] = useState<[number, number]>([0, 100000]);
   const [searchText, setSearchText] = useState("");
+
+  // Cross-report filter integration
+  const { filters: crossReportFilters, updateFilters: updateCrossFilters } = useReportFilters('fuel_analytics');
+  
+  useEffect(() => {
+    if (Object.keys(crossReportFilters).length > 0) {
+      setFilters(prev => ({ ...prev, ...crossReportFilters }));
+    }
+  }, []);
+
+  useEffect(() => {
+    updateCrossFilters(filters);
+  }, [filters]);
   
   // Drill-down filters
   const [drillDownFilters, setDrillDownFilters] = useState<{
@@ -129,9 +145,14 @@ const FuelAnalytics = () => {
   const uniqueRigs = analytics ? [...new Set(analytics.records.map(r => r.rig))] : [];
 
   if (isLoading) {
-    return (
-      <DashboardLayout>
-        <div className="space-y-6">
+  return (
+    <DashboardLayout>
+      <div className="space-y-6">
+        {/* Smart Navigation */}
+        <QuickNavigationBar 
+          currentReport="fuel_analytics" 
+          currentFilters={filters}
+        />
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Fuel Cost Analytics</h2>
             <p className="text-muted-foreground">Interactive dashboard for fuel consumption analysis</p>
@@ -389,6 +410,13 @@ const FuelAnalytics = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Related Reports Navigation */}
+        <RelatedReportsPanel 
+          currentReport="fuel_analytics"
+          currentFilters={filters}
+          variant="full"
+        />
       </div>
     </DashboardLayout>
   );
