@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
+import { NotificationCenter } from "./NotificationCenter";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -14,7 +15,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         <SidebarInset>
           <header className="flex h-16 items-center gap-2 border-b px-4 sticky top-0 bg-background z-10">
             <SidebarTrigger className="-ml-1" />
-            <div className="flex flex-col">
+            <div className="flex flex-col flex-1">
               <h1 className="text-xl font-semibold">ADC Rig Management Dashboard</h1>
               <p className="text-sm text-muted-foreground">Real-time operational metrics and KPIs</p>
             </div>

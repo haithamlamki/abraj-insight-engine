@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.parse-filter-query]
 verify_jwt = false
+
+[functions.budget-variance-alerts]
+verify_jwt = false
