@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Download, FileSpreadsheet, Loader2, RotateCcw, Columns3, Save, BookmarkPlus, Trash2, Edit2, X } from "lucide-react";
+import { ArrowUpDown, Download, FileSpreadsheet, Loader2, RotateCcw, Columns3, Save, BookmarkPlus, Trash2, Edit2, X, Filter } from "lucide-react";
 import { useInfiniteReportData } from "@/hooks/useInfiniteReportData";
 import { DateRangeFilter } from "./DateRangeFilter";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -14,10 +14,12 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { BulkEditDialog } from "@/components/Admin/BulkEditDialog";
 import { useBulkEdit } from "@/hooks/useBulkEdit";
 import { supabase } from "@/integrations/supabase/client";
+import { AdvancedFilterBuilder, FilterGroup, FilterCondition } from "./AdvancedFilterBuilder";
 import * as XLSX from "xlsx";
 
 interface Column {
@@ -37,6 +39,7 @@ interface SavedView {
   density: "compact" | "comfortable" | "spacious";
   startDate: string | null;
   endDate: string | null;
+  advancedFilters?: FilterGroup[];
 }
 
 interface DataTableWithDBProps {
@@ -105,6 +108,10 @@ export const DataTableWithDB = ({
   const [currentViewId, setCurrentViewId] = useState<string | null>(null);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [viewName, setViewName] = useState("");
+  
+  // Advanced filters state
+  const [advancedFilters, setAdvancedFilters] = useState<FilterGroup[]>([]);
+  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   
   // Bulk selection state
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
@@ -348,6 +355,7 @@ export const DataTableWithDB = ({
       density,
       startDate: startDate?.toISOString() || null,
       endDate: endDate?.toISOString() || null,
+      advancedFilters,
     };
 
     const updatedViews = [...savedViews, newView];
@@ -371,6 +379,7 @@ export const DataTableWithDB = ({
     setDensity(view.density);
     setStartDate(view.startDate ? new Date(view.startDate) : null);
     setEndDate(view.endDate ? new Date(view.endDate) : null);
+    setAdvancedFilters(view.advancedFilters || []);
     setCurrentViewId(view.id);
     
     // Update localStorage for individual settings
@@ -402,6 +411,48 @@ export const DataTableWithDB = ({
 
   const currentView = savedViews.find(v => v.id === currentViewId);
 
+  // Function to evaluate a filter condition
+  const evaluateCondition = (row: any, condition: FilterCondition): boolean => {
+    const value = String(row[condition.field] || '');
+    const filterValue = condition.value;
+
+    switch (condition.operator) {
+      case 'equals':
+        return value === filterValue;
+      case 'not_equals':
+        return value !== filterValue;
+      case 'contains':
+        return value.toLowerCase().includes(filterValue.toLowerCase());
+      case 'not_contains':
+        return !value.toLowerCase().includes(filterValue.toLowerCase());
+      case 'greater_than':
+        return parseFloat(value) > parseFloat(filterValue);
+      case 'less_than':
+        return parseFloat(value) < parseFloat(filterValue);
+      case 'greater_equal':
+        return parseFloat(value) >= parseFloat(filterValue);
+      case 'less_equal':
+        return parseFloat(value) <= parseFloat(filterValue);
+      case 'is_empty':
+        return !value || value.trim() === '';
+      case 'is_not_empty':
+        return value && value.trim() !== '';
+      default:
+        return true;
+    }
+  };
+
+  // Function to evaluate a filter group
+  const evaluateFilterGroup = (row: any, group: FilterGroup): boolean => {
+    if (group.conditions.length === 0) return true;
+
+    if (group.logic === 'AND') {
+      return group.conditions.every(condition => evaluateCondition(row, condition));
+    } else {
+      return group.conditions.some(condition => evaluateCondition(row, condition));
+    }
+  };
+
   const filteredAndSortedData = useMemo(() => {
     if (!rawData) return [];
     
@@ -410,6 +461,14 @@ export const DataTableWithDB = ({
     // Apply formatting if provided
     if (formatRow) {
       processedData = processedData.map(formatRow);
+    }
+
+    // Apply advanced filters
+    if (advancedFilters.length > 0) {
+      processedData = processedData.filter((row) => {
+        // All filter groups must pass (AND logic between groups)
+        return advancedFilters.every(group => evaluateFilterGroup(row, group));
+      });
     }
 
     // Filter by date range
@@ -445,7 +504,7 @@ export const DataTableWithDB = ({
     }
 
     return processedData;
-  }, [rawData, searchTerm, sortColumn, sortDirection, formatRow, startDate, endDate]);
+  }, [rawData, searchTerm, sortColumn, sortDirection, formatRow, startDate, endDate, advancedFilters]);
 
   const handleExportCSV = () => {
     const csv = [
@@ -689,7 +748,50 @@ export const DataTableWithDB = ({
               className="max-w-sm"
               disabled={isLoading}
             />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setFilterDialogOpen(true)}
+              className={advancedFilters.length > 0 ? 'border-primary' : ''}
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Advanced Filters
+              {advancedFilters.length > 0 && (
+                <Badge variant="secondary" className="ml-2">
+                  {advancedFilters.length}
+                </Badge>
+              )}
+            </Button>
           </div>
+
+          {/* Active Filters Display */}
+          {advancedFilters.length > 0 && (
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-sm text-muted-foreground">Active filters:</span>
+              {advancedFilters.map((group, groupIdx) => (
+                <Badge key={group.id} variant="secondary" className="gap-1">
+                  Group {groupIdx + 1} ({group.logic})
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 w-4 p-0 hover:bg-transparent"
+                    onClick={() => {
+                      setAdvancedFilters(advancedFilters.filter(g => g.id !== group.id));
+                    }}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              ))}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setAdvancedFilters([])}
+              >
+                Clear all filters
+              </Button>
+            </div>
+          )}
 
           {isLoading ? (
             <LoadingSpinner text="Loading data..." />
@@ -813,6 +915,15 @@ export const DataTableWithDB = ({
           onExecute={handleExecuteBulkEdit}
           isExecuting={isExecuting}
           tableName={reportType}
+        />
+
+        {/* Advanced Filter Builder */}
+        <AdvancedFilterBuilder
+          open={filterDialogOpen}
+          onOpenChange={setFilterDialogOpen}
+          columns={columns}
+          filters={advancedFilters}
+          onFiltersChange={setAdvancedFilters}
         />
       </CardContent>
     </Card>
