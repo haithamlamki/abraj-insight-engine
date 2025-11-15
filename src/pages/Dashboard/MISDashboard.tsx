@@ -4,6 +4,14 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { useMISData } from "@/hooks/useMISData";
 import { KPICard } from "@/components/Dashboard/KPICard";
 import { ChartCard } from "@/components/Dashboard/ChartCard";
@@ -47,6 +55,23 @@ export default function MISDashboard() {
 
   const clearDrillDown = () => {
     setDrillDown({ type: null, value: null });
+  };
+
+  const getDrillDownLabel = () => {
+    if (!drillDown.type || !drillDown.value) return '';
+    
+    switch (drillDown.type) {
+      case 'rig':
+        return `Rig ${drillDown.value}`;
+      case 'npt_type':
+        return `${drillDown.value} NPT`;
+      case 'status':
+        return `Status: ${drillDown.value}`;
+      case 'client':
+        return `Client: ${drillDown.value}`;
+      default:
+        return drillDown.value;
+    }
   };
 
   const kpis = misData?.kpis;
@@ -208,21 +233,28 @@ export default function MISDashboard() {
             <h1 className="text-3xl font-bold text-foreground">MIS Dashboard</h1>
             <p className="text-muted-foreground">Management Information System - Integrated View</p>
             
-            {/* Active Drill-Down Filter */}
+            {/* Breadcrumb Navigation for Drill-Down */}
             {drillDown.type && drillDown.value && (
-              <div className="flex items-center gap-2 mt-2">
-                <Badge variant="secondary" className="flex items-center gap-2">
-                  <Filter className="h-3 w-3" />
-                  <span className="capitalize">{drillDown.type}: {drillDown.value}</span>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="h-4 w-4 p-0 hover:bg-transparent"
-                    onClick={clearDrillDown}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </Badge>
+              <div className="mt-3 px-4 py-2.5 bg-accent/50 rounded-lg border border-border/50">
+                <Breadcrumb>
+                  <BreadcrumbList>
+                    <BreadcrumbItem>
+                      <BreadcrumbLink 
+                        onClick={clearDrillDown}
+                        className="cursor-pointer hover:text-foreground transition-colors font-medium"
+                      >
+                        All Data
+                      </BreadcrumbLink>
+                    </BreadcrumbItem>
+                    
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                      <BreadcrumbPage className="font-medium text-foreground">
+                        {getDrillDownLabel()}
+                      </BreadcrumbPage>
+                    </BreadcrumbItem>
+                  </BreadcrumbList>
+                </Breadcrumb>
               </div>
             )}
           </div>
