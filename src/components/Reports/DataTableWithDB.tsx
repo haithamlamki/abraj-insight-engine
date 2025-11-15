@@ -1165,13 +1165,24 @@ export const DataTableWithDB = ({
                       >
                         <div className="flex items-center justify-between">
                           {column.sortable ? (
-                            <button
-                              onClick={() => handleSort(column.key)}
-                              className="flex items-center gap-2 hover:text-foreground transition-colors"
-                            >
-                              {column.label}
-                              <ArrowUpDown className="h-4 w-4" />
-                            </button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={() => handleSort(column.key)}
+                                  className="flex items-center gap-2 hover:text-foreground transition-colors"
+                                >
+                                  {column.label}
+                                  <ArrowUpDown className="h-4 w-4" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>
+                                  {sortColumn === column.key 
+                                    ? `Sorted ${sortDirection === 'asc' ? 'ascending' : 'descending'}. Click to reverse.`
+                                    : 'Click to sort by this column'}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
                           ) : (
                             <span>{column.label}</span>
                           )}
