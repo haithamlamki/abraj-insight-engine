@@ -16,6 +16,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { BulkEditDialog } from "@/components/Admin/BulkEditDialog";
 import { useBulkEdit } from "@/hooks/useBulkEdit";
@@ -743,8 +744,9 @@ export const DataTableWithDB = ({
   return (
     <>
       <DataTableTour reportType={reportType} run={tourRun} setRun={setTourRun} />
-      <Card className="w-full">
-        <CardHeader>
+      <TooltipProvider>
+        <Card className="w-full">
+          <CardHeader>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
@@ -754,15 +756,21 @@ export const DataTableWithDB = ({
               </CardDescription>
             </div>
             <div className="flex flex-wrap gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <BookmarkPlus className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">
-                      {currentView ? currentView.name : "Views"}
-                    </span>
-                  </Button>
-                </DropdownMenuTrigger>
+              <Tooltip>
+                <DropdownMenu>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <BookmarkPlus className="h-4 w-4 sm:mr-2" />
+                        <span className="hidden sm:inline">
+                          {currentView ? currentView.name : "Views"}
+                        </span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Save and manage custom table views with your preferred filters, columns, and sorting</p>
+                  </TooltipContent>
                 <DropdownMenuContent align="end" className="w-[200px]">
                   <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
                     <DialogTrigger asChild>
@@ -826,81 +834,126 @@ export const DataTableWithDB = ({
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Select value={density} onValueChange={handleDensityChange}>
-                <SelectTrigger className="w-[140px] h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="compact">Compact</SelectItem>
-                  <SelectItem value="comfortable">Comfortable</SelectItem>
-                  <SelectItem value="spacious">Spacious</SelectItem>
-                </SelectContent>
-              </Select>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" title="Toggle columns">
-                    <Columns3 className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Columns</span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-4" align="end">
-                  <div className="space-y-3">
-                    <h4 className="font-medium text-sm">Toggle Columns</h4>
-                    <div className="space-y-2">
-                      {columns.map((column) => (
-                        <div key={column.key} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`col-${column.key}`}
-                            checked={visibleColumns.has(column.key)}
-                            onCheckedChange={() => toggleColumnVisibility(column.key)}
-                            disabled={visibleColumns.size === 1 && visibleColumns.has(column.key)}
-                          />
-                          <Label
-                            htmlFor={`col-${column.key}`}
-                            className="text-sm font-normal cursor-pointer flex-1"
-                          >
-                            {column.label}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <Select value={density} onValueChange={handleDensityChange}>
+                      <SelectTrigger className="w-[140px] h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="compact">Compact</SelectItem>
+                        <SelectItem value="comfortable">Comfortable</SelectItem>
+                        <SelectItem value="spacious">Spacious</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                </PopoverContent>
-              </Popover>
-              <Button onClick={resetColumnWidths} variant="outline" size="sm" title="Reset column widths">
-                <RotateCcw className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Reset</span>
-              </Button>
-              <Button 
-                onClick={autoSizeColumns} 
-                variant="outline" 
-                size="sm" 
-                title="Auto-size columns based on content"
-                disabled={isLoading || !filteredAndSortedData.length}
-              >
-                <Maximize2 className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Auto-size</span>
-              </Button>
-              <Button
-                data-tour="export-button"
-                onClick={() => setExportDialogOpen(true)} 
-                variant="outline" 
-                size="sm" 
-                disabled={isLoading || !filteredAndSortedData.length}
-              >
-                <Download className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Export</span>
-                <span className="sm:hidden">Export</span>
-              </Button>
-              <Button
-                onClick={resetTour}
-                variant="outline"
-                size="sm"
-                title="Restart tour"
-              >
-                <HelpCircle className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Tour</span>
-              </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Adjust row height and padding for better readability</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <Columns3 className="h-4 w-4 sm:mr-2" />
+                          <span className="hidden sm:inline">Columns</span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[200px] p-4" align="end">
+                        <div className="space-y-3">
+                          <h4 className="font-medium text-sm">Toggle Columns</h4>
+                          <div className="space-y-2">
+                            {columns.map((column) => (
+                              <div key={column.key} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`col-${column.key}`}
+                                  checked={visibleColumns.has(column.key)}
+                                  onCheckedChange={() => toggleColumnVisibility(column.key)}
+                                  disabled={visibleColumns.size === 1 && visibleColumns.has(column.key)}
+                                />
+                                <Label
+                                  htmlFor={`col-${column.key}`}
+                                  className="text-sm font-normal cursor-pointer flex-1"
+                                >
+                                  {column.label}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Show or hide specific columns to customize your view</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button onClick={resetColumnWidths} variant="outline" size="sm">
+                    <RotateCcw className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Reset</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Reset all column widths to their default sizes</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                  onClick={autoSizeColumns} 
+                  variant="outline" 
+                  size="sm"
+                  disabled={isLoading || !filteredAndSortedData.length}
+                >
+                  <Maximize2 className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Auto-size</span>
+                </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Automatically adjust column widths to fit content perfectly</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                  data-tour="export-button"
+                  onClick={() => setExportDialogOpen(true)} 
+                  variant="outline" 
+                  size="sm" 
+                  disabled={isLoading || !filteredAndSortedData.length}
+                >
+                  <Download className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Export</span>
+                  <span className="sm:hidden">Export</span>
+                </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Export your data to Excel, CSV, or PDF format</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                  onClick={resetTour}
+                  variant="outline"
+                  size="sm"
+                >
+                  <HelpCircle className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Tour</span>
+                </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Restart the interactive tutorial to learn about table features</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
           <div className="overflow-x-auto">
@@ -926,9 +979,30 @@ export const DataTableWithDB = ({
           className="w-full"
         >
           <TabsList className="grid w-full grid-cols-3 mb-0 rounded-none border-b">
-            <TabsTrigger value="view-data">View Data</TabsTrigger>
-            <TabsTrigger data-tour="manual-entry-tab" value="manual-entry">Manual Entry</TabsTrigger>
-            <TabsTrigger data-tour="upload-tab" value="upload-excel">Upload Excel</TabsTrigger>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="view-data">View Data</TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Browse, filter, and analyze existing records</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger data-tour="manual-entry-tab" value="manual-entry">Manual Entry</TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Add individual records one at a time using a form</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger data-tour="upload-tab" value="upload-excel">Upload Excel</TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Bulk import data from Excel files or paste from spreadsheets</p>
+              </TooltipContent>
+            </Tooltip>
           </TabsList>
 
           <TabsContent value="view-data" className="space-y-0 m-0 p-6">
@@ -943,60 +1017,95 @@ export const DataTableWithDB = ({
                 <span className="text-sm font-medium">
                   {selectedRows.size} record(s) selected
                 </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedRows(new Set())}
-                >
-                  <X className="h-4 w-4 mr-1" />
-                  Clear
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedRows(new Set())}
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Clear
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Clear all selected records</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleBulkEdit}
-                >
-                  <Edit2 className="h-4 w-4 mr-1" />
-                  Edit
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setDeleteDialogOpen(true)}
-                >
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Delete
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleBulkEdit}
+                    >
+                      <Edit2 className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Edit multiple records at once</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setDeleteDialogOpen(true)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Delete
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Permanently delete selected records</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
             </div>
           )}
 
           <div className="flex flex-col sm:flex-row gap-4">
-            <Input
-              data-tour="search-input"
-              placeholder="Search..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-sm"
-              disabled={isLoading}
-            />
-            <Button
-              data-tour="filter-button"
-              variant="outline"
-              size="sm"
-              onClick={() => setFilterDialogOpen(true)}
-              className={advancedFilters.length > 0 ? 'border-primary' : ''}
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              Advanced Filters
-              {advancedFilters.length > 0 && (
-                <Badge variant="secondary" className="ml-2">
-                  {advancedFilters.length}
-                </Badge>
-              )}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Input
+                  data-tour="search-input"
+                  placeholder="Search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="max-w-sm"
+                  disabled={isLoading}
+                />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Search across all visible columns</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  data-tour="filter-button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFilterDialogOpen(true)}
+                  className={advancedFilters.length > 0 ? 'border-primary' : ''}
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Advanced Filters
+                {advancedFilters.length > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {advancedFilters.length}
+                  </Badge>
+                )}
+              </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Create complex filters with multiple conditions</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
 
           {/* Active Filters Display */}
@@ -1217,6 +1326,7 @@ export const DataTableWithDB = ({
         />
       </CardContent>
     </Card>
+      </TooltipProvider>
     </>
   );
 };
