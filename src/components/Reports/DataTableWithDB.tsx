@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Download, FileSpreadsheet, Loader2, RotateCcw, Columns3, Save, BookmarkPlus, Trash2, Edit2, X, Filter, Maximize2, HelpCircle } from "lucide-react";
+import { ArrowUpDown, Download, FileSpreadsheet, Loader2, RotateCcw, Columns3, Save, BookmarkPlus, Trash2, Edit2, X, Filter, Maximize2, HelpCircle, Sparkles } from "lucide-react";
 import { useInfiniteReportData } from "@/hooks/useInfiniteReportData";
 import { DateRangeFilter } from "./DateRangeFilter";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -28,6 +28,7 @@ import { ExcelUploadZone } from "./ExcelUploadZone";
 import { DataEntryOptionsDialog } from "./DataEntryOptionsDialog";
 import { DataTableTour } from "./DataTableTour";
 import { SmartFilterPanel } from "./SmartFilterPanel";
+import { NaturalLanguageFilter } from "./NaturalLanguageFilter";
 import { useDataTableTour } from "@/hooks/useDataTableTour";
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
@@ -144,6 +145,7 @@ export const DataTableWithDB = ({
   // Data entry options dialog state
   const [showDataEntryDialog, setShowDataEntryDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("view-data");
+  const [showNaturalLanguageFilter, setShowNaturalLanguageFilter] = useState(false);
   
   const { preview, execute, isPreviewLoading, isExecuting } = useBulkEdit();
   
@@ -438,6 +440,40 @@ export const DataTableWithDB = ({
       title: "Filters cleared",
       description: "All filters have been removed",
     });
+  };
+
+  const handleNaturalLanguageFilter = (filterConfig: any) => {
+    // Apply date range if present
+    if (filterConfig.dateRange) {
+      setStartDate(new Date(filterConfig.dateRange.start));
+      setEndDate(new Date(filterConfig.dateRange.end));
+    }
+
+    // Apply conditions if present
+    if (filterConfig.conditions && filterConfig.conditions.length > 0) {
+      const newGroup: FilterGroup = {
+        id: Date.now().toString(),
+        logic: 'AND',
+        conditions: filterConfig.conditions.map((cond: any, idx: number) => ({
+          id: `${Date.now()}-${idx}`,
+          field: cond.field,
+          operator: cond.operator,
+          value: cond.value
+        }))
+      };
+      setAdvancedFilters(prev => [...prev, newGroup]);
+    }
+
+    // Apply sorting if present
+    if (filterConfig.sortBy) {
+      setSortColumn(filterConfig.sortBy.field);
+      setSortDirection(filterConfig.sortBy.direction);
+    }
+
+    // Store the summary as a smart filter label
+    if (filterConfig.summary) {
+      setSmartFilterLabels(prev => [...prev, filterConfig.summary]);
+    }
   };
 
   const handleDensityChange = (newDensity: "compact" | "comfortable" | "spacious") => {
@@ -1050,6 +1086,18 @@ export const DataTableWithDB = ({
           </TabsList>
 
           <TabsContent value="view-data" className="space-y-0 m-0 p-6">
+            {/* Natural Language Filter */}
+            {showNaturalLanguageFilter && (
+              <div className="mb-4">
+                <NaturalLanguageFilter
+                  reportType={reportType}
+                  availableFields={columns.map(c => c.key)}
+                  onFilterApply={handleNaturalLanguageFilter}
+                  onClose={() => setShowNaturalLanguageFilter(false)}
+                />
+              </div>
+            )}
+
             {/* Bulk Actions Bar */}
             {selectedRows.size > 0 && (
             <div className="flex items-center justify-between p-3 bg-primary/10 border border-primary/20 rounded-lg">
@@ -1166,6 +1214,19 @@ export const DataTableWithDB = ({
               </TooltipContent>
             </Tooltip>
           </div>
+
+          {/* Natural Language Filter Toggle */}
+          {!showNaturalLanguageFilter && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowNaturalLanguageFilter(true)}
+              className="gap-2"
+            >
+              <Sparkles className="h-4 w-4" />
+              <span className="hidden sm:inline">Ask AI</span>
+            </Button>
+          )}
 
           {/* Active Filters Display */}
           {(advancedFilters.length > 0 || smartFilterLabels.length > 0) && (

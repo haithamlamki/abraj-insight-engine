@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.billing_npt_insights]
 verify_jwt = false
+
+[functions.parse-filter-query]
+verify_jwt = false
