@@ -112,6 +112,10 @@ export const DataTableWithDB = ({
   // Advanced filters state
   const [advancedFilters, setAdvancedFilters] = useState<FilterGroup[]>([]);
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+  const [filterTemplates, setFilterTemplates] = useState<Record<string, FilterGroup[]>>(() => {
+    const stored = localStorage.getItem(`filter-templates-${reportType}`);
+    return stored ? JSON.parse(stored) : {};
+  });
   
   // Bulk selection state
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
@@ -293,6 +297,40 @@ export const DataTableWithDB = ({
       console.error('Bulk edit error:', error);
     }
   };
+
+  // Filter template management
+  const saveFilterTemplate = (name: string, filters: FilterGroup[]) => {
+    const updated = { ...filterTemplates, [name]: filters };
+    setFilterTemplates(updated);
+    localStorage.setItem(`filter-templates-${reportType}`, JSON.stringify(updated));
+    toast({
+      title: "Template saved",
+      description: `Filter template "${name}" has been saved.`,
+    });
+  };
+
+  const loadFilterTemplate = (name: string) => {
+    const template = filterTemplates[name];
+    if (template) {
+      setAdvancedFilters(template);
+      toast({
+        title: "Template loaded",
+        description: `Applied filter template "${name}".`,
+      });
+    }
+  };
+
+  const deleteFilterTemplate = (name: string) => {
+    const updated = { ...filterTemplates };
+    delete updated[name];
+    setFilterTemplates(updated);
+    localStorage.setItem(`filter-templates-${reportType}`, JSON.stringify(updated));
+    toast({
+      title: "Template deleted",
+      description: `Filter template "${name}" has been deleted.`,
+    });
+  };
+
 
   const handleDensityChange = (newDensity: "compact" | "comfortable" | "spacious") => {
     setDensity(newDensity);
@@ -924,6 +962,10 @@ export const DataTableWithDB = ({
           columns={columns}
           filters={advancedFilters}
           onFiltersChange={setAdvancedFilters}
+          templates={filterTemplates}
+          onSaveTemplate={saveFilterTemplate}
+          onLoadTemplate={loadFilterTemplate}
+          onDeleteTemplate={deleteFilterTemplate}
         />
       </CardContent>
     </Card>

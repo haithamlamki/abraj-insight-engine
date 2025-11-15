@@ -5,8 +5,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Trash2, X } from "lucide-react";
+import { Plus, Trash2, X, Save, FolderOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 
 export interface FilterCondition {
   id: string;
@@ -32,6 +33,10 @@ interface AdvancedFilterBuilderProps {
   columns: Column[];
   filters: FilterGroup[];
   onFiltersChange: (filters: FilterGroup[]) => void;
+  templates?: Record<string, FilterGroup[]>;
+  onSaveTemplate?: (name: string, filters: FilterGroup[]) => void;
+  onLoadTemplate?: (name: string) => void;
+  onDeleteTemplate?: (name: string) => void;
 }
 
 const OPERATORS = [
@@ -53,8 +58,14 @@ export const AdvancedFilterBuilder = ({
   columns,
   filters,
   onFiltersChange,
+  templates = {},
+  onSaveTemplate,
+  onLoadTemplate,
+  onDeleteTemplate,
 }: AdvancedFilterBuilderProps) => {
   const [localFilters, setLocalFilters] = useState<FilterGroup[]>(filters);
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState("");
 
   const addFilterGroup = () => {
     const newGroup: FilterGroup = {
@@ -144,14 +155,82 @@ export const AdvancedFilterBuilder = ({
     return !['is_empty', 'is_not_empty'].includes(operator);
   };
 
+  const handleSaveTemplate = () => {
+    if (templateName.trim() && onSaveTemplate) {
+      onSaveTemplate(templateName.trim(), localFilters);
+      setTemplateName("");
+      setShowSaveTemplate(false);
+    }
+  };
+
+  const handleLoadTemplate = (name: string) => {
+    if (onLoadTemplate) {
+      onLoadTemplate(name);
+      const template = templates[name];
+      if (template) {
+        setLocalFilters(template);
+      }
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle>Advanced Filters</DialogTitle>
-          <DialogDescription>
-            Build complex filter conditions with multiple criteria
-          </DialogDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle>Advanced Filters</DialogTitle>
+              <DialogDescription>
+                Build complex filter conditions with multiple criteria
+              </DialogDescription>
+            </div>
+            {onSaveTemplate && onLoadTemplate && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowSaveTemplate(true)}
+                  disabled={localFilters.length === 0}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Template
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" disabled={Object.keys(templates).length === 0}>
+                      <FolderOpen className="h-4 w-4 mr-2" />
+                      Load Template
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    {Object.keys(templates).map((name) => (
+                      <div key={name} className="flex items-center justify-between px-2 py-1.5 hover:bg-accent">
+                        <button
+                          onClick={() => handleLoadTemplate(name)}
+                          className="flex-1 text-left text-sm"
+                        >
+                          {name}
+                        </button>
+                        {onDeleteTemplate && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteTemplate(name);
+                            }}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
+          </div>
         </DialogHeader>
 
         <ScrollArea className="max-h-[60vh] pr-4">
@@ -296,6 +375,45 @@ export const AdvancedFilterBuilder = ({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Save Template Dialog */}
+      <Dialog open={showSaveTemplate} onOpenChange={setShowSaveTemplate}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save Filter Template</DialogTitle>
+            <DialogDescription>
+              Give your filter template a name to save it for future use
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="template-name">Template Name</Label>
+              <Input
+                id="template-name"
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                placeholder="e.g., High Priority Issues"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSaveTemplate();
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowSaveTemplate(false);
+              setTemplateName("");
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveTemplate} disabled={!templateName.trim()}>
+              Save Template
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 };
