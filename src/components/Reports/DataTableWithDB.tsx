@@ -69,7 +69,7 @@ export const DataTableWithDB = ({
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [density, setDensity] = useState<"compact" | "comfortable" | "spacious">(() => {
     const stored = localStorage.getItem(`table-density-${reportType}`);
-    return (stored as "compact" | "comfortable" | "spacious") || "comfortable";
+    return (stored as "compact" | "comfortable" | "spacious") || "compact";
   });
   
   // Column resizing state
@@ -998,11 +998,11 @@ export const DataTableWithDB = ({
               {searchTerm ? 'No matching records found' : 'No data available yet'}
             </div>
           ) : (
-            <div className="w-full overflow-x-auto max-h-[600px] overflow-y-auto border rounded-md" ref={scrollRef}>
-              <table className="w-full border-collapse">
+            <div className="w-full max-h-[600px] overflow-y-auto border rounded-md" ref={scrollRef}>
+              <table className="w-full border-collapse table-fixed">
                 <thead className="sticky top-0 bg-background z-10 border-b">
                   <tr className="bg-muted/50">
-                    <th className={`${densityClasses.cell} w-[50px] border-r`}>
+                    <th className={`${densityClasses.cell} w-[40px] border-r`}>
                       <Checkbox
                         checked={selectedRows.size === filteredAndSortedData.length && filteredAndSortedData.length > 0}
                         onCheckedChange={handleSelectAll}
@@ -1011,10 +1011,10 @@ export const DataTableWithDB = ({
                     {visibleColumnsArray.map((column) => (
                       <th
                         key={column.key}
-                        className={`${densityClasses.cell} text-left font-medium relative group border-r`}
+                        className={`${densityClasses.cell} text-left font-medium relative group border-r text-xs`}
                         style={{ 
-                          width: columnWidths[column.key] ? `${columnWidths[column.key]}px` : `${100 / visibleColumnsArray.length}%`,
-                          minWidth: '100px'
+                          width: columnWidths[column.key] ? `${columnWidths[column.key]}px` : 'auto',
+                          minWidth: '80px'
                         }}
                       >
                         <div className="flex items-center justify-between">
@@ -1054,10 +1054,10 @@ export const DataTableWithDB = ({
                       {visibleColumnsArray.map((column) => (
                         <td 
                           key={column.key} 
-                          className={`${densityClasses.cell} ${densityClasses.row} border-r`}
+                          className={`${densityClasses.cell} ${densityClasses.row} border-r text-xs`}
                           style={{ 
-                            width: columnWidths[column.key] ? `${columnWidths[column.key]}px` : `${100 / visibleColumnsArray.length}%`,
-                            minWidth: '100px'
+                            width: columnWidths[column.key] ? `${columnWidths[column.key]}px` : 'auto',
+                            minWidth: '80px'
                           }}
                         >
                           <div className="overflow-hidden text-ellipsis whitespace-nowrap" title={String(row[column.key] || '')}>
