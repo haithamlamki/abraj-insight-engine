@@ -1,32 +1,16 @@
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
-import { DataEntryForm } from "@/components/Reports/DataEntryForm";
-import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
 import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
 import { Package, DollarSign, TrendingUp } from "lucide-react";
 
 const Material = () => {
-  const formFields = [
-    { name: "date", label: "Date", type: "date" as const, required: true },
-    { name: "rigNumber", label: "Rig Number", type: "text" as const, required: true },
-    { name: "materialType", label: "Material Type", type: "select" as const, options: ["Drilling Mud", "Cement", "Pipes", "Other"], required: true },
-    { name: "quantity", label: "Quantity", type: "number" as const, required: true },
-    { name: "cost", label: "Cost ($)", type: "number" as const, required: true },
-  ];
-
   const tableColumns = [
     { key: "date", label: "Date", sortable: true },
     { key: "rigNumber", label: "Rig", sortable: true },
     { key: "materialType", label: "Material", sortable: true },
     { key: "quantity", label: "Quantity", sortable: true },
     { key: "cost", label: "Cost", sortable: true },
-  ];
-
-  const sampleData = [
-    { date: "2024-03-15", rigNumber: "Rig-101", materialType: "Drilling Mud", quantity: "250 bbls", cost: "$15,000" },
-    { date: "2024-03-15", rigNumber: "Rig-102", materialType: "Cement", quantity: "180 sacks", cost: "$8,500" },
-    { date: "2024-03-14", rigNumber: "Rig-103", materialType: "Pipes", quantity: "12 units", cost: "$42,000" },
   ];
 
   const trendData = [
@@ -76,21 +60,6 @@ const Material = () => {
             })}
           />
         </div>
-      }
-      entryContent={
-        <DataEntryForm
-          title="Enter Material Data"
-          fields={formFields}
-          frequency="daily"
-          reportType="fuel"
-        />
-      }
-      uploadContent={
-        <ExcelUploadZone
-          title="Upload Material Report"
-          templateName="material_template.xlsx"
-          reportType="material"
-        />
       }
     />
   );

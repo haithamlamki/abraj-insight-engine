@@ -1,6 +1,4 @@
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
-import { DataEntryForm } from "@/components/Reports/DataEntryForm";
-import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
 import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
@@ -12,26 +10,12 @@ const Stock = () => {
   const { kpis, isLoading: kpisLoading } = useKPIData("stock");
   const { chartData, isLoading: chartLoading } = useChartData("stock");
 
-  const formFields = [
-    { name: "date", label: "Date", type: "date" as const, required: true },
-    { name: "itemName", label: "Item Name", type: "text" as const, required: true },
-    { name: "category", label: "Category", type: "select" as const, options: ["Drilling", "Safety", "Maintenance", "Other"], required: true },
-    { name: "currentStock", label: "Current Stock", type: "number" as const, required: true },
-    { name: "minStock", label: "Min Stock Level", type: "number" as const, required: true },
-  ];
-
   const tableColumns = [
     { key: "itemName", label: "Item", sortable: true },
     { key: "category", label: "Category", sortable: true },
     { key: "currentStock", label: "Current", sortable: true },
     { key: "minStock", label: "Min Level", sortable: true },
     { key: "status", label: "Status", sortable: true },
-  ];
-
-  const sampleData = [
-    { itemName: "Drill Bits", category: "Drilling", currentStock: "45", minStock: "20", status: "OK" },
-    { itemName: "Safety Harnesses", category: "Safety", currentStock: "12", minStock: "15", status: "Low" },
-    { itemName: "Hydraulic Oil", category: "Maintenance", currentStock: "850 L", minStock: "500 L", status: "OK" },
   ];
 
   const trendData = [
@@ -92,21 +76,6 @@ const Stock = () => {
             })}
           />
         </div>
-      }
-      entryContent={
-        <DataEntryForm
-          title="Enter Stock Data"
-          fields={formFields}
-          frequency="daily"
-          reportType="stock"
-        />
-      }
-      uploadContent={
-        <ExcelUploadZone
-          title="Upload Stock Report"
-          templateName="stock_template.xlsx"
-          reportType="stock"
-        />
       }
     />
   );

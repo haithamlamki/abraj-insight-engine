@@ -1,6 +1,4 @@
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
-import { DataEntryForm } from "@/components/Reports/DataEntryForm";
-import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
 import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { useNPTRootCauseData } from "@/hooks/useNPTRootCauseData";
 import { useNPTFilters } from "@/hooks/useNPTFilters";
@@ -350,40 +348,6 @@ const NPTRootCause = () => {
             </TabsContent>
           </Tabs>
         </div>
-      }
-      entryContent={
-        <DataEntryForm
-          title="Add NPT Root Cause Record"
-          reportType="npt_root_cause"
-          frequency="monthly"
-          fields={[
-            { name: 'rigNumber', label: 'Rig Number', type: 'text', required: true },
-            { name: 'year', label: 'Year', type: 'number', required: true },
-            { name: 'month', label: 'Month', type: 'text', required: true },
-            { name: 'date', label: 'Date', type: 'number', required: true },
-            { name: 'hrs', label: 'Hours', type: 'number', required: true },
-            { name: 'nptType', label: 'NPT Type', type: 'text', required: true },
-            { name: 'system', label: 'System', type: 'text', required: true },
-            { name: 'parentEquipmentFailure', label: 'Parent Equipment', type: 'text' },
-            { name: 'partEquipmentFailure', label: 'Part Equipment', type: 'text' },
-            { name: 'contractualProcess', label: 'Contractual Process', type: 'text' },
-            { name: 'departmentResponsibility', label: 'Department', type: 'text' },
-            { name: 'immediateCauseOfFailure', label: 'Immediate Cause', type: 'text' },
-            { name: 'rootCause', label: 'Root Cause', type: 'text' },
-            { name: 'immediateCorrectiveAction', label: 'Corrective Action', type: 'text' },
-            { name: 'futureActionImprovement', label: 'Future Action', type: 'text' },
-            { name: 'actionParty', label: 'Action Party', type: 'text' },
-            { name: 'notificationNumber', label: 'N2 Number', type: 'text' },
-            { name: 'failureInvestigationReports', label: 'Investigation Status', type: 'text' },
-          ]}
-        />
-      }
-      uploadContent={
-        <ExcelUploadZone
-          title="Import NPT Root Cause Data"
-          templateName="npt_root_cause_template.xlsx"
-          reportType="npt_root_cause"
-        />
       }
     />
   );

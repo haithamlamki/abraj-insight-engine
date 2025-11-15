@@ -1,32 +1,16 @@
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
-import { DataEntryForm } from "@/components/Reports/DataEntryForm";
-import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
-import { PasteDataZone } from "@/components/Reports/PasteDataZone";
 import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
 import { Activity, CheckCircle2, AlertCircle } from "lucide-react";
 
 const DRLine = () => {
-  const formFields = [
-    { name: "date", label: "Date", type: "date" as const, required: true },
-    { name: "rigNumber", label: "Rig Number", type: "text" as const, required: true },
-    { name: "status", label: "Status", type: "select" as const, options: ["Operational", "Down", "Maintenance", "Standby"], required: true },
-    { name: "notes", label: "Notes", type: "text" as const },
-  ];
-
   const tableColumns = [
     { key: "date", label: "Date", sortable: true },
     { key: "rigNumber", label: "Rig", sortable: true },
     { key: "status", label: "Status", sortable: true },
     { key: "uptime", label: "Uptime %", sortable: true },
     { key: "notes", label: "Notes", sortable: false },
-  ];
-
-  const sampleData = [
-    { date: "2024-03-15", rigNumber: "Rig-101", status: "Operational", uptime: "100%", notes: "Normal operations" },
-    { date: "2024-03-15", rigNumber: "Rig-205", status: "Down", uptime: "0%", notes: "Equipment failure" },
-    { date: "2024-03-15", rigNumber: "Rig-102", status: "Operational", uptime: "100%", notes: "-" },
   ];
 
   const trendData = [
@@ -78,27 +62,6 @@ const DRLine = () => {
             })}
           />
         </div>
-      }
-      entryContent={
-        <DataEntryForm
-          title="Enter DR Line Status"
-          fields={formFields}
-          frequency="daily"
-          reportType="stock"
-        />
-      }
-      uploadContent={
-        <ExcelUploadZone
-          title="Upload DR Line Report"
-          templateName="dr_line_template.xlsx"
-          reportType="dr_line"
-        />
-      }
-      pasteContent={
-        <PasteDataZone
-          title="Paste DR Line Data"
-          reportType="dr_line"
-        />
       }
     />
   );

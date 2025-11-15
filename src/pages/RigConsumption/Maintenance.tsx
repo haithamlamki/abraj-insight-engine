@@ -1,32 +1,16 @@
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
-import { DataEntryForm } from "@/components/Reports/DataEntryForm";
-import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
 import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
 import { Wrench, DollarSign, Clock } from "lucide-react";
 
 const Maintenance = () => {
-  const formFields = [
-    { name: "date", label: "Date", type: "date" as const, required: true },
-    { name: "rigNumber", label: "Rig Number", type: "text" as const, required: true },
-    { name: "maintenanceType", label: "Type", type: "select" as const, options: ["Preventive", "Corrective", "Emergency"], required: true },
-    { name: "downtime", label: "Downtime (hrs)", type: "number" as const, required: true },
-    { name: "cost", label: "Cost ($)", type: "number" as const, required: true },
-  ];
-
   const tableColumns = [
     { key: "date", label: "Date", sortable: true },
     { key: "rigNumber", label: "Rig", sortable: true },
     { key: "maintenanceType", label: "Type", sortable: true },
     { key: "downtime", label: "Downtime", sortable: true },
     { key: "cost", label: "Cost", sortable: true },
-  ];
-
-  const sampleData = [
-    { date: "2024-03-15", rigNumber: "Rig-101", maintenanceType: "Preventive", downtime: "4 hrs", cost: "$8,500" },
-    { date: "2024-03-14", rigNumber: "Rig-205", maintenanceType: "Emergency", downtime: "12 hrs", cost: "$28,000" },
-    { date: "2024-03-13", rigNumber: "Rig-102", maintenanceType: "Corrective", downtime: "6 hrs", cost: "$12,500" },
   ];
 
   const trendData = [
@@ -76,21 +60,6 @@ const Maintenance = () => {
             })}
           />
         </div>
-      }
-      entryContent={
-        <DataEntryForm
-          title="Enter Maintenance Data"
-          fields={formFields}
-          frequency="daily"
-          reportType="fuel"
-        />
-      }
-      uploadContent={
-        <ExcelUploadZone
-          title="Upload Maintenance Report"
-          templateName="maintenance_template.xlsx"
-          reportType="maintenance"
-        />
       }
     />
   );

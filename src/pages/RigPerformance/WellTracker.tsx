@@ -1,6 +1,4 @@
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
-import { DataEntryForm } from "@/components/Reports/DataEntryForm";
-import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
 import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
@@ -12,18 +10,6 @@ const WellTracker = () => {
   const { kpis, isLoading: kpisLoading } = useKPIData("well_tracker");
   const { chartData, isLoading: chartLoading } = useChartData("well_tracker");
 
-  const formFields = [
-    { name: "rig", label: "Rig", type: "text" as const, required: true },
-    { name: "wellName", label: "Well Name", type: "text" as const, required: true },
-    { name: "startDate", label: "Start Date", type: "date" as const, required: true },
-    { name: "endDate", label: "End Date", type: "date" as const },
-    { name: "targetDepth", label: "Target Depth (m)", type: "number" as const, required: true },
-    { name: "actualDepth", label: "Actual Depth (m)", type: "number" as const, required: true },
-    { name: "status", label: "Status", type: "select" as const, options: ["Drilling", "Completed", "Suspended", "P&A"], required: true },
-    { name: "operator", label: "Operator", type: "text" as const, required: true },
-    { name: "location", label: "Location", type: "text" as const },
-  ];
-
   const tableColumns = [
     { key: "rig", label: "Rig", sortable: true },
     { key: "wellName", label: "Well", sortable: true },
@@ -31,12 +17,6 @@ const WellTracker = () => {
     { key: "actualDepth", label: "Depth (m)", sortable: true },
     { key: "status", label: "Status", sortable: true },
     { key: "operator", label: "Operator", sortable: true },
-  ];
-
-  const sampleData = [
-    { rig: "ADC-225", wellName: "BHD-2024-001", startDate: "2024-01-05", actualDepth: "3,245", status: "Drilling", operator: "ADNOC" },
-    { rig: "ADC-226", wellName: "RWS-2024-012", startDate: "2023-12-28", actualDepth: "4,120", status: "Completed", operator: "ADNOC" },
-    { rig: "ADC-227", wellName: "HAB-2024-003", startDate: "2024-01-15", actualDepth: "2,890", status: "Drilling", operator: "ADNOC" },
   ];
 
   const trendData = [
@@ -100,21 +80,6 @@ const WellTracker = () => {
             })}
           />
         </div>
-      }
-      entryContent={
-        <DataEntryForm
-          title="Enter Well Data"
-          fields={formFields}
-          frequency="daily"
-          reportType="well_tracker"
-        />
-      }
-      uploadContent={
-        <ExcelUploadZone
-          title="Upload Well Tracker Report"
-          templateName="well_tracker_template.xlsx"
-          reportType="well_tracker"
-        />
       }
     />
   );

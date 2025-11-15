@@ -1,6 +1,4 @@
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
-import { DataEntryForm } from "@/components/Reports/DataEntryForm";
-import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
 import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
@@ -12,19 +10,6 @@ const RigMoves = () => {
   const { kpis, isLoading: kpisLoading } = useKPIData("rig_moves");
   const { chartData, isLoading: chartLoading } = useChartData("rig_moves");
 
-  const formFields = [
-    { name: "rig", label: "Rig", type: "text" as const, required: true },
-    { name: "date", label: "Date", type: "date" as const, required: true },
-    { name: "fromLocation", label: "From Location", type: "text" as const, required: true },
-    { name: "toLocation", label: "To Location", type: "text" as const, required: true },
-    { name: "distance", label: "Distance (km)", type: "number" as const, required: true },
-    { name: "budgetedTime", label: "Budgeted Time (hrs)", type: "number" as const, required: true },
-    { name: "actualTime", label: "Actual Time (hrs)", type: "number" as const, required: true },
-    { name: "budgetedCost", label: "Budgeted Cost ($)", type: "number" as const, required: true },
-    { name: "actualCost", label: "Actual Cost ($)", type: "number" as const, required: true },
-    { name: "profitLoss", label: "Profit/Loss ($)", type: "number" as const },
-  ];
-
   const tableColumns = [
     { key: "rig", label: "Rig", sortable: true },
     { key: "date", label: "Date", sortable: true },
@@ -33,12 +18,6 @@ const RigMoves = () => {
     { key: "distance", label: "Distance", sortable: true },
     { key: "actualTime", label: "Time (hrs)", sortable: true },
     { key: "profitLoss", label: "Profit/Loss", sortable: true },
-  ];
-
-  const sampleData = [
-    { rig: "ADC-225", date: "2024-01-10", fromLocation: "Al Dhafra", toLocation: "Ruwais", distance: "45", actualTime: "12.5", profitLoss: "+$15,000" },
-    { rig: "ADC-226", date: "2024-01-25", fromLocation: "Habshan", toLocation: "Bu Hasa", distance: "68", actualTime: "18.2", profitLoss: "-$8,500" },
-    { rig: "ADC-227", date: "2024-02-08", fromLocation: "Asab", toLocation: "Shah", distance: "32", actualTime: "10.8", profitLoss: "+$22,000" },
   ];
 
   const trendData = [
@@ -105,21 +84,6 @@ const RigMoves = () => {
             })}
           />
         </div>
-      }
-      entryContent={
-        <DataEntryForm
-          title="Enter Rig Move Data"
-          fields={formFields}
-          frequency="daily"
-          reportType="rig_moves"
-        />
-      }
-      uploadContent={
-        <ExcelUploadZone
-          title="Upload Rig Move Report"
-          templateName="rig_moves_template.xlsx"
-          reportType="rig_moves"
-        />
       }
     />
   );

@@ -1,7 +1,5 @@
 import { useMemo } from "react";
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
-import { DataEntryForm } from "@/components/Reports/DataEntryForm";
-import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
 import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { EnhancedKPICard } from "@/components/Revenue/EnhancedKPICard";
 import { useReportData } from "@/hooks/useReportData";
@@ -262,36 +260,6 @@ const BillingNPTSummary = () => {
             </TabsContent>
           </Tabs>
         </div>
-      }
-      entryContent={
-        <DataEntryForm
-          title="Add NPT Summary Record"
-          reportType="billing_npt_summary"
-          frequency="monthly"
-          fields={[
-            { name: 'year', label: 'Year', type: 'number', required: true },
-            { name: 'month', label: 'Month', type: 'text', required: true },
-            { name: 'rig', label: 'Rig', type: 'text', required: true },
-            { name: 'oprRate', label: 'Operational Rate (hrs)', type: 'number' },
-            { name: 'reduceRate', label: 'Reduced Rate (hrs)', type: 'number' },
-            { name: 'repairRate', label: 'Repair Rate (hrs)', type: 'number' },
-            { name: 'zeroRate', label: 'Zero Rate (hrs)', type: 'number' },
-            { name: 'specialRate', label: 'Special Rate (hrs)', type: 'number' },
-            { name: 'rigMoveReduce', label: 'Rig Move (Reduce) (hrs)', type: 'number' },
-            { name: 'rigMove', label: 'Rig Move (hrs)', type: 'number' },
-            { name: 'aMaint', label: 'Allowable Maintenance (hrs)', type: 'number' },
-            { name: 'aMaintZero', label: 'A.Maint Zero (hrs)', type: 'number' },
-            { name: 'total', label: 'Total (hrs)', type: 'number' },
-            { name: 'totalNpt', label: 'Total NPT (hrs)', type: 'number' },
-          ]}
-        />
-      }
-      uploadContent={
-        <ExcelUploadZone
-          title="Import Billing NPT Summary Data"
-          templateName="billing_npt_summary_template.xlsx"
-          reportType="billing_npt_summary"
-        />
       }
     />
   );
