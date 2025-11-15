@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Download, FileSpreadsheet, Loader2, RotateCcw, Columns3, Save, BookmarkPlus, Trash2 } from "lucide-react";
+import { ArrowUpDown, Download, FileSpreadsheet, Loader2, RotateCcw, Columns3, Save, BookmarkPlus, Trash2, Edit2, X } from "lucide-react";
 import { useInfiniteReportData } from "@/hooks/useInfiniteReportData";
 import { DateRangeFilter } from "./DateRangeFilter";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -13,7 +13,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { BulkEditDialog } from "@/components/Admin/BulkEditDialog";
+import { useBulkEdit } from "@/hooks/useBulkEdit";
+import { supabase } from "@/integrations/supabase/client";
 import * as XLSX from "xlsx";
 
 interface Column {
@@ -101,6 +105,15 @@ export const DataTableWithDB = ({
   const [currentViewId, setCurrentViewId] = useState<string | null>(null);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [viewName, setViewName] = useState("");
+  
+  // Bulk selection state
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [bulkEditDialogOpen, setBulkEditDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [bulkEditPreview, setBulkEditPreview] = useState<any>(null);
+  
+  const { preview, execute, isPreviewLoading, isExecuting } = useBulkEdit();
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -191,6 +204,87 @@ export const DataTableWithDB = ({
   const resetColumnWidths = () => {
     setColumnWidths({});
     localStorage.removeItem(`table-column-widths-${reportType}`);
+  };
+
+  // Bulk selection handlers
+  const handleSelectAll = () => {
+    if (selectedRows.size === filteredAndSortedData.length) {
+      setSelectedRows(new Set());
+    } else {
+      setSelectedRows(new Set(filteredAndSortedData.map(row => row.id)));
+    }
+  };
+
+  const handleSelectRow = (id: string) => {
+    const newSelected = new Set(selectedRows);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedRows(newSelected);
+  };
+
+  const handleBulkDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from(reportType as any)
+        .delete()
+        .in('id', Array.from(selectedRows));
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Deleted ${selectedRows.size} record(s)`,
+      });
+
+      setSelectedRows(new Set());
+      setDeleteDialogOpen(false);
+    } catch (error) {
+      console.error('Bulk delete error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete records",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleBulkEdit = async () => {
+    try {
+      const previewData = await preview({
+        filter: {
+          table: reportType,
+        }
+      });
+      setBulkEditPreview(previewData);
+      setBulkEditDialogOpen(true);
+    } catch (error) {
+      console.error('Bulk edit preview error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load preview",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExecuteBulkEdit = async (operation: any) => {
+    try {
+      await execute({
+        filter: { table: reportType },
+        operation,
+      });
+
+      setSelectedRows(new Set());
+      setBulkEditDialogOpen(false);
+    } catch (error) {
+      console.error('Bulk edit error:', error);
+    }
   };
 
   const handleDensityChange = (newDensity: "compact" | "comfortable" | "spacious") => {
@@ -546,6 +640,47 @@ export const DataTableWithDB = ({
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
+          {/* Bulk Actions Bar */}
+          {selectedRows.size > 0 && (
+            <div className="flex items-center justify-between p-3 bg-primary/10 border border-primary/20 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={selectedRows.size === filteredAndSortedData.length}
+                  onCheckedChange={handleSelectAll}
+                />
+                <span className="text-sm font-medium">
+                  {selectedRows.size} record(s) selected
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedRows(new Set())}
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Clear
+                </Button>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkEdit}
+                >
+                  <Edit2 className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Delete
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row gap-4">
             <Input
               placeholder="Search..."
@@ -567,6 +702,12 @@ export const DataTableWithDB = ({
               <table className="w-full min-w-[600px]" style={{ tableLayout: 'fixed' }}>
                 <thead className="sticky top-0 bg-background z-10">
                   <tr className="border-b bg-muted/50">
+                    <th className={`${densityClasses.cell} w-[50px]`}>
+                      <Checkbox
+                        checked={selectedRows.size === filteredAndSortedData.length && filteredAndSortedData.length > 0}
+                        onCheckedChange={handleSelectAll}
+                      />
+                    </th>
                     {visibleColumnsArray.map((column) => (
                       <th
                         key={column.key}
@@ -601,6 +742,12 @@ export const DataTableWithDB = ({
                 <tbody>
                   {filteredAndSortedData.map((row, index) => (
                     <tr key={row.id || index} className="border-b hover:bg-muted/50 transition-colors">
+                      <td className={`${densityClasses.cell}`}>
+                        <Checkbox
+                          checked={selectedRows.has(row.id)}
+                          onCheckedChange={() => handleSelectRow(row.id)}
+                        />
+                      </td>
                       {visibleColumnsArray.map((column) => (
                         <td 
                           key={column.key} 
@@ -628,6 +775,45 @@ export const DataTableWithDB = ({
             </ScrollArea>
           )}
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete {selectedRows.size} record(s)? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleBulkDelete}
+                disabled={isDeleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Bulk Edit Dialog */}
+        <BulkEditDialog
+          open={bulkEditDialogOpen}
+          onOpenChange={setBulkEditDialogOpen}
+          previewData={bulkEditPreview}
+          onExecute={handleExecuteBulkEdit}
+          isExecuting={isExecuting}
+          tableName={reportType}
+        />
       </CardContent>
     </Card>
   );
