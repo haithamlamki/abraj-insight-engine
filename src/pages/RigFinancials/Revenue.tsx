@@ -1,11 +1,14 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
 import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { DollarSign, TrendingUp, PieChart, Target } from "lucide-react";
 import { useRevenueFilters } from "@/hooks/useRevenueFilters";
 import { useRevenueAnalytics } from "@/hooks/useRevenueAnalytics";
+import { useReportFilters } from "@/hooks/useReportFilters";
 import { RevenueFilterPanel } from "@/components/Revenue/RevenueFilterPanel";
 import { ActiveFiltersBar } from "@/components/Revenue/ActiveFiltersBar";
+import { QuickNavigationBar } from "@/components/QuickNavigationBar";
+import { RelatedReportsPanel } from "@/components/RelatedReportsPanel";
 import { EnhancedKPICard } from "@/components/Revenue/EnhancedKPICard";
 import { RevenueTimeSeriesChart } from "@/components/Revenue/RevenueTimeSeriesChart";
 import { RigPerformanceChart } from "@/components/Revenue/RigPerformanceChart";
@@ -25,6 +28,21 @@ const Revenue = () => {
     applyQuickFilter,
     hasActiveFilters,
   } = useRevenueFilters();
+
+  // Cross-report filter integration
+  const { filters: crossReportFilters, updateFilters: updateCrossFilters } = useReportFilters('revenue');
+  
+  // Merge cross-report filters with local filters on mount
+  useEffect(() => {
+    if (Object.keys(crossReportFilters).length > 0) {
+      updateFilters(crossReportFilters);
+    }
+  }, []);
+
+  // Update cross-report filters when local filters change
+  useEffect(() => {
+    updateCrossFilters(filters);
+  }, [filters]);
 
   const {
     data,
@@ -145,6 +163,12 @@ const Revenue = () => {
             />
           )}
 
+          {/* Smart Navigation */}
+          <QuickNavigationBar 
+            currentReport="revenue" 
+            currentFilters={filters}
+          />
+
           <TabsContent value="dashboard" className="space-y-6">
             <div ref={dashboardRef}>
             {/* KPI Cards */}
@@ -235,6 +259,13 @@ const Revenue = () => {
 
             {/* AI Insights Panel */}
             <AIInsightsPanel filters={filters} />
+
+            {/* Related Reports Navigation */}
+            <RelatedReportsPanel 
+              currentReport="revenue"
+              currentFilters={filters}
+              variant="full"
+            />
             </div>
           </TabsContent>
 
