@@ -17,6 +17,7 @@ import { NPTCorrelationChart } from "@/components/Revenue/NPTCorrelationChart";
 import { RevenueForecastChart } from "@/components/Revenue/RevenueForecastChart";
 import { ExportMenu } from "@/components/Revenue/ExportMenu";
 import { AIInsightsPanel } from "@/components/Revenue/AIInsightsPanel";
+import { SmartBudgetButton } from "@/components/Layout/SmartBudgetButton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useReportData } from "@/hooks/useReportData";
 
@@ -136,6 +137,7 @@ const Revenue = () => {
             </TabsList>
             
             <div className="flex gap-2">
+              <SmartBudgetButton reportType="revenue" size="sm" />
               <ExportMenu
                 data={data}
                 filteredCount={data.length}

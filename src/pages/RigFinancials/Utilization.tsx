@@ -16,6 +16,7 @@ import { UtilizationHeatmap } from "@/components/Utilization/UtilizationHeatmap"
 import { UtilizationAnalytics } from "@/components/Reports/UtilizationAnalytics";
 import { QuickNavigationBar } from "@/components/QuickNavigationBar";
 import { RelatedReportsPanel } from "@/components/RelatedReportsPanel";
+import { SmartBudgetButton } from "@/components/Layout/SmartBudgetButton";
 
 const Utilization = () => {
   const { data: rawData = [] } = useReportData("utilization");
@@ -109,7 +110,8 @@ const Utilization = () => {
               />
 
               <div className="grid gap-6 lg:grid-cols-4">
-                <div className="lg:col-span-1">
+                <div className="lg:col-span-1 space-y-4">
+                  <SmartBudgetButton reportType="utilization" size="sm" className="w-full" />
                   <UtilizationFilterPanel
                     filters={filters}
                     onFilterChange={updateFilters}

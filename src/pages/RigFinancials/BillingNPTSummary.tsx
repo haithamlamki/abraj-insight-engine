@@ -16,6 +16,7 @@ import { ActiveFiltersBar } from "@/components/BillingNPT/ActiveFiltersBar";
 import { AIInsightsPanel } from "@/components/BillingNPT/AIInsightsPanel";
 import { QuickNavigationBar } from "@/components/QuickNavigationBar";
 import { RelatedReportsPanel } from "@/components/RelatedReportsPanel";
+import { SmartBudgetButton } from "@/components/Layout/SmartBudgetButton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUp, AlertTriangle, FileText, Target, Percent, TrendingDown, Activity } from "lucide-react";
 import { HourBreakdownChart } from "@/components/BillingNPT/HourBreakdownChart";
@@ -180,15 +181,18 @@ const BillingNPTSummary = () => {
                 />
               )}
 
-              <BillingNPTFilterPanel
-                filters={filters}
-                onFiltersChange={updateFilters}
-                onClearFilters={clearFilters}
-                onApplyQuickFilter={applyQuickFilter}
-                availableYears={availableYears}
-                availableMonths={availableMonths}
-                availableRigs={availableRigs}
-              />
+              <div className="flex gap-2">
+                <SmartBudgetButton reportType="billing_npt" size="sm" />
+                <BillingNPTFilterPanel
+                  filters={filters}
+                  onFiltersChange={updateFilters}
+                  onClearFilters={clearFilters}
+                  onApplyQuickFilter={applyQuickFilter}
+                  availableYears={availableYears}
+                  availableMonths={availableMonths}
+                  availableRigs={availableRigs}
+                />
+              </div>
 
               <OperationalRateChart 
                 data={analytics.monthlyTrends}
