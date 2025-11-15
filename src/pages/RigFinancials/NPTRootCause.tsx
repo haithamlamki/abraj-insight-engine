@@ -92,6 +92,19 @@ const NPTRootCause = () => {
     });
   }, [rawBillingData, billingFilters]);
 
+  // Count active filters
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filters.years.length > 0) count++;
+    if (filters.months.length > 0) count++;
+    if (filters.rigs.length > 0) count++;
+    if (filters.nptTypes.length > 0) count++;
+    if (filters.systems.length > 0) count++;
+    if (filters.departments.length > 0) count++;
+    if (filters.rootCauses.length > 0) count++;
+    return count;
+  }, [filters]);
+
   const handleMonthClick = (month: string) => {
     updateFilters({ months: [month] });
   };
@@ -186,27 +199,37 @@ const NPTRootCause = () => {
               <NPTTrendChart 
                 data={analytics.monthlyTrend}
                 onMonthClick={handleMonthClick}
+                activeFilterCount={activeFilterCount}
+                totalRecords={data?.length}
               />
 
               <div className="grid gap-6 md:grid-cols-2">
                 <RigRankingChart 
                   data={analytics.rigRanking}
                   onRigClick={handleRigClick}
+                  activeFilterCount={activeFilterCount}
+                  totalRecords={data?.length}
                 />
                 <NPTTypeDonutChart 
                   data={analytics.nptTypeDistribution}
                   onTypeClick={handleTypeClick}
+                  activeFilterCount={activeFilterCount}
+                  totalRecords={data?.length}
                 />
               </div>
 
               <SystemBreakdownChart 
                 data={analytics.systemBreakdown}
                 onSystemClick={handleSystemClick}
+                activeFilterCount={activeFilterCount}
+                totalRecords={data?.length}
               />
 
               <RootCauseParetoChart 
                 data={analytics.rootCausePareto}
                 onCauseClick={handleCauseClick}
+                activeFilterCount={activeFilterCount}
+                totalRecords={data?.length}
               />
 
               <NPTHeatmap

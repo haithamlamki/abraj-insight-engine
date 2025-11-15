@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
+import { ChartFilterIndicator } from "@/components/Reports/ChartFilterIndicator";
 
 interface SystemBreakdownChartProps {
   data: Array<{
@@ -9,16 +10,27 @@ interface SystemBreakdownChartProps {
     percentage: number;
   }>;
   onSystemClick?: (system: string) => void;
+  activeFilterCount?: number;
+  totalRecords?: number;
 }
 
-export function SystemBreakdownChart({ data, onSystemClick }: SystemBreakdownChartProps) {
+export function SystemBreakdownChart({ data, onSystemClick, activeFilterCount = 0, totalRecords }: SystemBreakdownChartProps) {
   const topSystems = data.slice(0, 10);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Top Systems by NPT Hours</CardTitle>
-        <CardDescription>Click a bar to filter by system</CardDescription>
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle>Top Systems by NPT Hours</CardTitle>
+            <CardDescription>Click a bar to filter by system</CardDescription>
+          </div>
+          <ChartFilterIndicator 
+            activeFilterCount={activeFilterCount}
+            displayedRecords={data.length}
+            totalRecords={totalRecords}
+          />
+        </div>
       </CardHeader>
       <CardContent>
         <ChartContainer config={{}} className="h-[400px]">
