@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { GlobalSearch } from "@/components/GlobalSearch";
 import Auth from "./pages/Auth";
 import Index from "./pages/Index";
 import RigFinancials from "./pages/RigFinancials";
@@ -58,6 +59,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <GlobalSearch />
             <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
