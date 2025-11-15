@@ -998,7 +998,7 @@ export const DataTableWithDB = ({
               {searchTerm ? 'No matching records found' : 'No data available yet'}
             </div>
           ) : (
-            <div className="w-full max-h-[600px] overflow-y-auto border rounded-md" ref={scrollRef}>
+            <div className="w-full border rounded-md" ref={scrollRef}>
               <table className="w-full border-collapse table-fixed">
                 <thead className="sticky top-0 bg-background z-10 border-b">
                   <tr className="bg-muted/50">
