@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.budget-variance-alerts]
 verify_jwt = false
+
+[functions.budget-recommendations]
+verify_jwt = true
