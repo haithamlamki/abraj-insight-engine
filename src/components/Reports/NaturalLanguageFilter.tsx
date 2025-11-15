@@ -45,10 +45,59 @@ export const NaturalLanguageFilter = ({
       recognitionRef.current.interimResults = false;
       recognitionRef.current.lang = 'en-US';
 
-      recognitionRef.current.onresult = (event: any) => {
+      recognitionRef.current.onresult = async (event: any) => {
         const transcript = event.results[0][0].transcript;
         setQuery(transcript);
         setIsListening(false);
+        
+        // Auto-submit after transcription
+        if (transcript.trim()) {
+          setIsProcessing(true);
+          try {
+            const { data, error } = await supabase.functions.invoke('parse-filter-query', {
+              body: {
+                query: transcript.trim(),
+                reportType,
+                availableFields
+              }
+            });
+
+            if (error) throw error;
+            if (data.error) throw new Error(data.error);
+
+            const { filterConfig } = data;
+            onFilterApply(filterConfig);
+            setLastFilter(filterConfig.summary || transcript);
+            setQuery('');
+            
+            toast({
+              title: "Filter applied",
+              description: filterConfig.summary || "Your voice query has been applied",
+            });
+          } catch (error) {
+            console.error('Natural language filter error:', error);
+            
+            let errorMessage = "Failed to parse your query. Please try rephrasing.";
+            
+            if (error instanceof Error) {
+              if (error.message.includes("Rate limit")) {
+                errorMessage = "Too many requests. Please wait a moment and try again.";
+              } else if (error.message.includes("Payment required")) {
+                errorMessage = "AI credits exhausted. Please add credits to continue.";
+              } else if (error.message.includes("LOVABLE_API_KEY")) {
+                errorMessage = "AI service not configured. Please contact support.";
+              }
+            }
+            
+            toast({
+              title: "Error",
+              description: errorMessage,
+              variant: "destructive"
+            });
+          } finally {
+            setIsProcessing(false);
+          }
+        }
       };
 
       recognitionRef.current.onerror = (event: any) => {
@@ -73,7 +122,7 @@ export const NaturalLanguageFilter = ({
         recognitionRef.current.stop();
       }
     };
-  }, [toast]);
+  }, [toast, reportType, availableFields, onFilterApply]);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
