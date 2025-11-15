@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SmartBudgetSettings } from "@/components/Budget/SmartBudgetSettings";
 import { BudgetAlertsPanel } from "@/components/Budget/BudgetAlertsPanel";
+import { BudgetRecommendationsPanel } from "@/components/Budget/BudgetRecommendationsPanel";
 import { Button } from "@/components/ui/button";
 import { 
   Settings, 
@@ -78,10 +79,14 @@ const BudgetConfiguration = () => {
         </div>
 
         <Tabs defaultValue="settings" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-[600px]">
+          <TabsList className="grid w-full grid-cols-4 lg:w-[800px]">
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
               Settings
+            </TabsTrigger>
+            <TabsTrigger value="recommendations" className="flex items-center gap-2">
+              <Info className="h-4 w-4" />
+              AI Recommendations
             </TabsTrigger>
             <TabsTrigger value="alerts" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
@@ -144,6 +149,11 @@ const BudgetConfiguration = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* AI Recommendations Tab */}
+          <TabsContent value="recommendations" className="space-y-6">
+            <BudgetRecommendationsPanel />
           </TabsContent>
 
           {/* Alerts Tab */}
