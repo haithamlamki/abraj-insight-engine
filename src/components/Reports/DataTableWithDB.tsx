@@ -15,12 +15,15 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { BulkEditDialog } from "@/components/Admin/BulkEditDialog";
 import { useBulkEdit } from "@/hooks/useBulkEdit";
 import { supabase } from "@/integrations/supabase/client";
 import { AdvancedFilterBuilder, FilterGroup, FilterCondition } from "./AdvancedFilterBuilder";
 import { ExportDialog } from "./ExportDialog";
+import { DataEntryForm } from "./DataEntryForm";
+import { ExcelUploadZone } from "./ExcelUploadZone";
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
@@ -835,9 +838,16 @@ export const DataTableWithDB = ({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {/* Bulk Actions Bar */}
-          {selectedRows.size > 0 && (
+        <Tabs defaultValue="view-data" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="view-data">View Data</TabsTrigger>
+            <TabsTrigger value="manual-entry">Manual Entry</TabsTrigger>
+            <TabsTrigger value="upload-excel">Upload Excel</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="view-data" className="space-y-4">
+            {/* Bulk Actions Bar */}
+            {selectedRows.size > 0 && (
             <div className="flex items-center justify-between p-3 bg-primary/10 border border-primary/20 rounded-lg">
               <div className="flex items-center gap-2">
                 <Checkbox
@@ -1013,10 +1023,9 @@ export const DataTableWithDB = ({
               )}
             </ScrollArea>
           )}
-        </div>
 
-        {/* Delete Confirmation Dialog */}
-        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          {/* Delete Confirmation Dialog */}
+          <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
@@ -1043,7 +1052,37 @@ export const DataTableWithDB = ({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+          </TabsContent>
 
+          <TabsContent value="manual-entry">
+            <DataEntryForm
+              title={`Add ${title} Record`}
+              fields={columns
+                .filter(col => col.key !== 'id' && col.key !== 'created_at' && col.key !== 'updated_at')
+                .map(col => ({
+                  name: col.key,
+                  label: col.label,
+                  type: col.key.includes('date') ? 'date' : 
+                        col.key.includes('qty') || col.key.includes('rate') || col.key.includes('days') || 
+                        col.key.includes('hours') || col.key.includes('cost') || col.key.includes('revenue') ? 'number' : 'text',
+                  required: false,
+                  placeholder: `Enter ${col.label.toLowerCase()}...`
+                }))}
+              frequency="monthly"
+              reportType={reportType}
+            />
+          </TabsContent>
+
+          <TabsContent value="upload-excel">
+            <ExcelUploadZone
+              title={`Upload ${title} Data`}
+              templateName={reportType}
+              reportType={reportType}
+            />
+          </TabsContent>
+        </Tabs>
+
+        {/* Dialogs outside tabs */}
         {/* Bulk Edit Dialog */}
         <BulkEditDialog
           open={bulkEditDialogOpen}
