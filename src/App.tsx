@@ -7,6 +7,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { GlobalSearch } from "@/components/GlobalSearch";
+import { CrossReportFilterProvider } from "@/contexts/CrossReportFilterContext";
 import Auth from "./pages/Auth";
 import Index from "./pages/Index";
 import RigFinancials from "./pages/RigFinancials";
@@ -55,12 +56,13 @@ const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <GlobalSearch />
-            <Routes>
+        <CrossReportFilterProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <GlobalSearch />
+              <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             
@@ -110,9 +112,10 @@ const App = () => (
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
-  </ErrorBoundary>
+      </CrossReportFilterProvider>
+    </AuthProvider>
+  </QueryClientProvider>
+</ErrorBoundary>
 );
 
 export default App;
