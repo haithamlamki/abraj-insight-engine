@@ -1,7 +1,5 @@
 import { useState, useMemo, useRef } from "react";
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
-import { DataEntryForm } from "@/components/Reports/DataEntryForm";
-import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
 import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { DollarSign, TrendingUp, PieChart, Target } from "lucide-react";
 import { useRevenueFilters } from "@/hooks/useRevenueFilters";
@@ -88,18 +86,6 @@ const Revenue = () => {
     updateFilters({ [filterType]: value });
   };
 
-  const formFields = [
-    { name: "rig", label: "Rig", type: "text" as const, required: true },
-    { name: "month", label: "Month", type: "select" as const, options: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], required: true },
-    { name: "days", label: "Days", type: "number" as const, required: true },
-    { name: "fuel", label: "Fuel ($)", type: "number" as const, required: true },
-    { name: "nptRepair", label: "NPT Repair ($)", type: "number" as const, required: true },
-    { name: "nptZero", label: "NPT Zero ($)", type: "number" as const, required: true },
-    { name: "client", label: "Client", type: "text" as const, required: true },
-    { name: "revTotal", label: "Revenue Total ($)", type: "number" as const, required: true },
-    { name: "comments", label: "Comments", type: "text" as const },
-  ];
-
   const tableColumns = [
     { key: "year", label: "Year", sortable: true },
     { key: "month", label: "Months", sortable: true },
@@ -112,21 +98,6 @@ const Revenue = () => {
     { key: "nptRepair", label: "NPT Repair", sortable: true },
     { key: "nptZero", label: "NPT Zero", sortable: true },
     { key: "comments", label: "Comments", sortable: true },
-  ];
-
-  const sampleData = [
-    { rig: "ADC-225", month: "January", days: "31", fuel: "$125,000", nptRepair: "$45,000", nptZero: "$15,000", client: "ADNOC", revTotal: "$4.2M" },
-    { rig: "ADC-226", month: "January", days: "31", fuel: "$130,000", nptRepair: "$38,000", nptZero: "$12,000", client: "ADNOC", revTotal: "$4.5M" },
-    { rig: "ADC-227", month: "January", days: "31", fuel: "$118,000", nptRepair: "$52,000", nptZero: "$18,000", client: "ADNOC", revTotal: "$3.8M" },
-  ];
-
-  const trendData = [
-    { month: "Oct", revenue: 4.1, fuel: 0.118, nptRepair: 0.042, nptZero: 0.014 },
-    { month: "Nov", revenue: 4.3, fuel: 0.125, nptRepair: 0.038, nptZero: 0.012 },
-    { month: "Dec", revenue: 4.0, fuel: 0.120, nptRepair: 0.048, nptZero: 0.016 },
-    { month: "Jan", revenue: 4.2, fuel: 0.125, nptRepair: 0.045, nptZero: 0.015 },
-    { month: "Feb", revenue: 4.5, fuel: 0.130, nptRepair: 0.038, nptZero: 0.012 },
-    { month: "Mar", revenue: 3.8, fuel: 0.118, nptRepair: 0.052, nptZero: 0.018 },
   ];
 
   return (
@@ -288,21 +259,6 @@ const Revenue = () => {
             />
           </TabsContent>
         </Tabs>
-      }
-      entryContent={
-        <DataEntryForm
-          title="Enter Revenue Data"
-          fields={formFields}
-          frequency="daily"
-          reportType="revenue"
-        />
-      }
-      uploadContent={
-        <ExcelUploadZone
-          title="Upload Revenue Report"
-          templateName="revenue_template.xlsx"
-          reportType="revenue"
-        />
       }
     />
   );

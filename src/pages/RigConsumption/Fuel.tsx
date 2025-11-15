@@ -1,6 +1,4 @@
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
-import { DataEntryForm } from "@/components/Reports/DataEntryForm";
-import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
 import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
@@ -14,21 +12,6 @@ const Fuel = () => {
   const currentYear = new Date().getFullYear();
   const { data: analytics, isLoading } = useFuelAnalytics({ year: currentYear });
 
-  const formFields = [
-    { name: "rig", label: "Rig", type: "text" as const, required: true },
-    { name: "year", label: "Year", type: "number" as const, required: true },
-    { name: "month", label: "Month", type: "select" as const, options: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], required: true },
-    { name: "opening_stock", label: "Opening Stock (L)", type: "number" as const },
-    { name: "total_received", label: "Total Received (L)", type: "number" as const },
-    { name: "total_consumed", label: "Total Consumed (L)", type: "number" as const },
-    { name: "rig_engine_consumption", label: "Rig Engine Consumption (L)", type: "number" as const },
-    { name: "camp_engine_consumption", label: "Camp Engine Consumption (L)", type: "number" as const },
-    { name: "invoice_to_client", label: "Invoice to Client (L)", type: "number" as const },
-    { name: "other_site_consumers", label: "Other Site Consumers (L)", type: "number" as const },
-    { name: "vehicles_consumption", label: "Vehicles Consumption (L)", type: "number" as const },
-    { name: "closing_balance", label: "Closing Balance (L)", type: "number" as const },
-    { name: "fuel_cost", label: "Fuel Cost ($)", type: "number" as const },
-  ];
 
   const tableColumns = [
     { key: "rig", label: "Rig", sortable: true },
@@ -100,21 +83,6 @@ const Fuel = () => {
             })}
           />
         </div>
-      }
-      entryContent={
-        <DataEntryForm
-          title="Enter Fuel Data"
-          fields={formFields}
-          frequency="monthly"
-          reportType="fuel"
-        />
-      }
-      uploadContent={
-        <ExcelUploadZone
-          title="Upload Fuel Report"
-          templateName="fuel_template.xlsx"
-          reportType="fuel"
-        />
       }
     />
   );

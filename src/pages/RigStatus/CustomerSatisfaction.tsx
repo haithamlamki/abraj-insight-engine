@@ -1,6 +1,4 @@
 import { DataEntryLayout } from "@/components/Reports/DataEntryLayout";
-import { DataEntryForm } from "@/components/Reports/DataEntryForm";
-import { ExcelUploadZone } from "@/components/Reports/ExcelUploadZone";
 import { DataTableWithDB } from "@/components/Reports/DataTableWithDB";
 import { HistoricalTrendChart } from "@/components/Reports/HistoricalTrendChart";
 import { KPICard } from "@/components/Dashboard/KPICard";
@@ -12,37 +10,12 @@ const CustomerSatisfaction = () => {
   const { kpis, isLoading: kpisLoading } = useKPIData("customer_satisfaction");
   const { chartData, isLoading: chartLoading } = useChartData("customer_satisfaction");
 
-  const formFields = [
-    { name: "rig", label: "Rig", type: "text" as const, required: true },
-    { name: "month", label: "Month", type: "select" as const, options: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], required: true },
-    { name: "year", label: "Year", type: "select" as const, options: ["2024", "2023", "2022"], required: true },
-    { name: "satisfactionRate", label: "Satisfaction Rate (%)", type: "number" as const, required: true },
-    { name: "responseTime", label: "Avg Response Time (hrs)", type: "number" as const },
-    { name: "issuesResolved", label: "Issues Resolved", type: "number" as const },
-    { name: "clientFeedback", label: "Client Feedback", type: "text" as const },
-  ];
-
   const tableColumns = [
     { key: "rig", label: "Rig", sortable: true },
     { key: "month", label: "Month", sortable: true },
     { key: "satisfactionRate", label: "Satisfaction", sortable: true },
     { key: "responseTime", label: "Response Time", sortable: true },
     { key: "issuesResolved", label: "Issues Resolved", sortable: true },
-  ];
-
-  const sampleData = [
-    { rig: "ADC-225", month: "January", satisfactionRate: "94.5%", responseTime: "2.3", issuesResolved: "45" },
-    { rig: "ADC-226", month: "January", satisfactionRate: "96.8%", responseTime: "1.8", issuesResolved: "38" },
-    { rig: "ADC-227", month: "January", satisfactionRate: "92.2%", responseTime: "2.8", issuesResolved: "52" },
-  ];
-
-  const trendData = [
-    { month: "Oct", satisfaction: 93.2, responseTime: 2.5 },
-    { month: "Nov", satisfaction: 94.5, responseTime: 2.3 },
-    { month: "Dec", satisfaction: 96.8, responseTime: 1.8 },
-    { month: "Jan", satisfaction: 92.8, responseTime: 2.6 },
-    { month: "Feb", satisfaction: 95.2, responseTime: 2.1 },
-    { month: "Mar", satisfaction: 94.5, responseTime: 2.3 },
   ];
 
   return (
@@ -95,21 +68,6 @@ const CustomerSatisfaction = () => {
             })}
           />
         </div>
-      }
-      entryContent={
-        <DataEntryForm
-          title="Enter Satisfaction Data"
-          fields={formFields}
-          frequency="daily"
-          reportType="customer_satisfaction"
-        />
-      }
-      uploadContent={
-        <ExcelUploadZone
-          title="Upload Satisfaction Report"
-          templateName="satisfaction_template.xlsx"
-          reportType="customer_satisfaction"
-        />
       }
     />
   );
