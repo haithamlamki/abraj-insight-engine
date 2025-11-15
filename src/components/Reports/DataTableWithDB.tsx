@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Download, FileSpreadsheet, Loader2, RotateCcw, Columns3, Save, BookmarkPlus, Trash2, Edit2, X, Filter, Maximize2 } from "lucide-react";
+import { ArrowUpDown, Download, FileSpreadsheet, Loader2, RotateCcw, Columns3, Save, BookmarkPlus, Trash2, Edit2, X, Filter, Maximize2, HelpCircle } from "lucide-react";
 import { useInfiniteReportData } from "@/hooks/useInfiniteReportData";
 import { DateRangeFilter } from "./DateRangeFilter";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -25,6 +25,8 @@ import { ExportDialog } from "./ExportDialog";
 import { DataEntryForm } from "./DataEntryForm";
 import { ExcelUploadZone } from "./ExcelUploadZone";
 import { DataEntryOptionsDialog } from "./DataEntryOptionsDialog";
+import { DataTableTour } from "./DataTableTour";
+import { useDataTableTour } from "@/hooks/useDataTableTour";
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
@@ -63,6 +65,7 @@ export const DataTableWithDB = ({
   formatRow 
 }: DataTableWithDBProps) => {
   const { toast } = useToast();
+  const { run: tourRun, setRun: setTourRun, resetTour } = useDataTableTour(reportType);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -738,8 +741,10 @@ export const DataTableWithDB = ({
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
+    <>
+      <DataTableTour reportType={reportType} run={tourRun} setRun={setTourRun} />
+      <Card className="w-full">
+        <CardHeader>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
@@ -877,6 +882,7 @@ export const DataTableWithDB = ({
                 <span className="hidden sm:inline">Auto-size</span>
               </Button>
               <Button
+                data-tour="export-button"
                 onClick={() => setExportDialogOpen(true)} 
                 variant="outline" 
                 size="sm" 
@@ -885,6 +891,15 @@ export const DataTableWithDB = ({
                 <Download className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Export</span>
                 <span className="sm:hidden">Export</span>
+              </Button>
+              <Button
+                onClick={resetTour}
+                variant="outline"
+                size="sm"
+                title="Restart tour"
+              >
+                <HelpCircle className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Tour</span>
               </Button>
             </div>
           </div>
@@ -895,6 +910,7 @@ export const DataTableWithDB = ({
       </CardHeader>
       <CardContent className="p-0">
         <Tabs 
+          data-tour="data-entry-tabs"
           value={activeTab} 
           onValueChange={(value) => {
             // Check if dialog should be shown for this report type
@@ -911,8 +927,8 @@ export const DataTableWithDB = ({
         >
           <TabsList className="grid w-full grid-cols-3 mb-0 rounded-none border-b">
             <TabsTrigger value="view-data">View Data</TabsTrigger>
-            <TabsTrigger value="manual-entry">Manual Entry</TabsTrigger>
-            <TabsTrigger value="upload-excel">Upload Excel</TabsTrigger>
+            <TabsTrigger data-tour="manual-entry-tab" value="manual-entry">Manual Entry</TabsTrigger>
+            <TabsTrigger data-tour="upload-tab" value="upload-excel">Upload Excel</TabsTrigger>
           </TabsList>
 
           <TabsContent value="view-data" className="space-y-0 m-0 p-6">
@@ -959,6 +975,7 @@ export const DataTableWithDB = ({
 
           <div className="flex flex-col sm:flex-row gap-4">
             <Input
+              data-tour="search-input"
               placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -966,6 +983,7 @@ export const DataTableWithDB = ({
               disabled={isLoading}
             />
             <Button
+              data-tour="filter-button"
               variant="outline"
               size="sm"
               onClick={() => setFilterDialogOpen(true)}
@@ -1019,7 +1037,7 @@ export const DataTableWithDB = ({
           ) : (
             <div className="w-full border rounded-md" ref={scrollRef}>
               <table className="w-full border-collapse table-fixed">
-                <thead className="sticky top-0 bg-background z-10 border-b">
+                <thead data-tour="table-header" className="sticky top-0 bg-background z-10 border-b">
                   <tr className="bg-muted/50">
                     <th className={`${densityClasses.cell} w-[40px] border-r`}>
                       <Checkbox
@@ -1199,5 +1217,6 @@ export const DataTableWithDB = ({
         />
       </CardContent>
     </Card>
+    </>
   );
 };
