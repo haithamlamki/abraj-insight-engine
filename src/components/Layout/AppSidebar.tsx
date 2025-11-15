@@ -161,7 +161,7 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               </SidebarMenu>
             ) : (
-              <Collapsible defaultOpen={hasActiveChild(item.items)} className="group/collapsible">
+              <Collapsible defaultOpen={true} className="group/collapsible">
                 <SidebarGroupLabel asChild>
                   <CollapsibleTrigger className="flex w-full items-center justify-between">
                     <div className="flex items-center gap-2">
