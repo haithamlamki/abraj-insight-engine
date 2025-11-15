@@ -61,6 +61,11 @@ const menuItems = [
     icon: BarChart3,
   },
   {
+    title: "MIS Dashboard",
+    url: "/mis-dashboard",
+    icon: LayoutDashboard,
+  },
+  {
     title: "Custom Dashboards",
     url: "/dashboards",
     icon: LayoutDashboard,

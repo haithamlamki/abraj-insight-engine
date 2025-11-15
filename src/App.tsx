@@ -27,6 +27,7 @@ import Fuel from "./pages/RigConsumption/Fuel";
 import FuelAnalytics from "./pages/RigConsumption/FuelAnalytics";
 import Material from "./pages/RigConsumption/Material";
 import Maintenance from "./pages/RigConsumption/Maintenance";
+import MISDashboard from "./pages/Dashboard/MISDashboard";
 
 // Rig Performance sub-pages
 import RigMoves from "./pages/RigPerformance/RigMoves";
@@ -65,6 +66,7 @@ const App = () => (
               <Routes>
               <Route path="/auth" element={<Auth />} />
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+              <Route path="/mis-dashboard" element={<ProtectedRoute><MISDashboard /></ProtectedRoute>} />
             
               {/* Custom Dashboards */}
               <Route path="/dashboards" element={<ProtectedRoute><DashboardManager /></ProtectedRoute>} />
