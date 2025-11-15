@@ -24,6 +24,7 @@ import { AdvancedFilterBuilder, FilterGroup, FilterCondition } from "./AdvancedF
 import { ExportDialog } from "./ExportDialog";
 import { DataEntryForm } from "./DataEntryForm";
 import { ExcelUploadZone } from "./ExcelUploadZone";
+import { DataEntryOptionsDialog } from "./DataEntryOptionsDialog";
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
@@ -133,6 +134,10 @@ export const DataTableWithDB = ({
   const [bulkEditDialogOpen, setBulkEditDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [bulkEditPreview, setBulkEditPreview] = useState<any>(null);
+  
+  // Data entry options dialog state
+  const [showDataEntryDialog, setShowDataEntryDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState("view-data");
   
   const { preview, execute, isPreviewLoading, isExecuting } = useBulkEdit();
   
@@ -889,7 +894,21 @@ export const DataTableWithDB = ({
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <Tabs defaultValue="view-data" className="w-full">
+        <Tabs 
+          value={activeTab} 
+          onValueChange={(value) => {
+            // Check if dialog should be shown for this report type
+            const hideDialog = localStorage.getItem(`hide-data-entry-dialog-${reportType}`);
+            
+            // Show dialog only when switching to manual-entry or upload-excel tabs
+            // and only if user hasn't disabled it
+            if (!hideDialog && (value === "manual-entry" || value === "upload-excel") && activeTab === "view-data") {
+              setShowDataEntryDialog(true);
+            }
+            setActiveTab(value);
+          }} 
+          className="w-full"
+        >
           <TabsList className="grid w-full grid-cols-3 mb-0 rounded-none border-b">
             <TabsTrigger value="view-data">View Data</TabsTrigger>
             <TabsTrigger value="manual-entry">Manual Entry</TabsTrigger>
@@ -1170,6 +1189,13 @@ export const DataTableWithDB = ({
           columns={columns}
           onExport={handleExport}
           isExporting={isExporting}
+        />
+
+        {/* Data Entry Options Dialog */}
+        <DataEntryOptionsDialog
+          isOpen={showDataEntryDialog}
+          onClose={() => setShowDataEntryDialog(false)}
+          reportType={reportType}
         />
       </CardContent>
     </Card>
