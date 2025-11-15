@@ -20,7 +20,10 @@ import { BulkEditDialog } from "@/components/Admin/BulkEditDialog";
 import { useBulkEdit } from "@/hooks/useBulkEdit";
 import { supabase } from "@/integrations/supabase/client";
 import { AdvancedFilterBuilder, FilterGroup, FilterCondition } from "./AdvancedFilterBuilder";
+import { ExportDialog } from "./ExportDialog";
 import * as XLSX from "xlsx";
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
 
 interface Column {
   key: string;
@@ -116,6 +119,10 @@ export const DataTableWithDB = ({
     const stored = localStorage.getItem(`filter-templates-${reportType}`);
     return stored ? JSON.parse(stored) : {};
   });
+  
+  // Export state
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   
   // Bulk selection state
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
@@ -544,36 +551,128 @@ export const DataTableWithDB = ({
     return processedData;
   }, [rawData, searchTerm, sortColumn, sortDirection, formatRow, startDate, endDate, advancedFilters]);
 
-  const handleExportCSV = () => {
-    const csv = [
-      visibleColumnsArray.map(col => col.label).join(","),
-      ...filteredAndSortedData.map(row =>
-        visibleColumnsArray.map(col => row[col.key]).join(",")
-      )
-    ].join("\n");
+  const handleExport = async (selectedColumnKeys: string[], format: 'csv' | 'excel' | 'pdf') => {
+    setIsExporting(true);
+    try {
+      const selectedColumns = columns.filter(col => selectedColumnKeys.includes(col.key));
+      const timestamp = new Date().toISOString().split('T')[0];
+      const filename = `${reportType}_${timestamp}`;
 
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${reportType}_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-  };
+      if (format === 'csv') {
+        // CSV Export with proper escaping
+        const escapeCSV = (value: any) => {
+          if (value === null || value === undefined) return '';
+          const stringValue = String(value);
+          if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+            return `"${stringValue.replace(/"/g, '""')}"`;
+          }
+          return stringValue;
+        };
 
-  const handleExportExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(
-      filteredAndSortedData.map(row => {
-        const obj: any = {};
-        visibleColumnsArray.forEach(col => {
-          obj[col.label] = row[col.key];
+        const csv = [
+          selectedColumns.map(col => escapeCSV(col.label)).join(","),
+          ...filteredAndSortedData.map(row =>
+            selectedColumns.map(col => escapeCSV(row[col.key])).join(",")
+          )
+        ].join("\n");
+
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${filename}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+      } else if (format === 'excel') {
+        // Excel Export
+        const worksheet = XLSX.utils.json_to_sheet(
+          filteredAndSortedData.map(row => {
+            const obj: any = {};
+            selectedColumns.forEach(col => {
+              obj[col.label] = row[col.key];
+            });
+            return obj;
+          })
+        );
+        
+        // Auto-size columns
+        const maxWidth = 50;
+        const colWidths = selectedColumns.map(col => {
+          const headerLength = col.label.length;
+          const maxDataLength = Math.max(
+            ...filteredAndSortedData.map(row => 
+              String(row[col.key] || '').length
+            ).slice(0, 100) // Sample first 100 rows for performance
+          );
+          return { wch: Math.min(Math.max(headerLength, maxDataLength) + 2, maxWidth) };
         });
-        return obj;
-      })
-    );
-    
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
-    XLSX.writeFile(workbook, `${reportType}_${new Date().toISOString().split('T')[0]}.xlsx`);
+        worksheet['!cols'] = colWidths;
+        
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
+        XLSX.writeFile(workbook, `${filename}.xlsx`);
+      } else if (format === 'pdf') {
+        // PDF Export
+        const doc = new jsPDF('l', 'mm', 'a4');
+        
+        // Add title
+        doc.setFontSize(16);
+        doc.text(title || reportType, 14, 15);
+        
+        // Add metadata
+        doc.setFontSize(10);
+        doc.text(`Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 14, 22);
+        doc.text(`Records: ${filteredAndSortedData.length}`, 14, 27);
+        
+        // Prepare table data
+        const headers = selectedColumns.map(col => col.label);
+        const data = filteredAndSortedData.map(row =>
+          selectedColumns.map(col => {
+            const value = row[col.key];
+            if (value === null || value === undefined) return '';
+            return String(value);
+          })
+        );
+        
+        // Add table using jsPDF autoTable plugin
+        (doc as any).autoTable({
+          head: [headers],
+          body: data,
+          startY: 32,
+          styles: {
+            fontSize: 8,
+            cellPadding: 2,
+          },
+          headStyles: {
+            fillColor: [59, 130, 246], // blue-500
+            textColor: 255,
+            fontStyle: 'bold',
+          },
+          alternateRowStyles: {
+            fillColor: [249, 250, 251], // gray-50
+          },
+          margin: { top: 32 },
+        });
+        
+        doc.save(`${filename}.pdf`);
+      }
+
+      toast({
+        title: "Export successful",
+        description: `Data exported as ${format.toUpperCase()}`,
+      });
+      
+      setExportDialogOpen(false);
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: "Export failed",
+        description: "There was an error exporting the data",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   if (error) {
@@ -718,15 +817,15 @@ export const DataTableWithDB = ({
                 <RotateCcw className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Reset Columns</span>
               </Button>
-              <Button onClick={handleExportCSV} variant="outline" size="sm" disabled={isLoading || !filteredAndSortedData.length}>
-                <Download className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">CSV</span>
-                <span className="sm:hidden">CSV</span>
-              </Button>
-              <Button onClick={handleExportExcel} variant="outline" size="sm" disabled={isLoading || !filteredAndSortedData.length}>
-                <FileSpreadsheet className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Excel</span>
-                <span className="sm:hidden">XLS</span>
+              <Button 
+                onClick={() => setExportDialogOpen(true)} 
+                variant="outline" 
+                size="sm" 
+                disabled={isLoading || !filteredAndSortedData.length}
+              >
+                <Download className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Export</span>
+                <span className="sm:hidden">Export</span>
               </Button>
             </div>
           </div>
@@ -966,6 +1065,15 @@ export const DataTableWithDB = ({
           onSaveTemplate={saveFilterTemplate}
           onLoadTemplate={loadFilterTemplate}
           onDeleteTemplate={deleteFilterTemplate}
+        />
+
+        {/* Export Dialog */}
+        <ExportDialog
+          open={exportDialogOpen}
+          onOpenChange={setExportDialogOpen}
+          columns={columns}
+          onExport={handleExport}
+          isExporting={isExporting}
         />
       </CardContent>
     </Card>
