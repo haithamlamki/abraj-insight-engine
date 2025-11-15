@@ -88,6 +88,59 @@ export default function MISDashboard() {
 
   const displayData = filteredData || data;
 
+  // Comparison metrics (filtered vs overall)
+  const comparisonMetrics = useMemo(() => {
+    if (!drillDown.type || !drillDown.value || !data || !filteredData) return null;
+
+    // Calculate filtered KPIs
+    const filteredRevenue = filteredData.revenue.reduce((sum, r) => sum + (Number(r.revenue_actual) || 0), 0);
+    const filteredNPT = filteredData.billingNpt.reduce((sum, n) => sum + (Number(n.npt_hours) || 0), 0);
+    const filteredUtilization = filteredData.utilization.length > 0
+      ? filteredData.utilization.reduce((sum, u) => sum + (Number(u.utilization_rate) || 0), 0) / filteredData.utilization.length
+      : 0;
+    const filteredFuel = filteredData.fuel.reduce((sum, f) => sum + (Number(f.fuel_cost) || 0), 0);
+    const filteredOpenWOs = filteredData.workOrders.reduce((sum, w) => 
+      sum + (Number(w.elec_open) || 0) + (Number(w.mech_open) || 0) + (Number(w.oper_open) || 0), 0);
+
+    // Calculate overall KPIs
+    const overallRevenue = data.revenue.reduce((sum, r) => sum + (Number(r.revenue_actual) || 0), 0);
+    const overallNPT = data.billingNpt.reduce((sum, n) => sum + (Number(n.npt_hours) || 0), 0);
+    const overallUtilization = data.utilization.length > 0
+      ? data.utilization.reduce((sum, u) => sum + (Number(u.utilization_rate) || 0), 0) / data.utilization.length
+      : 0;
+    const overallFuel = data.fuel.reduce((sum, f) => sum + (Number(f.fuel_cost) || 0), 0);
+    const overallOpenWOs = data.workOrders.reduce((sum, w) => 
+      sum + (Number(w.elec_open) || 0) + (Number(w.mech_open) || 0) + (Number(w.oper_open) || 0), 0);
+
+    return {
+      revenue: {
+        filtered: filteredRevenue,
+        overall: overallRevenue,
+        variance: overallRevenue > 0 ? ((filteredRevenue - overallRevenue) / overallRevenue) * 100 : 0,
+      },
+      npt: {
+        filtered: filteredNPT,
+        overall: overallNPT,
+        variance: overallNPT > 0 ? ((filteredNPT - overallNPT) / overallNPT) * 100 : 0,
+      },
+      utilization: {
+        filtered: filteredUtilization,
+        overall: overallUtilization,
+        variance: overallUtilization > 0 ? ((filteredUtilization - overallUtilization) / overallUtilization) * 100 : 0,
+      },
+      fuel: {
+        filtered: filteredFuel,
+        overall: overallFuel,
+        variance: overallFuel > 0 ? ((filteredFuel - overallFuel) / overallFuel) * 100 : 0,
+      },
+      workOrders: {
+        filtered: filteredOpenWOs,
+        overall: overallOpenWOs,
+        variance: overallOpenWOs > 0 ? ((filteredOpenWOs - overallOpenWOs) / overallOpenWOs) * 100 : 0,
+      },
+    };
+  }, [drillDown, data, filteredData]);
+
   // Revenue by Rig
   const revenueByRig = useMemo(() => {
     if (!displayData?.revenue) return [];
@@ -197,6 +250,165 @@ export default function MISDashboard() {
             </Select>
           </div>
         </div>
+
+        {/* Comparison View - Shows when drill-down is active */}
+        {comparisonMetrics && (
+          <Card className="p-6 bg-muted/30 border-primary/20">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold">Comparison View</h3>
+                <p className="text-sm text-muted-foreground">
+                  {drillDown.value} vs Overall Average
+                </p>
+              </div>
+              <Button variant="outline" size="sm" onClick={clearDrillDown}>
+                Exit Comparison
+              </Button>
+            </div>
+            
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+              {/* Revenue Comparison */}
+              <Card className="p-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">Revenue</p>
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xl font-bold">
+                      ${(comparisonMetrics.revenue.filtered / 1000000).toFixed(2)}M
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Overall: ${(comparisonMetrics.revenue.overall / 1000000).toFixed(2)}M
+                    </p>
+                  </div>
+                  <div className={`flex items-center gap-1 text-sm font-medium ${
+                    comparisonMetrics.revenue.variance >= 0 ? 'text-primary' : 'text-destructive'
+                  }`}>
+                    {comparisonMetrics.revenue.variance >= 0 ? (
+                      <TrendingUp className="h-4 w-4" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4" />
+                    )}
+                    {Math.abs(comparisonMetrics.revenue.variance).toFixed(1)}%
+                  </div>
+                </div>
+              </Card>
+
+              {/* Utilization Comparison */}
+              <Card className="p-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">Utilization</p>
+                    <Gauge className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xl font-bold">
+                      {comparisonMetrics.utilization.filtered.toFixed(1)}%
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Overall: {comparisonMetrics.utilization.overall.toFixed(1)}%
+                    </p>
+                  </div>
+                  <div className={`flex items-center gap-1 text-sm font-medium ${
+                    comparisonMetrics.utilization.variance >= 0 ? 'text-primary' : 'text-destructive'
+                  }`}>
+                    {comparisonMetrics.utilization.variance >= 0 ? (
+                      <TrendingUp className="h-4 w-4" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4" />
+                    )}
+                    {Math.abs(comparisonMetrics.utilization.variance).toFixed(1)}%
+                  </div>
+                </div>
+              </Card>
+
+              {/* NPT Comparison */}
+              <Card className="p-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">NPT Hours</p>
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xl font-bold">
+                      {comparisonMetrics.npt.filtered.toFixed(0)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Overall: {comparisonMetrics.npt.overall.toFixed(0)}
+                    </p>
+                  </div>
+                  <div className={`flex items-center gap-1 text-sm font-medium ${
+                    comparisonMetrics.npt.variance <= 0 ? 'text-primary' : 'text-destructive'
+                  }`}>
+                    {comparisonMetrics.npt.variance <= 0 ? (
+                      <TrendingDown className="h-4 w-4" />
+                    ) : (
+                      <TrendingUp className="h-4 w-4" />
+                    )}
+                    {Math.abs(comparisonMetrics.npt.variance).toFixed(1)}%
+                  </div>
+                </div>
+              </Card>
+
+              {/* Fuel Comparison */}
+              <Card className="p-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">Fuel Cost</p>
+                    <Fuel className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xl font-bold">
+                      ${(comparisonMetrics.fuel.filtered / 1000).toFixed(0)}K
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Overall: ${(comparisonMetrics.fuel.overall / 1000).toFixed(0)}K
+                    </p>
+                  </div>
+                  <div className={`flex items-center gap-1 text-sm font-medium ${
+                    comparisonMetrics.fuel.variance <= 0 ? 'text-primary' : 'text-destructive'
+                  }`}>
+                    {comparisonMetrics.fuel.variance <= 0 ? (
+                      <TrendingDown className="h-4 w-4" />
+                    ) : (
+                      <TrendingUp className="h-4 w-4" />
+                    )}
+                    {Math.abs(comparisonMetrics.fuel.variance).toFixed(1)}%
+                  </div>
+                </div>
+              </Card>
+
+              {/* Work Orders Comparison */}
+              <Card className="p-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">Open WOs</p>
+                    <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xl font-bold">
+                      {comparisonMetrics.workOrders.filtered.toFixed(0)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Overall: {comparisonMetrics.workOrders.overall.toFixed(0)}
+                    </p>
+                  </div>
+                  <div className={`flex items-center gap-1 text-sm font-medium ${
+                    comparisonMetrics.workOrders.variance <= 0 ? 'text-primary' : 'text-destructive'
+                  }`}>
+                    {comparisonMetrics.workOrders.variance <= 0 ? (
+                      <TrendingDown className="h-4 w-4" />
+                    ) : (
+                      <TrendingUp className="h-4 w-4" />
+                    )}
+                    {Math.abs(comparisonMetrics.workOrders.variance).toFixed(1)}%
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </Card>
+        )}
 
         {/* Top KPIs - Now Clickable */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
