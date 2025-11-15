@@ -17,7 +17,6 @@ import NotFound from "./pages/NotFound";
 // Rig Financials sub-pages
 import Utilization from "./pages/RigFinancials/Utilization";
 import BillingNPTSummary from "./pages/RigFinancials/BillingNPTSummary";
-import BillingNPT from "./pages/RigFinancials/BillingNPT";
 import NPTRootCause from "./pages/RigFinancials/NPTRootCause";
 import Revenue from "./pages/RigFinancials/Revenue";
 
@@ -73,7 +72,7 @@ const App = () => (
               <Route path="/rig-financials/utilization" element={<ProtectedRoute><Utilization /></ProtectedRoute>} />
               <Route path="/rig-financials/ytd" element={<ProtectedRoute><BillingNPTSummary /></ProtectedRoute>} />
               <Route path="/rig-financials/billing-npt-summary" element={<ProtectedRoute><BillingNPTSummary /></ProtectedRoute>} />
-              <Route path="/rig-financials/billing-npt" element={<ProtectedRoute><BillingNPT /></ProtectedRoute>} />
+              <Route path="/rig-financials/billing-npt" element={<ProtectedRoute><NPTRootCause /></ProtectedRoute>} />
               <Route path="/rig-financials/npt-root-cause" element={<ProtectedRoute><NPTRootCause /></ProtectedRoute>} />
               <Route path="/rig-financials/revenue" element={<ProtectedRoute><Revenue /></ProtectedRoute>} />
             
