@@ -22,7 +22,7 @@ export const UtilizationFilters = ({ data, onFilterChange }: UtilizationFiltersP
     year: "all",
     month: "all",
     rig: "all",
-    nptType: "all",
+    nptType: "Abraj",
   });
 
   // Extract unique values from data
@@ -44,7 +44,7 @@ export const UtilizationFilters = ({ data, onFilterChange }: UtilizationFiltersP
       year: "all",
       month: "all",
       rig: "all",
-      nptType: "all",
+      nptType: "Abraj",
     };
     setFilters(clearedFilters);
   };
