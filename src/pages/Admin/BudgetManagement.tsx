@@ -13,11 +13,13 @@ import {
   Edit,
   Copy,
   Download,
-  Upload
+  Upload,
+  Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
 import { generateBudgetTemplate, parseBudgetExcel, exportBudgetToExcel } from "@/lib/budgetExcel";
 import { BudgetEditor } from "@/components/Budget/BudgetEditor";
+import { SmartBudgetSettings } from "@/components/Budget/SmartBudgetSettings";
 import {
   Dialog,
   DialogContent,
@@ -40,6 +42,7 @@ const BudgetManagement = () => {
   const [selectedReport, setSelectedReport] = useState<string>('utilization');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [smartSettingsOpen, setSmartSettingsOpen] = useState(false);
 
   const { data: versions, isLoading } = useQuery({
     queryKey: ['budget-versions'],
@@ -230,6 +233,14 @@ const BudgetManagement = () => {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button 
+              onClick={() => setSmartSettingsOpen(true)}
+              variant="default"
+              className="bg-primary"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Smart Budget
+            </Button>
             <Select value={selectedReport} onValueChange={setSelectedReport}>
               <SelectTrigger className="w-48">
                 <SelectValue />
@@ -392,6 +403,12 @@ const BudgetManagement = () => {
         </Dialog>
         </div>
       </DashboardLayout>
+
+      <SmartBudgetSettings 
+        open={smartSettingsOpen}
+        onOpenChange={setSmartSettingsOpen}
+        reportType={selectedReport}
+      />
     </>
   );
 };
