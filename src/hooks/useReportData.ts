@@ -48,8 +48,8 @@ export function useBulkSaveReportData(reportType: string) {
   const tableName = getTableName(reportType);
   
   return useMutation({
-    mutationFn: async (dataArray: any[]) => {
-      return bulkInsertData(tableName, dataArray);
+    mutationFn: async ({ dataArray, overwrite = false }: { dataArray: any[]; overwrite?: boolean }) => {
+      return bulkInsertData(tableName, dataArray, { overwrite });
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [reportType, tableName] });

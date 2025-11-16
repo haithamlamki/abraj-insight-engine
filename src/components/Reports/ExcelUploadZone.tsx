@@ -16,7 +16,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { HeaderMappingPreview } from "./HeaderMappingPreview";
 import { ValidationWarningsDialog } from "./ValidationWarningsDialog";
+import { DuplicateWarningDialog } from "./DuplicateWarningDialog";
 import { ZodError } from "zod";
+import { checkDuplicates } from "@/lib/supabaseQueries";
+import { getTableName } from "@/lib/supabaseQueries";
 
 interface ExcelUploadZoneProps {
   title: string;
@@ -49,6 +52,9 @@ export const ExcelUploadZone = ({
   const [pendingWarnings, setPendingWarnings] = useState<any[]>([]);
   const [importStartTime, setImportStartTime] = useState<number>(0);
   const [totalRowsBeforeFilter, setTotalRowsBeforeFilter] = useState<number>(0);
+  const [showDuplicatesDialog, setShowDuplicatesDialog] = useState(false);
+  const [duplicateRecords, setDuplicateRecords] = useState<any[]>([]);
+  const [pendingDataForDuplicates, setPendingDataForDuplicates] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bulkSave = useBulkSaveReportData(reportType);
 
@@ -264,7 +270,29 @@ export const ExcelUploadZone = ({
     }
   };
 
-  const completeSaveProcess = (finalValidData: any[], schemaValidationErrors: any[] = []) => {
+  const completeSaveProcess = async (finalValidData: any[], schemaValidationErrors: any[] = []) => {
+    // Check for duplicates before saving
+    try {
+      const tableName = getTableName(reportType);
+      const duplicates = await checkDuplicates(tableName, finalValidData);
+      
+      if (duplicates.length > 0) {
+        setPendingDataForDuplicates(finalValidData);
+        setDuplicateRecords(duplicates);
+        setShowDuplicatesDialog(true);
+        return;
+      }
+      
+      // No duplicates, proceed with save
+      await performSave(finalValidData, schemaValidationErrors, false);
+    } catch (error) {
+      console.error('Error checking duplicates:', error);
+      toast.error('Failed to check for duplicates');
+      setUploading(false);
+    }
+  };
+
+  const performSave = async (finalValidData: any[], schemaValidationErrors: any[] = [], overwrite: boolean = false) => {
     setParsedData(finalValidData);
 
     // Track auto-corrections
@@ -314,6 +342,63 @@ export const ExcelUploadZone = ({
     toast.info("تم إلغاء الاستيراد. يرجى مراجعة البيانات وإعادة المحاولة.");
   };
 
+  const handleDuplicatesSkip = async () => {
+    setShowDuplicatesDialog(false);
+    const tableName = getTableName(reportType);
+    
+    // Filter out duplicates
+    const nonDuplicates = pendingDataForDuplicates.filter(record => {
+      return !duplicateRecords.some(dup => 
+        dup.rig === record.rig && 
+        dup.year === record.year && 
+        dup.month === record.month
+      );
+    });
+    
+    if (nonDuplicates.length === 0) {
+      toast.info('All records were duplicates. No data imported.');
+      setUploadStatus("idle");
+      setUploading(false);
+      return;
+    }
+    
+    try {
+      await bulkSave.mutateAsync({ dataArray: nonDuplicates, overwrite: false });
+      await performSave(nonDuplicates, [], false);
+      toast.success(`Imported ${nonDuplicates.length} new records, skipped ${pendingDataForDuplicates.length - nonDuplicates.length} duplicates`);
+    } catch (error) {
+      console.error('Error saving data:', error);
+      toast.error('Failed to save data');
+    } finally {
+      setPendingDataForDuplicates([]);
+      setDuplicateRecords([]);
+    }
+  };
+
+  const handleDuplicatesOverwrite = async () => {
+    setShowDuplicatesDialog(false);
+    
+    try {
+      await bulkSave.mutateAsync({ dataArray: pendingDataForDuplicates, overwrite: true });
+      await performSave(pendingDataForDuplicates, [], true);
+      toast.success(`Overwritten ${pendingDataForDuplicates.length} records`);
+    } catch (error) {
+      console.error('Error overwriting data:', error);
+      toast.error('Failed to overwrite data');
+    } finally {
+      setPendingDataForDuplicates([]);
+      setDuplicateRecords([]);
+    }
+  };
+
+  const handleDuplicatesCancel = () => {
+    setShowDuplicatesDialog(false);
+    setUploadStatus("idle");
+    setPendingDataForDuplicates([]);
+    setDuplicateRecords([]);
+    setUploading(false);
+  };
+
   const handleImportData = async () => {
     if (parsedData.length === 0) {
       toast.error("No data to import");
@@ -321,7 +406,7 @@ export const ExcelUploadZone = ({
     }
 
     try {
-      await bulkSave.mutateAsync(parsedData);
+      await bulkSave.mutateAsync({ dataArray: parsedData, overwrite: false });
       
       // Log successful import statistics
       await logImportStatistics({
@@ -658,6 +743,25 @@ export const ExcelUploadZone = ({
           )}
         </CardContent>
       </Card>
+
+      {/* Validation Warnings Dialog */}
+      <ValidationWarningsDialog
+        open={showWarningsDialog}
+        warnings={pendingWarnings}
+        totalRecords={rawParsedData.length}
+        validRecords={pendingValidData.length}
+        onContinue={handleWarningsContinue}
+        onCancel={handleWarningsCancel}
+      />
+
+      {/* Duplicate Records Dialog */}
+      <DuplicateWarningDialog
+        open={showDuplicatesDialog}
+        duplicates={duplicateRecords}
+        onSkip={handleDuplicatesSkip}
+        onOverwrite={handleDuplicatesOverwrite}
+        onCancel={handleDuplicatesCancel}
+      />
     </div>
   );
 };
