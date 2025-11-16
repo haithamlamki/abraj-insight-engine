@@ -1044,7 +1044,7 @@ export function normalizeHeader(str: any): string {
     .toLowerCase()
     .replace(/[\u200B-\u200D\uFEFF]/g, '') // Remove zero-width characters
     .replace(/[\s\u00A0]+/g, '') // Remove ALL whitespace including NBSP
-    .replace(/[()%.,]/g, '') // Remove common punctuation
+    .replace(/[()%.,*]/g, '') // Remove common punctuation including asterisks
     .replace(/s$/i, '') // Remove trailing 's' for plural handling
     .trim();
 }
