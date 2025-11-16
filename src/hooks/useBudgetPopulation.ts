@@ -1,25 +1,25 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { populate2025Budget } from "@/lib/populate2025Budget";
 
 export function useBudgetPopulation() {
   const [isPopulating, setIsPopulating] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
-  const populate2025Budget = async () => {
+  const handlePopulate = async (fuelFile: File, materialFile: File, repairFile: File) => {
     setIsPopulating(true);
     
     try {
       toast.info("Starting 2025 budget population...");
       
-      const { data, error } = await supabase.functions.invoke('populate-2025-budget');
+      const result = await populate2025Budget(fuelFile, materialFile, repairFile);
 
-      if (error) throw error;
-
-      if (data.success) {
-        toast.success(`Budget populated successfully! ${data.recordsInserted} records created.`);
+      if (result.success) {
+        toast.success(`Budget populated successfully! ${result.recordsInserted} records created.`);
+        setUploadDialogOpen(false);
         return true;
       } else {
-        throw new Error(data.error || 'Failed to populate budget');
+        throw new Error(result.error || 'Failed to populate budget');
       }
     } catch (error: any) {
       console.error('Error populating budget:', error);
@@ -32,6 +32,8 @@ export function useBudgetPopulation() {
 
   return {
     isPopulating,
-    populate2025Budget,
+    uploadDialogOpen,
+    setUploadDialogOpen,
+    handlePopulate,
   };
 }
