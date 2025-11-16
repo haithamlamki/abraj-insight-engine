@@ -384,6 +384,35 @@ export function isTitleRow(row: any): boolean {
 }
 
 /**
+ * Check if a row looks like a header row with column names
+ */
+export function isHeaderRow(row: any): boolean {
+  if (!row || typeof row !== 'object') return false;
+  
+  // Common header keywords (lowercase for comparison)
+  const headerKeywords = [
+    'year', 'years', 'month', 'months', 'mounth', 'rig', 'rigs', 'rig number',
+    'actual', 'budget', 'budgeted', 'fuel', 'total', 'diff', 'difference',
+    'npt', 'repair', 'zero', 'comments', 'comment', 'status', 'client',
+    'revenue', 'cost', 'hours', 'hrs', 'date', 'days', 'rate'
+  ];
+  
+  const values = Object.values(row);
+  const textValues = values
+    .filter(val => val !== null && val !== undefined && String(val).trim() !== '')
+    .map(val => String(val).toLowerCase().trim());
+  
+  // If more than 50% of non-empty values are header keywords, it's likely a header row
+  if (textValues.length < 3) return false;
+  
+  const matchingKeywords = textValues.filter(val => 
+    headerKeywords.some(keyword => val === keyword || val.includes(keyword))
+  );
+  
+  return matchingKeywords.length >= Math.max(3, textValues.length * 0.5);
+}
+
+/**
  * Parse Excel file and return structured data
  */
 export async function parseExcelFile(file: File, autoCorrect: boolean = false): Promise<ParseResult> {
@@ -490,6 +519,7 @@ export async function parseExcelFile(file: File, autoCorrect: boolean = false): 
       const filteredData = jsonData.filter((row: any) => {
         if (isBlankRow(row)) return false;
         if (isTitleRow(row)) return false;
+        if (isHeaderRow(row)) return false;
         return true;
       });
 
