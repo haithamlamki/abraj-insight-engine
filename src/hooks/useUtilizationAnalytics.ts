@@ -71,7 +71,7 @@ export function useUtilizationAnalytics(data: any[]) {
     const totalAllowableNPT = data.reduce((sum, d) => sum + (d.allowable_npt || 0), 0);
     
     const lowUtilizationCount = data.filter(d => 
-      d.utilization_rate !== null && d.utilization_rate < 50 && d.status === 'Active'
+      d.utilization_rate !== null && d.utilization_rate < 0.5 && d.status === 'Active'
     ).length;
 
     // Find top client by rig count
@@ -87,7 +87,7 @@ export function useUtilizationAnalytics(data: any[]) {
       : null;
 
     return {
-      avgUtilization: Math.round(avgUtilization * 10) / 10,
+      avgUtilization: Math.round(avgUtilization * 100 * 10) / 10,
       totalActiveRigs: activeRigs.size,
       totalStackedRigs: stackedRigs.size,
       totalAllowableNPT: Math.round(totalAllowableNPT),
@@ -121,7 +121,7 @@ export function useUtilizationAnalytics(data: any[]) {
       .map(([client, data]) => ({
         client,
         rigCount: data.rigs.size,
-        avgUtilization: data.count > 0 ? Math.round(data.totalUtilization / data.count * 10) / 10 : 0,
+        avgUtilization: data.count > 0 ? Math.round(data.totalUtilization / data.count * 100 * 10) / 10 : 0,
         workingDays: data.workingDays,
       }))
       .sort((a, b) => b.rigCount - a.rigCount);
@@ -157,7 +157,7 @@ export function useUtilizationAnalytics(data: any[]) {
         return {
           rig,
           client: latestRecord.client || null,
-          avgUtilization: Math.round(avgUtilization * 10) / 10,
+          avgUtilization: Math.round(avgUtilization * 100 * 10) / 10,
           status: latestRecord.status || 'Active',
           workingDays: records.reduce((sum, r) => sum + (r.working_days || 0), 0),
           lastMonth: latestRecord.month || '',
@@ -192,7 +192,7 @@ export function useUtilizationAnalytics(data: any[]) {
       .map(([period, data]) => ({
         period,
         avgUtilization: data.utilization.length > 0
-          ? Math.round(data.utilization.reduce((sum, u) => sum + u, 0) / data.utilization.length * 10) / 10
+          ? Math.round(data.utilization.reduce((sum, u) => sum + u, 0) / data.utilization.length * 100 * 10) / 10
           : 0,
         activeRigs: data.activeRigs.size,
         stackedRigs: data.stackedRigs.size,
@@ -206,7 +206,7 @@ export function useUtilizationAnalytics(data: any[]) {
       rig: record.rig,
       month: `${record.year}-${String(record.month).padStart(2, '0')}`,
       year: record.year,
-      utilization: record.utilization_rate,
+      utilization: record.utilization_rate !== null ? record.utilization_rate * 100 : null,
       status: record.status || 'Active',
       client: record.client,
     }));
