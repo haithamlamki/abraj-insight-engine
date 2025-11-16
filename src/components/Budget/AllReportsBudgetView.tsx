@@ -3,14 +3,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Calendar, DollarSign, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { FileText, Calendar, DollarSign, TrendingUp, Pencil } from "lucide-react";
 import { format } from "date-fns";
 
 interface AllReportsBudgetViewProps {
   versionId: string;
+  onEditReport?: (reportKey: string) => void;
 }
 
-export function AllReportsBudgetView({ versionId }: AllReportsBudgetViewProps) {
+export function AllReportsBudgetView({ versionId, onEditReport }: AllReportsBudgetViewProps) {
   const { data: reportsData, isLoading } = useQuery({
     queryKey: ["all-reports-budget", versionId],
     queryFn: async () => {
@@ -63,7 +65,7 @@ export function AllReportsBudgetView({ versionId }: AllReportsBudgetViewProps) {
             totalBudget,
             lastUpdated,
             budgetCount,
-            currency: budgetData?.[0]?.currency || "OMR",
+            currency: budgetData?.[0]?.currency || "USD",
             rigCount: Object.keys(rigSummary || {}).length,
             rigSummary: Object.entries(rigSummary || {})
               .map(([rig, data]: [string, any]) => ({ rig, ...data }))
@@ -78,7 +80,7 @@ export function AllReportsBudgetView({ versionId }: AllReportsBudgetViewProps) {
     enabled: !!versionId,
   });
 
-  const formatCurrency = (value: number, currency: string = "OMR") => {
+  const formatCurrency = (value: number, currency: string = "USD") => {
     return `${value.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })} ${currency}`;
   };
 
@@ -115,7 +117,19 @@ export function AllReportsBudgetView({ versionId }: AllReportsBudgetViewProps) {
                     <Badge variant="outline">{report.department}</Badge>
                   </CardDescription>
                 </div>
-                <FileText className="h-5 w-5 text-muted-foreground" />
+                <div className="flex items-center gap-2">
+                  {onEditReport && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onEditReport(report.report_key)}
+                      className="h-8 w-8"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <FileText className="h-5 w-5 text-muted-foreground" />
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
