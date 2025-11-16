@@ -29,7 +29,6 @@ const reportTypeFields: { [key: string]: { field: string; required: boolean; lab
     { field: 'fuel_charge', required: false, label: 'Fuel Charge' },
     { field: 'npt_repair', required: false, label: 'NPT Repair' },
     { field: 'npt_zero', required: false, label: 'NPT Zero' },
-    { field: 'client', required: false, label: 'Client' },
     { field: 'comments', required: false, label: 'Comments' },
   ],
   billing_npt: [
