@@ -438,7 +438,14 @@ const BudgetManagement = () => {
                 عرض شامل لجميع التقارير مع آخر ميزانية مسجلة لكل تقرير
               </p>
             </div>
-            <AllReportsBudgetView versionId={versions[0].id} />
+            <AllReportsBudgetView 
+              versionId={versions[0].id}
+              onEditReport={(reportKey) => {
+                setSelectedReport(reportKey);
+                setSelectedVersion(versions[0].id);
+                setEditorOpen(true);
+              }}
+            />
           </div>
         )}
 
