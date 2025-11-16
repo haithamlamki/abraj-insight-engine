@@ -22,6 +22,8 @@ import { generateBudgetTemplate, parseBudgetExcel, exportBudgetToExcel } from "@
 import { BudgetEditor } from "@/components/Budget/BudgetEditor";
 import { SmartBudgetSettings } from "@/components/Budget/SmartBudgetSettings";
 import { useBudgetPopulation } from "@/hooks/useBudgetPopulation";
+import { ManualBudgetInput } from "@/components/Budget/ManualBudgetInput";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -417,59 +419,78 @@ const BudgetManagement = () => {
         </Dialog>
 
         <Dialog open={budgetUploadOpen} onOpenChange={setBudgetUploadOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-4xl max-h-[90vh]">
             <DialogHeader>
               <DialogTitle>Populate 2025 Budget</DialogTitle>
               <DialogDescription>
-                Upload the three Excel files (Fuel, Material, Repair) to populate the 2025 budget from 2023 baseline data.
+                Choose how to populate the 2025 budget data.
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Fuel Budget (2023)</label>
-                <Input
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={(e) => setFuelFile(e.target.files?.[0] || null)}
-                  disabled={isPopulating}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">Material Budget (2023)</label>
-                <Input
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={(e) => setMaterialFile(e.target.files?.[0] || null)}
-                  disabled={isPopulating}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">Repair Budget (2023)</label>
-                <Input
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={(e) => setRepairFile(e.target.files?.[0] || null)}
-                  disabled={isPopulating}
-                />
-              </div>
-              <Button
-                onClick={async () => {
-                  if (!fuelFile || !materialFile || !repairFile) {
-                    toast.error('Please upload all three Excel files');
-                    return;
-                  }
-                  const success = await handlePopulate(fuelFile, materialFile, repairFile);
-                  if (success) {
+            <Tabs defaultValue="excel" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="excel">Excel Upload</TabsTrigger>
+                <TabsTrigger value="manual">Manual Input</TabsTrigger>
+              </TabsList>
+              <TabsContent value="excel" className="space-y-4">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Fuel Budget (2023)</label>
+                    <Input
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={(e) => setFuelFile(e.target.files?.[0] || null)}
+                      disabled={isPopulating}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Material Budget (2023)</label>
+                    <Input
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={(e) => setMaterialFile(e.target.files?.[0] || null)}
+                      disabled={isPopulating}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Repair Budget (2023)</label>
+                    <Input
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={(e) => setRepairFile(e.target.files?.[0] || null)}
+                      disabled={isPopulating}
+                    />
+                  </div>
+                  <Button
+                    onClick={async () => {
+                      if (!fuelFile || !materialFile || !repairFile) {
+                        toast.error('Please upload all three Excel files');
+                        return;
+                      }
+                      const success = await handlePopulate(fuelFile, materialFile, repairFile);
+                      if (success) {
+                        queryClient.invalidateQueries({ queryKey: ['budget-versions'] });
+                        queryClient.invalidateQueries({ queryKey: ['budgets'] });
+                      }
+                    }}
+                    disabled={isPopulating || !fuelFile || !materialFile || !repairFile}
+                    className="w-full"
+                  >
+                    {isPopulating ? 'Populating Budget...' : 'Populate Budget'}
+                  </Button>
+                </div>
+              </TabsContent>
+              <TabsContent value="manual" className="overflow-y-auto max-h-[60vh]">
+                <ManualBudgetInput
+                  versionId={versions?.[0]?.id || ""}
+                  year={2025}
+                  onComplete={() => {
+                    setBudgetUploadOpen(false);
                     queryClient.invalidateQueries({ queryKey: ['budget-versions'] });
                     queryClient.invalidateQueries({ queryKey: ['budgets'] });
-                  }
-                }}
-                disabled={isPopulating || !fuelFile || !materialFile || !repairFile}
-                className="w-full"
-              >
-                {isPopulating ? 'Populating Budget...' : 'Populate Budget'}
-              </Button>
-            </div>
+                  }}
+                />
+              </TabsContent>
+            </Tabs>
           </DialogContent>
         </Dialog>
         </div>
