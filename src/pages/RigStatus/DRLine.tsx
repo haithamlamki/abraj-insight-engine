@@ -26,6 +26,7 @@ const DRLine = () => {
     <DataEntryLayout
       title="DR Line Status"
       description="Daily rig line operational status tracking"
+      reportType="dr_line"
       breadcrumbs={[
         { label: "Dashboard", href: "/" },
         { label: "Rig Status", href: "/rig-status" },

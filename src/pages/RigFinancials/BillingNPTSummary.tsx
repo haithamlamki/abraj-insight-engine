@@ -90,6 +90,7 @@ const BillingNPTSummary = () => {
     <DataEntryLayout
       title="Billing NPT Summary"
       description="Interactive NPT & Operational Analysis Dashboard"
+      reportType="billing_npt_summary"
       breadcrumbs={[
         { label: "Dashboard", href: "/" },
         { label: "Rig Financials", href: "/rig-financials" },

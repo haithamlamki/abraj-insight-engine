@@ -44,6 +44,7 @@ const Fuel = () => {
     <DataEntryLayout
       title="Fuel Consumption"
       description="Monitor and optimize fuel usage across all rigs"
+      reportType="fuel"
       breadcrumbs={[
         { label: "Dashboard", href: "/" },
         { label: "Rig Consumption", href: "/rig-consumption" },

@@ -32,6 +32,7 @@ const WellTracker = () => {
     <DataEntryLayout
       title="Well Tracker"
       description="Monitor drilling progress and well completion status"
+      reportType="well_tracker"
       breadcrumbs={[
         { label: "Dashboard", href: "/" },
         { label: "Rig Performance", href: "/rig-performance" },

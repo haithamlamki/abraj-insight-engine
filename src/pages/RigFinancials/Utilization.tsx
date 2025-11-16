@@ -78,6 +78,7 @@ const Utilization = () => {
     <DataEntryLayout
       title="Rig Utilization"
       description="Track and analyze rig utilization rates across all operations"
+      reportType="utilization"
       breadcrumbs={[
         { label: "Dashboard", href: "/" },
         { label: "Rig Financials", href: "/rig-financials" },

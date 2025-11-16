@@ -22,6 +22,7 @@ const CustomerSatisfaction = () => {
     <DataEntryLayout
       title="Customer Satisfaction"
       description="Track client feedback and satisfaction scores"
+      reportType="customer_satisfaction"
       breadcrumbs={[
         { label: "Dashboard", href: "/" },
         { label: "Rig Status", href: "/rig-status" },
