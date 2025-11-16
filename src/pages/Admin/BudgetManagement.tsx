@@ -14,12 +14,14 @@ import {
   Copy,
   Download,
   Upload,
-  Sparkles
+  Sparkles,
+  Play
 } from "lucide-react";
 import { toast } from "sonner";
 import { generateBudgetTemplate, parseBudgetExcel, exportBudgetToExcel } from "@/lib/budgetExcel";
 import { BudgetEditor } from "@/components/Budget/BudgetEditor";
 import { SmartBudgetSettings } from "@/components/Budget/SmartBudgetSettings";
+import { useBudgetPopulation } from "@/hooks/useBudgetPopulation";
 import {
   Dialog,
   DialogContent,
@@ -43,6 +45,7 @@ const BudgetManagement = () => {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [smartSettingsOpen, setSmartSettingsOpen] = useState(false);
+  const { isPopulating, populate2025Budget } = useBudgetPopulation();
 
   const { data: versions, isLoading } = useQuery({
     queryKey: ['budget-versions'],
@@ -233,6 +236,20 @@ const BudgetManagement = () => {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button 
+              onClick={async () => {
+                const success = await populate2025Budget();
+                if (success) {
+                  queryClient.invalidateQueries({ queryKey: ['budget-versions'] });
+                  queryClient.invalidateQueries({ queryKey: ['budgets'] });
+                }
+              }}
+              disabled={isPopulating}
+              variant="secondary"
+            >
+              <Play className="h-4 w-4 mr-2" />
+              {isPopulating ? 'Populating...' : 'Populate 2025 Budget'}
+            </Button>
             <Button 
               onClick={() => setSmartSettingsOpen(true)}
               variant="default"
