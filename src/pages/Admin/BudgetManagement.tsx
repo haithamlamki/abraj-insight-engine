@@ -45,7 +45,10 @@ const BudgetManagement = () => {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [smartSettingsOpen, setSmartSettingsOpen] = useState(false);
-  const { isPopulating, populate2025Budget } = useBudgetPopulation();
+  const { isPopulating, uploadDialogOpen: budgetUploadOpen, setUploadDialogOpen: setBudgetUploadOpen, handlePopulate } = useBudgetPopulation();
+  const [fuelFile, setFuelFile] = useState<File | null>(null);
+  const [materialFile, setMaterialFile] = useState<File | null>(null);
+  const [repairFile, setRepairFile] = useState<File | null>(null);
 
   const { data: versions, isLoading } = useQuery({
     queryKey: ['budget-versions'],
@@ -237,18 +240,12 @@ const BudgetManagement = () => {
           </div>
           <div className="flex gap-2">
             <Button 
-              onClick={async () => {
-                const success = await populate2025Budget();
-                if (success) {
-                  queryClient.invalidateQueries({ queryKey: ['budget-versions'] });
-                  queryClient.invalidateQueries({ queryKey: ['budgets'] });
-                }
-              }}
+              onClick={() => setBudgetUploadOpen(true)}
               disabled={isPopulating}
               variant="secondary"
             >
               <Play className="h-4 w-4 mr-2" />
-              {isPopulating ? 'Populating...' : 'Populate 2025 Budget'}
+              Populate 2025 Budget
             </Button>
             <Button 
               onClick={() => setSmartSettingsOpen(true)}
@@ -415,6 +412,63 @@ const BudgetManagement = () => {
               {importMutation.isPending && (
                 <p className="text-sm text-muted-foreground">Importing...</p>
               )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={budgetUploadOpen} onOpenChange={setBudgetUploadOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Populate 2025 Budget</DialogTitle>
+              <DialogDescription>
+                Upload the three Excel files (Fuel, Material, Repair) to populate the 2025 budget from 2023 baseline data.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Fuel Budget (2023)</label>
+                <Input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={(e) => setFuelFile(e.target.files?.[0] || null)}
+                  disabled={isPopulating}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Material Budget (2023)</label>
+                <Input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={(e) => setMaterialFile(e.target.files?.[0] || null)}
+                  disabled={isPopulating}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Repair Budget (2023)</label>
+                <Input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={(e) => setRepairFile(e.target.files?.[0] || null)}
+                  disabled={isPopulating}
+                />
+              </div>
+              <Button
+                onClick={async () => {
+                  if (!fuelFile || !materialFile || !repairFile) {
+                    toast.error('Please upload all three Excel files');
+                    return;
+                  }
+                  const success = await handlePopulate(fuelFile, materialFile, repairFile);
+                  if (success) {
+                    queryClient.invalidateQueries({ queryKey: ['budget-versions'] });
+                    queryClient.invalidateQueries({ queryKey: ['budgets'] });
+                  }
+                }}
+                disabled={isPopulating || !fuelFile || !materialFile || !repairFile}
+                className="w-full"
+              >
+                {isPopulating ? 'Populating Budget...' : 'Populate Budget'}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
