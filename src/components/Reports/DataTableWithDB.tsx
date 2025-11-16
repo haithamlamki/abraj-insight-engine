@@ -76,6 +76,10 @@ export const DataTableWithDB = ({
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+  const [selectedYear, setSelectedYear] = useState<number>(() => {
+    const stored = localStorage.getItem(`table-year-filter-${reportType}`);
+    return stored ? parseInt(stored) : new Date().getFullYear();
+  });
   const [density, setDensity] = useState<"compact" | "comfortable" | "spacious">(() => {
     const stored = localStorage.getItem(`table-density-${reportType}`);
     return (stored as "compact" | "comfortable" | "spacious") || "compact";
@@ -651,6 +655,13 @@ export const DataTableWithDB = ({
       });
     }
 
+    // Filter by selected year
+    if (selectedYear) {
+      processedData = processedData.filter((row) => {
+        return row.year === selectedYear;
+      });
+    }
+
     // Filter by selected month
     if (selectedMonth) {
       processedData = processedData.filter((row) => {
@@ -691,7 +702,7 @@ export const DataTableWithDB = ({
     }
 
     return processedData;
-  }, [rawData, searchTerm, sortColumn, sortDirection, formatRow, startDate, endDate, selectedMonth, advancedFilters]);
+  }, [rawData, searchTerm, sortColumn, sortDirection, formatRow, startDate, endDate, selectedYear, selectedMonth, advancedFilters]);
 
   const handleExport = async (selectedColumnKeys: string[], format: 'csv' | 'excel' | 'pdf') => {
     setIsExporting(true);
@@ -1295,12 +1306,53 @@ export const DataTableWithDB = ({
             </div>
           ) : (
             <div className="w-full border rounded-md" ref={scrollRef}>
-              {/* Monthly Upload Status Row */}
-              <MonthlyUploadStatus 
-                reportType={reportType} 
-                onMonthClick={setSelectedMonth}
-                selectedMonth={selectedMonth}
-              />
+              {/* Year Selector and Monthly Upload Status */}
+              <div className="border-b">
+                <div className="flex items-center justify-between p-3 bg-muted/10">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-muted-foreground">Filter by Year:</span>
+                    <Select
+                      value={selectedYear.toString()}
+                      onValueChange={(value) => {
+                        const year = parseInt(value);
+                        setSelectedYear(year);
+                        localStorage.setItem(`table-year-filter-${reportType}`, year.toString());
+                      }}
+                    >
+                      <SelectTrigger className="w-[120px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                          <SelectItem key={year} value={year.toString()}>
+                            {year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedYear !== new Date().getFullYear() && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const currentYear = new Date().getFullYear();
+                          setSelectedYear(currentYear);
+                          localStorage.setItem(`table-year-filter-${reportType}`, currentYear.toString());
+                        }}
+                      >
+                        Reset to {new Date().getFullYear()}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                
+                <MonthlyUploadStatus 
+                  reportType={reportType}
+                  year={selectedYear}
+                  onMonthClick={setSelectedMonth}
+                  selectedMonth={selectedMonth}
+                />
+              </div>
               
               <table className="w-full border-collapse table-fixed">
                 <thead data-tour="table-header" className="sticky top-0 bg-background z-10 border-b">

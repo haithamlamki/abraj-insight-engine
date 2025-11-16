@@ -1,6 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Download, Search } from "lucide-react";
 import { useState } from "react";
 import { MonthlyUploadStatus } from "./MonthlyUploadStatus";
@@ -23,6 +24,10 @@ export const DataTable = ({ columns, data, title, reportType }: DataTableProps) 
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+  const [selectedYear, setSelectedYear] = useState<number>(() => {
+    const stored = reportType ? localStorage.getItem(`table-year-filter-${reportType}`) : null;
+    return stored ? parseInt(stored) : new Date().getFullYear();
+  });
 
   const handleSort = (columnKey: string) => {
     if (sortColumn === columnKey) {
@@ -34,6 +39,13 @@ export const DataTable = ({ columns, data, title, reportType }: DataTableProps) 
   };
 
   const filteredData = data.filter((row) => {
+    // Filter by selected year
+    if (selectedYear && row.year) {
+      if (row.year !== selectedYear) {
+        return false;
+      }
+    }
+    
     // Filter by selected month
     if (selectedMonth && row.month) {
       if (row.month.toLowerCase() !== selectedMonth.toLowerCase()) {
@@ -77,13 +89,58 @@ export const DataTable = ({ columns, data, title, reportType }: DataTableProps) 
       </div>
 
       <div className="rounded-md border">
-        {/* Monthly Upload Status Row */}
+        {/* Year Selector and Monthly Upload Status */}
         {reportType && (
-          <MonthlyUploadStatus 
-            reportType={reportType} 
-            onMonthClick={setSelectedMonth}
-            selectedMonth={selectedMonth}
-          />
+          <div className="border-b">
+            <div className="flex items-center justify-between p-3 bg-muted/10">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-muted-foreground">Filter by Year:</span>
+                <Select
+                  value={selectedYear.toString()}
+                  onValueChange={(value) => {
+                    const year = parseInt(value);
+                    setSelectedYear(year);
+                    if (reportType) {
+                      localStorage.setItem(`table-year-filter-${reportType}`, year.toString());
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedYear !== new Date().getFullYear() && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      const currentYear = new Date().getFullYear();
+                      setSelectedYear(currentYear);
+                      if (reportType) {
+                        localStorage.setItem(`table-year-filter-${reportType}`, currentYear.toString());
+                      }
+                    }}
+                  >
+                    Reset to {new Date().getFullYear()}
+                  </Button>
+                )}
+              </div>
+            </div>
+            
+            <MonthlyUploadStatus 
+              reportType={reportType}
+              year={selectedYear}
+              onMonthClick={setSelectedMonth}
+              selectedMonth={selectedMonth}
+            />
+          </div>
         )}
         
         <Table>
