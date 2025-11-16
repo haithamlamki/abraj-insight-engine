@@ -17,7 +17,8 @@ import {
   Sparkles,
   Play,
   TrendingUp,
-  Eye
+  Eye,
+  BarChart3
 } from "lucide-react";
 import { toast } from "sonner";
 import { generateBudgetTemplate, parseBudgetExcel, exportBudgetToExcel } from "@/lib/budgetExcel";
@@ -28,6 +29,7 @@ import { useImportActuals } from "@/hooks/useImportActuals";
 import { ManualBudgetInput } from "@/components/Budget/ManualBudgetInput";
 import { ActualsBudgetComparison } from "@/components/Budget/ActualsBudgetComparison";
 import { BudgetPreview } from "@/components/Budget/BudgetPreview";
+import { BudgetSummaryDashboard } from "@/components/Budget/BudgetSummaryDashboard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -55,6 +57,7 @@ const BudgetManagement = () => {
   const [smartSettingsOpen, setSmartSettingsOpen] = useState(false);
   const [comparisonOpen, setComparisonOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
   const { isPopulating, uploadDialogOpen: budgetUploadOpen, setUploadDialogOpen: setBudgetUploadOpen, handlePopulate } = useBudgetPopulation();
   const { importActuals, isImporting } = useImportActuals();
   const [fuelFile, setFuelFile] = useState<File | null>(null);
@@ -287,6 +290,14 @@ const BudgetManagement = () => {
             >
               <Eye className="h-4 w-4 mr-2" />
               Preview Budget
+            </Button>
+            <Button 
+              onClick={() => setSummaryOpen(true)}
+              disabled={!versions?.[0]?.id}
+              variant="secondary"
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Summary Dashboard
             </Button>
             <Button 
               onClick={() => setSmartSettingsOpen(true)}
@@ -557,6 +568,20 @@ const BudgetManagement = () => {
             </DialogHeader>
             {versions?.[0]?.id && (
               <BudgetPreview versionId={versions[0].id} />
+            )}
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={summaryOpen} onOpenChange={setSummaryOpen}>
+          <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Budget Summary Dashboard</DialogTitle>
+              <DialogDescription>
+                Overview of total budget allocation by department and rig with visual indicators.
+              </DialogDescription>
+            </DialogHeader>
+            {versions?.[0]?.id && (
+              <BudgetSummaryDashboard versionId={versions[0].id} />
             )}
           </DialogContent>
         </Dialog>
