@@ -18,6 +18,7 @@ import { BulkEditDialog } from "@/components/Admin/BulkEditDialog";
 import { useBulkEdit } from "@/hooks/useBulkEdit";
 import type { BulkEditFilter } from "@/hooks/useBulkEdit";
 import { DataQualityHeatmap } from "@/components/Admin/DataQualityHeatmap";
+import { DataQualityTrendChart } from "@/components/Admin/DataQualityTrendChart";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -142,6 +143,10 @@ export default function BulkDataEditor() {
 
         {table && year && (
           <DataQualityHeatmap tableName={table} year={parseInt(year)} />
+        )}
+
+        {table && (
+          <DataQualityTrendChart tableName={table} />
         )}
 
         <Alert>
