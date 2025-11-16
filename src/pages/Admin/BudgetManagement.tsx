@@ -22,6 +22,7 @@ import { generateBudgetTemplate, parseBudgetExcel, exportBudgetToExcel } from "@
 import { BudgetEditor } from "@/components/Budget/BudgetEditor";
 import { SmartBudgetSettings } from "@/components/Budget/SmartBudgetSettings";
 import { useBudgetPopulation } from "@/hooks/useBudgetPopulation";
+import { useImportActuals } from "@/hooks/useImportActuals";
 import { ManualBudgetInput } from "@/components/Budget/ManualBudgetInput";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -48,6 +49,7 @@ const BudgetManagement = () => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [smartSettingsOpen, setSmartSettingsOpen] = useState(false);
   const { isPopulating, uploadDialogOpen: budgetUploadOpen, setUploadDialogOpen: setBudgetUploadOpen, handlePopulate } = useBudgetPopulation();
+  const { importActuals, isImporting } = useImportActuals();
   const [fuelFile, setFuelFile] = useState<File | null>(null);
   const [materialFile, setMaterialFile] = useState<File | null>(null);
   const [repairFile, setRepairFile] = useState<File | null>(null);
@@ -248,6 +250,20 @@ const BudgetManagement = () => {
             >
               <Play className="h-4 w-4 mr-2" />
               Populate 2025 Budget
+            </Button>
+            <Button 
+              onClick={() => {
+                if (!versions?.[0]?.id) {
+                  toast.error("No budget version found");
+                  return;
+                }
+                importActuals(versions[0].id);
+              }}
+              disabled={isImporting || !versions?.[0]?.id}
+              variant="secondary"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              {isImporting ? "Importing..." : "Import 2024 Actuals"}
             </Button>
             <Button 
               onClick={() => setSmartSettingsOpen(true)}
