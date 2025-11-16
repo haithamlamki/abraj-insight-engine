@@ -14,8 +14,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Database, Search, Edit3, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { useBulkEdit, type BulkEditFilter } from "@/hooks/useBulkEdit";
 import { BulkEditDialog } from "@/components/Admin/BulkEditDialog";
+import { useBulkEdit } from "@/hooks/useBulkEdit";
+import type { BulkEditFilter } from "@/hooks/useBulkEdit";
+import { DataQualityHeatmap } from "@/components/Admin/DataQualityHeatmap";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -137,6 +139,10 @@ export default function BulkDataEditor() {
             Update multiple records at once to fix common data issues
           </p>
         </div>
+
+        {table && year && (
+          <DataQualityHeatmap tableName={table} year={parseInt(year)} />
+        )}
 
         <Alert>
           <AlertTriangle className="h-4 w-4" />
