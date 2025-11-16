@@ -22,6 +22,7 @@ export const DataTable = ({ columns, data, title, reportType }: DataTableProps) 
   const [searchTerm, setSearchTerm] = useState("");
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
 
   const handleSort = (columnKey: string) => {
     if (sortColumn === columnKey) {
@@ -32,11 +33,19 @@ export const DataTable = ({ columns, data, title, reportType }: DataTableProps) 
     }
   };
 
-  const filteredData = data.filter((row) =>
-    Object.values(row).some((value) =>
+  const filteredData = data.filter((row) => {
+    // Filter by selected month
+    if (selectedMonth && row.month) {
+      if (row.month.toLowerCase() !== selectedMonth.toLowerCase()) {
+        return false;
+      }
+    }
+    
+    // Filter by search term
+    return Object.values(row).some((value) =>
       String(value).toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
+    );
+  });
 
   const sortedData = [...filteredData].sort((a, b) => {
     if (!sortColumn) return 0;
@@ -69,7 +78,13 @@ export const DataTable = ({ columns, data, title, reportType }: DataTableProps) 
 
       <div className="rounded-md border">
         {/* Monthly Upload Status Row */}
-        {reportType && <MonthlyUploadStatus reportType={reportType} />}
+        {reportType && (
+          <MonthlyUploadStatus 
+            reportType={reportType} 
+            onMonthClick={setSelectedMonth}
+            selectedMonth={selectedMonth}
+          />
+        )}
         
         <Table>
           <TableHeader>

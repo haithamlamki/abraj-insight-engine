@@ -7,6 +7,8 @@ interface MonthlyUploadStatusProps {
   reportType: string;
   year?: number;
   className?: string;
+  onMonthClick?: (month: string | null) => void;
+  selectedMonth?: string | null;
 }
 
 const MONTHS = [
@@ -19,7 +21,7 @@ const MONTH_ABBR = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 ];
 
-export function MonthlyUploadStatus({ reportType, year = new Date().getFullYear(), className = "" }: MonthlyUploadStatusProps) {
+export function MonthlyUploadStatus({ reportType, year = new Date().getFullYear(), className = "", onMonthClick, selectedMonth }: MonthlyUploadStatusProps) {
   const tableName = getTableName(reportType);
 
   const { data: monthStatus, isLoading } = useQuery({
@@ -63,14 +65,30 @@ export function MonthlyUploadStatus({ reportType, year = new Date().getFullYear(
       <div className="flex items-center gap-4 p-3">
         <div className="font-semibold text-sm min-w-[120px]">
           Month to Date
+          {selectedMonth && (
+            <div className="text-xs text-primary font-normal mt-0.5">
+              Filtered: {selectedMonth}
+            </div>
+          )}
         </div>
         <div className="flex flex-wrap gap-3 flex-1 items-center">
           {monthStatus.map((status) => (
-            <div key={status.month} className="flex flex-col items-center gap-1">
-              <span className="text-xs text-muted-foreground font-medium">
+            <button
+              key={status.month}
+              onClick={() => onMonthClick?.(selectedMonth === status.month ? null : status.month)}
+              className="flex flex-col items-center gap-1 hover:scale-110 transition-transform cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50 rounded-md p-1"
+              title={`Click to filter by ${status.month}`}
+            >
+              <span className={`text-xs font-medium ${
+                selectedMonth === status.month ? 'text-primary' : 'text-muted-foreground'
+              }`}>
                 {status.abbr}
               </span>
-              <div className={`flex items-center justify-center w-6 h-6 rounded-full ${
+              <div className={`flex items-center justify-center w-6 h-6 rounded-full transition-all ${
+                selectedMonth === status.month
+                  ? 'ring-2 ring-primary ring-offset-2 ring-offset-background'
+                  : ''
+              } ${
                 status.hasData 
                   ? 'bg-green-500/20 text-green-600 dark:text-green-400' 
                   : 'bg-red-500/20 text-red-600 dark:text-red-400'
@@ -81,7 +99,7 @@ export function MonthlyUploadStatus({ reportType, year = new Date().getFullYear(
                   <X className="h-4 w-4" strokeWidth={3} />
                 )}
               </div>
-            </div>
+            </button>
           ))}
         </div>
         <div className="flex gap-4 text-xs text-muted-foreground min-w-[180px] justify-end">

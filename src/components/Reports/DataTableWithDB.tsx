@@ -75,6 +75,7 @@ export const DataTableWithDB = ({
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [density, setDensity] = useState<"compact" | "comfortable" | "spacious">(() => {
     const stored = localStorage.getItem(`table-density-${reportType}`);
     return (stored as "compact" | "comfortable" | "spacious") || "compact";
@@ -650,6 +651,13 @@ export const DataTableWithDB = ({
       });
     }
 
+    // Filter by selected month
+    if (selectedMonth) {
+      processedData = processedData.filter((row) => {
+        return row.month?.toLowerCase() === selectedMonth.toLowerCase();
+      });
+    }
+
     // Filter by date range
     if (startDate || endDate) {
       processedData = processedData.filter((row) => {
@@ -683,7 +691,7 @@ export const DataTableWithDB = ({
     }
 
     return processedData;
-  }, [rawData, searchTerm, sortColumn, sortDirection, formatRow, startDate, endDate, advancedFilters]);
+  }, [rawData, searchTerm, sortColumn, sortDirection, formatRow, startDate, endDate, selectedMonth, advancedFilters]);
 
   const handleExport = async (selectedColumnKeys: string[], format: 'csv' | 'excel' | 'pdf') => {
     setIsExporting(true);
@@ -1288,7 +1296,11 @@ export const DataTableWithDB = ({
           ) : (
             <div className="w-full border rounded-md" ref={scrollRef}>
               {/* Monthly Upload Status Row */}
-              <MonthlyUploadStatus reportType={reportType} />
+              <MonthlyUploadStatus 
+                reportType={reportType} 
+                onMonthClick={setSelectedMonth}
+                selectedMonth={selectedMonth}
+              />
               
               <table className="w-full border-collapse table-fixed">
                 <thead data-tour="table-header" className="sticky top-0 bg-background z-10 border-b">
