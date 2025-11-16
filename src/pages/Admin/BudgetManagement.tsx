@@ -15,7 +15,8 @@ import {
   Download,
   Upload,
   Sparkles,
-  Play
+  Play,
+  TrendingUp
 } from "lucide-react";
 import { toast } from "sonner";
 import { generateBudgetTemplate, parseBudgetExcel, exportBudgetToExcel } from "@/lib/budgetExcel";
@@ -24,11 +25,13 @@ import { SmartBudgetSettings } from "@/components/Budget/SmartBudgetSettings";
 import { useBudgetPopulation } from "@/hooks/useBudgetPopulation";
 import { useImportActuals } from "@/hooks/useImportActuals";
 import { ManualBudgetInput } from "@/components/Budget/ManualBudgetInput";
+import { ActualsBudgetComparison } from "@/components/Budget/ActualsBudgetComparison";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -48,6 +51,7 @@ const BudgetManagement = () => {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [smartSettingsOpen, setSmartSettingsOpen] = useState(false);
+  const [comparisonOpen, setComparisonOpen] = useState(false);
   const { isPopulating, uploadDialogOpen: budgetUploadOpen, setUploadDialogOpen: setBudgetUploadOpen, handlePopulate } = useBudgetPopulation();
   const { importActuals, isImporting } = useImportActuals();
   const [fuelFile, setFuelFile] = useState<File | null>(null);
@@ -264,6 +268,14 @@ const BudgetManagement = () => {
             >
               <Upload className="h-4 w-4 mr-2" />
               {isImporting ? "Importing..." : "Import 2024 Actuals"}
+            </Button>
+            <Button 
+              onClick={() => setComparisonOpen(true)}
+              disabled={!versions?.[0]?.id}
+              variant="secondary"
+            >
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Compare Actuals vs Budget
             </Button>
             <Button 
               onClick={() => setSmartSettingsOpen(true)}
@@ -507,6 +519,20 @@ const BudgetManagement = () => {
                 />
               </TabsContent>
             </Tabs>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={comparisonOpen} onOpenChange={setComparisonOpen}>
+          <DialogContent className="max-w-7xl max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>2024 Actuals vs 2025 Budget Comparison</DialogTitle>
+              <DialogDescription>
+                Compare actual values from 2024 with the 2025 budget targets. Green badges indicate budget above actuals, red indicates below actuals.
+              </DialogDescription>
+            </DialogHeader>
+            {versions?.[0]?.id && (
+              <ActualsBudgetComparison versionId={versions[0].id} />
+            )}
           </DialogContent>
         </Dialog>
         </div>
