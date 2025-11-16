@@ -4,8 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
+import { CheckCircle2, AlertCircle, RefreshCw, Settings2 } from "lucide-react";
 import { normalizeHeader, matchHeaderToField } from "@/lib/excelParser";
+import { useHeaderMappingSettings } from "@/hooks/useHeaderMappingSettings";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface HeaderMappingPreviewProps {
   detectedHeaders: string[];
@@ -125,7 +135,13 @@ export const HeaderMappingPreview = ({
   onMappingConfirmed,
   onCancel,
 }: HeaderMappingPreviewProps) => {
-  const expectedFields = reportTypeFields[reportType] || [];
+  const allFields = reportTypeFields[reportType] || [];
+  const { isFieldVisible, toggleFieldVisibility, resetSettings } = useHeaderMappingSettings();
+  
+  // Filter fields based on visibility settings
+  const expectedFields = allFields.filter(field => 
+    field.required || isFieldVisible(reportType, field.field)
+  );
   
   // Initialize mapping state with auto-detected mappings
   const [mapping, setMapping] = useState<{ [key: string]: string }>(() => {
@@ -216,15 +232,70 @@ export const HeaderMappingPreview = ({
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Map Excel Headers to Database Fields</span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleResetMapping}
-            className="gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Reset
-          </Button>
+          <div className="flex gap-2">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Settings2 className="h-4 w-4" />
+                  Customize Fields
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Customize Visible Fields</DialogTitle>
+                  <DialogDescription>
+                    Show or hide optional fields in the mapping preview. Required fields are always visible.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 mt-4">
+                  {allFields.map(({ field, required, label }) => (
+                    <div key={field} className="flex items-center space-x-3 p-3 bg-muted/30 rounded-lg">
+                      <Checkbox
+                        id={`field-${field}`}
+                        checked={required || isFieldVisible(reportType, field)}
+                        disabled={required}
+                        onCheckedChange={() => toggleFieldVisibility(reportType, field)}
+                      />
+                      <Label
+                        htmlFor={`field-${field}`}
+                        className="flex-1 cursor-pointer"
+                      >
+                        <div className="font-medium">
+                          {label}
+                          {required && <span className="text-destructive ml-1">* (Required)</span>}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Database field: <code className="text-xs">{field}</code>
+                        </div>
+                      </Label>
+                    </div>
+                  ))}
+                  <div className="flex justify-end pt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => resetSettings(reportType)}
+                    >
+                      Reset to Default
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleResetMapping}
+              className="gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Reset Mapping
+            </Button>
+          </div>
         </CardTitle>
         <CardDescription>
           We detected {detectedHeaders.length} columns. Map them to the correct database fields below.
