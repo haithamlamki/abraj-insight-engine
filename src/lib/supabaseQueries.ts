@@ -15,13 +15,71 @@ export async function insertData(table: string, data: any) {
 }
 
 /**
+ * Check for duplicate records based on rig, year, and month
+ */
+export async function checkDuplicates(table: string, dataArray: any[]) {
+  const duplicates: { rig: string; year: number; month: string; count: number }[] = [];
+  
+  // Group by rig, year, month combinations
+  const combinations = new Map<string, any[]>();
+  dataArray.forEach(record => {
+    const key = `${record.rig}-${record.year}-${record.month}`;
+    if (!combinations.has(key)) {
+      combinations.set(key, []);
+    }
+    combinations.get(key)!.push(record);
+  });
+
+  // Check each combination against database
+  for (const [key, records] of combinations) {
+    const [rig, year, month] = key.split('-');
+    const { count, error } = await (supabase as any)
+      .from(table)
+      .select('*', { count: 'exact', head: true })
+      .eq('rig', rig)
+      .eq('year', parseInt(year))
+      .eq('month', month);
+
+    if (error) {
+      console.error('Error checking duplicates:', error);
+      continue;
+    }
+
+    if (count && count > 0) {
+      duplicates.push({
+        rig,
+        year: parseInt(year),
+        month,
+        count: records.length,
+      });
+    }
+  }
+
+  return duplicates;
+}
+
+/**
  * Generic bulk insert function for any table
  */
-export async function bulkInsertData(table: string, dataArray: any[]) {
+export async function bulkInsertData(table: string, dataArray: any[], options: { overwrite?: boolean } = {}) {
   const chunkSize = 500;
   const results: any[] = [];
+  
   for (let i = 0; i < dataArray.length; i += chunkSize) {
     const chunk = dataArray.slice(i, i + chunkSize);
+    
+    if (options.overwrite) {
+      // Delete existing records first, then insert
+      for (const record of chunk) {
+        await (supabase as any)
+          .from(table)
+          .delete()
+          .eq('rig', record.rig)
+          .eq('year', record.year)
+          .eq('month', record.month);
+      }
+    }
+    
     const { data, error } = await (supabase as any)
       .from(table)
       .insert(chunk)

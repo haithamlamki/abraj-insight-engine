@@ -251,7 +251,7 @@ export const PasteDataZone = ({
     }
 
     try {
-      await bulkSave.mutateAsync(parsedData);
+      await bulkSave.mutateAsync({ dataArray: parsedData, overwrite: false });
       
       // Log successful import statistics
       await logImportStatistics({
