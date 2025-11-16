@@ -16,7 +16,8 @@ import {
   Upload,
   Sparkles,
   Play,
-  TrendingUp
+  TrendingUp,
+  Eye
 } from "lucide-react";
 import { toast } from "sonner";
 import { generateBudgetTemplate, parseBudgetExcel, exportBudgetToExcel } from "@/lib/budgetExcel";
@@ -26,6 +27,7 @@ import { useBudgetPopulation } from "@/hooks/useBudgetPopulation";
 import { useImportActuals } from "@/hooks/useImportActuals";
 import { ManualBudgetInput } from "@/components/Budget/ManualBudgetInput";
 import { ActualsBudgetComparison } from "@/components/Budget/ActualsBudgetComparison";
+import { BudgetPreview } from "@/components/Budget/BudgetPreview";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -52,6 +54,7 @@ const BudgetManagement = () => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [smartSettingsOpen, setSmartSettingsOpen] = useState(false);
   const [comparisonOpen, setComparisonOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const { isPopulating, uploadDialogOpen: budgetUploadOpen, setUploadDialogOpen: setBudgetUploadOpen, handlePopulate } = useBudgetPopulation();
   const { importActuals, isImporting } = useImportActuals();
   const [fuelFile, setFuelFile] = useState<File | null>(null);
@@ -276,6 +279,14 @@ const BudgetManagement = () => {
             >
               <TrendingUp className="h-4 w-4 mr-2" />
               Compare Actuals vs Budget
+            </Button>
+            <Button 
+              onClick={() => setPreviewOpen(true)}
+              disabled={!versions?.[0]?.id}
+              variant="secondary"
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Preview Budget
             </Button>
             <Button 
               onClick={() => setSmartSettingsOpen(true)}
@@ -532,6 +543,20 @@ const BudgetManagement = () => {
             </DialogHeader>
             {versions?.[0]?.id && (
               <ActualsBudgetComparison versionId={versions[0].id} />
+            )}
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+          <DialogContent className="max-w-7xl max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>Budget Preview - 2025</DialogTitle>
+              <DialogDescription>
+                View and analyze budget data across reports, rigs, and metrics.
+              </DialogDescription>
+            </DialogHeader>
+            {versions?.[0]?.id && (
+              <BudgetPreview versionId={versions[0].id} />
             )}
           </DialogContent>
         </Dialog>
