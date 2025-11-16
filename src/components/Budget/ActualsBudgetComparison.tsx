@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, TrendingUp, TrendingDown, Minus, BarChart3, TableIcon } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -13,6 +14,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 interface ActualsBudgetComparisonProps {
   versionId: string;
@@ -23,6 +36,7 @@ const MONTHS = ["January", "February", "March", "April", "May", "June", "July", 
 export function ActualsBudgetComparison({ versionId }: ActualsBudgetComparisonProps) {
   const [selectedReportId, setSelectedReportId] = useState<string>("");
   const [selectedMetricId, setSelectedMetricId] = useState<string>("");
+  const [viewMode, setViewMode] = useState<"table" | "chart">("chart");
 
   const { data: reports, isLoading: reportsLoading } = useQuery({
     queryKey: ["dim_report"],
@@ -229,6 +243,58 @@ export function ActualsBudgetComparison({ versionId }: ActualsBudgetComparisonPr
     }
   };
 
+  // Prepare chart data
+  const chartData = rigs?.map((rig) => {
+    const rigData: any = { rigName: rig.rig_name };
+    
+    MONTHS.forEach((month, monthIndex) => {
+      const monthNum = monthIndex + 1;
+      const budget = budgetData?.find(
+        b => b.rig_id === rig.id && b.month === monthNum
+      )?.budget_value || 0;
+      
+      const actual = actualsData?.[`${rig.rig_name}_${monthNum}`] || 0;
+      const variance = calculateVariance(actual, budget);
+
+      rigData[`${month}_actual`] = actual;
+      rigData[`${month}_budget`] = budget;
+      rigData[`${month}_variance`] = variance;
+    });
+
+    return rigData;
+  }) || [];
+
+  // Prepare monthly aggregate data
+  const monthlyData = MONTHS.map((month, monthIndex) => {
+    const monthNum = monthIndex + 1;
+    let totalActual = 0;
+    let totalBudget = 0;
+    let rigCount = 0;
+
+    rigs?.forEach((rig) => {
+      const budget = budgetData?.find(
+        b => b.rig_id === rig.id && b.month === monthNum
+      )?.budget_value || 0;
+      
+      const actual = actualsData?.[`${rig.rig_name}_${monthNum}`] || 0;
+
+      if (actual > 0 || budget > 0) {
+        totalActual += actual;
+        totalBudget += budget;
+        rigCount++;
+      }
+    });
+
+    const avgVariance = rigCount > 0 ? calculateVariance(totalActual, totalBudget) : 0;
+
+    return {
+      month,
+      actual: totalActual,
+      budget: totalBudget,
+      variance: avgVariance,
+    };
+  });
+
   if (reportsLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -282,9 +348,124 @@ export function ActualsBudgetComparison({ versionId }: ActualsBudgetComparisonPr
 
       {selectedMetricId && (
         <Card className="p-4">
+          <div className="flex justify-end mb-4 gap-2">
+            <Button
+              variant={viewMode === "chart" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setViewMode("chart")}
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Charts
+            </Button>
+            <Button
+              variant={viewMode === "table" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setViewMode("table")}
+            >
+              <TableIcon className="h-4 w-4 mr-2" />
+              Table
+            </Button>
+          </div>
+
           {actualsLoading ? (
             <div className="flex items-center justify-center p-8">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : viewMode === "chart" ? (
+            <div className="space-y-8">
+              {/* Monthly Aggregate Trend */}
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Overall Monthly Trend</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={monthlyData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="actual"
+                      stroke="#ef4444"
+                      name="2024 Actual"
+                      strokeWidth={2}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="budget"
+                      stroke="#22c55e"
+                      name="2025 Budget"
+                      strokeWidth={2}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Variance by Month */}
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Variance Trend (%)</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={monthlyData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip 
+                      formatter={(value: number) => `${value.toFixed(1)}%`}
+                    />
+                    <Legend />
+                    <Bar
+                      dataKey="variance"
+                      fill="#3b82f6"
+                      name="Budget vs Actual Variance"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* Individual Rig Performance */}
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Rig-by-Rig Comparison (January - June)</h3>
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="rigName" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    {MONTHS.slice(0, 6).map((month, idx) => (
+                      <Bar
+                        key={`actual-${month}`}
+                        dataKey={`${month}_actual`}
+                        fill={`hsl(${idx * 60}, 70%, 50%)`}
+                        name={`${month} Actual`}
+                        stackId={month}
+                      />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Rig-by-Rig Comparison (July - December)</h3>
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="rigName" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    {MONTHS.slice(6, 12).map((month, idx) => (
+                      <Bar
+                        key={`actual-${month}`}
+                        dataKey={`${month}_actual`}
+                        fill={`hsl(${(idx + 6) * 60}, 70%, 50%)`}
+                        name={`${month} Actual`}
+                        stackId={month}
+                      />
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -330,12 +511,12 @@ export function ActualsBudgetComparison({ versionId }: ActualsBudgetComparisonPr
                       })}
                     </TableRow>
                   ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </Card>
-      )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </Card>
+        )}
 
       {!selectedMetricId && (
         <Card className="p-8 text-center">
