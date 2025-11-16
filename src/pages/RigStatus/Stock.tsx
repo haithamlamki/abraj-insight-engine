@@ -31,6 +31,7 @@ const Stock = () => {
     <DataEntryLayout
       title="Stock Levels"
       description="Monitor inventory and manage stock across all locations"
+      reportType="stock_levels"
       breadcrumbs={[
         { label: "Dashboard", href: "/" },
         { label: "Rig Status", href: "/rig-status" },

@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { BulkEditQuickAccess } from "./BulkEditQuickAccess";
 
 interface DataEntryLayoutProps {
   title: string;
@@ -13,6 +14,7 @@ interface DataEntryLayoutProps {
   entryContent?: ReactNode;
   uploadContent?: ReactNode;
   pasteContent?: ReactNode;
+  reportType?: string;
 }
 
 export const DataEntryLayout = ({
@@ -22,7 +24,8 @@ export const DataEntryLayout = ({
   viewContent,
   entryContent,
   uploadContent,
-  pasteContent
+  pasteContent,
+  reportType
 }: DataEntryLayoutProps) => {
   return (
     <DashboardLayout>
@@ -70,18 +73,21 @@ export const DataEntryLayout = ({
           
           {entryContent && (
             <TabsContent value="entry" className="space-y-6 mt-6">
+              <BulkEditQuickAccess reportType={reportType} />
               {entryContent}
             </TabsContent>
           )}
           
           {uploadContent && (
             <TabsContent value="upload" className="space-y-6 mt-6">
+              <BulkEditQuickAccess reportType={reportType} />
               {uploadContent}
             </TabsContent>
           )}
           
           {pasteContent && (
             <TabsContent value="paste" className="space-y-6 mt-6">
+              <BulkEditQuickAccess reportType={reportType} />
               {pasteContent}
             </TabsContent>
           )}

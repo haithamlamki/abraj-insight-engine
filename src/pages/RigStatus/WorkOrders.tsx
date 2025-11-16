@@ -23,6 +23,7 @@ const WorkOrders = () => {
     <DataEntryLayout
       title="Work Orders"
       description="Manage and track work orders across all rigs"
+      reportType="work_orders"
       breadcrumbs={[
         { label: "Dashboard", href: "/" },
         { label: "Rig Status", href: "/rig-status" },

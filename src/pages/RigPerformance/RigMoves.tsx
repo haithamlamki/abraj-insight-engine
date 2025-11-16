@@ -33,6 +33,7 @@ const RigMoves = () => {
     <DataEntryLayout
       title="Rig Moves"
       description="Track rig relocations and associated logistics"
+      reportType="rig_moves"
       breadcrumbs={[
         { label: "Dashboard", href: "/" },
         { label: "Rig Performance", href: "/rig-performance" },

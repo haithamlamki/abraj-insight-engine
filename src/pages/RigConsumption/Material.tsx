@@ -26,6 +26,7 @@ const Material = () => {
     <DataEntryLayout
       title="Material Tracking"
       description="Track material usage and costs across operations"
+      reportType="material"
       breadcrumbs={[
         { label: "Dashboard", href: "/" },
         { label: "Rig Consumption", href: "/rig-consumption" },

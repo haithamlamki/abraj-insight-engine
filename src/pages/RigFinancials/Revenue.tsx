@@ -123,6 +123,7 @@ const Revenue = () => {
     <DataEntryLayout
       title="Revenue Analysis Dashboard"
       description="Interactive revenue tracking and analysis with forecasting"
+      reportType="revenue"
       breadcrumbs={[
         { label: "Dashboard", href: "/" },
         { label: "Rig Financials", href: "/rig-financials" },

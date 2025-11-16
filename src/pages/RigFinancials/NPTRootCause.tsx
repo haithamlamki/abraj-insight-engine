@@ -133,6 +133,7 @@ const NPTRootCause = () => {
     <DataEntryLayout
       title="NPT Analysis & Root Cause Dashboard"
       description="Comprehensive NPT analysis with billing tracking and root cause investigation"
+      reportType="npt_root_cause"
       breadcrumbs={[
         { label: "Dashboard", href: "/" },
         { label: "Rig Financials", href: "/rig-financials" },

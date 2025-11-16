@@ -26,6 +26,7 @@ const Maintenance = () => {
     <DataEntryLayout
       title="Repair & Maintenance"
       description="Track maintenance activities and associated costs"
+      reportType="maintenance"
       breadcrumbs={[
         { label: "Dashboard", href: "/" },
         { label: "Rig Consumption", href: "/rig-consumption" },
