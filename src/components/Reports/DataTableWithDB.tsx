@@ -30,6 +30,7 @@ import { DataTableTour } from "./DataTableTour";
 import { SmartFilterPanel } from "./SmartFilterPanel";
 import { NaturalLanguageFilter } from "./NaturalLanguageFilter";
 import { useDataTableTour } from "@/hooks/useDataTableTour";
+import { MonthlyUploadStatus } from "./MonthlyUploadStatus";
 import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
@@ -1367,6 +1368,9 @@ export const DataTableWithDB = ({
                   ))}
                 </tbody>
               </table>
+              
+              {/* Monthly Upload Status Row */}
+              <MonthlyUploadStatus reportType={reportType} />
               
               {/* Infinite scroll trigger */}
               <div ref={observerTarget} className="h-4" />

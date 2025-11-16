@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Download, Search } from "lucide-react";
 import { useState } from "react";
+import { MonthlyUploadStatus } from "./MonthlyUploadStatus";
 
 interface Column {
   key: string;
@@ -14,9 +15,10 @@ interface DataTableProps {
   columns: Column[];
   data: Record<string, any>[];
   title?: string;
+  reportType?: string;
 }
 
-export const DataTable = ({ columns, data, title }: DataTableProps) => {
+export const DataTable = ({ columns, data, title, reportType }: DataTableProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -107,6 +109,9 @@ export const DataTable = ({ columns, data, title }: DataTableProps) => {
             )}
           </TableBody>
         </Table>
+        
+        {/* Monthly Upload Status Row */}
+        {reportType && <MonthlyUploadStatus reportType={reportType} />}
       </div>
     </div>
   );
