@@ -68,6 +68,9 @@ export const DataTable = ({ columns, data, title, reportType }: DataTableProps) 
       </div>
 
       <div className="rounded-md border">
+        {/* Monthly Upload Status Row */}
+        {reportType && <MonthlyUploadStatus reportType={reportType} />}
+        
         <Table>
           <TableHeader>
             <TableRow>
@@ -109,9 +112,6 @@ export const DataTable = ({ columns, data, title, reportType }: DataTableProps) 
             )}
           </TableBody>
         </Table>
-        
-        {/* Monthly Upload Status Row */}
-        {reportType && <MonthlyUploadStatus reportType={reportType} />}
       </div>
     </div>
   );

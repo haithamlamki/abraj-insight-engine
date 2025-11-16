@@ -1287,6 +1287,9 @@ export const DataTableWithDB = ({
             </div>
           ) : (
             <div className="w-full border rounded-md" ref={scrollRef}>
+              {/* Monthly Upload Status Row */}
+              <MonthlyUploadStatus reportType={reportType} />
+              
               <table className="w-full border-collapse table-fixed">
                 <thead data-tour="table-header" className="sticky top-0 bg-background z-10 border-b">
                   <tr className="bg-muted/50">
@@ -1368,9 +1371,6 @@ export const DataTableWithDB = ({
                   ))}
                 </tbody>
               </table>
-              
-              {/* Monthly Upload Status Row */}
-              <MonthlyUploadStatus reportType={reportType} />
               
               {/* Infinite scroll trigger */}
               <div ref={observerTarget} className="h-4" />
