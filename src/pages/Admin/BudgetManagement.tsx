@@ -30,7 +30,7 @@ import { ManualBudgetInput } from "@/components/Budget/ManualBudgetInput";
 import { ActualsBudgetComparison } from "@/components/Budget/ActualsBudgetComparison";
 import { BudgetPreview } from "@/components/Budget/BudgetPreview";
 import { BudgetSummaryDashboard } from "@/components/Budget/BudgetSummaryDashboard";
-import { SimplifiedBudgetTables } from "@/components/Budget/SimplifiedBudgetTables";
+import { ComprehensiveBudgetTable } from "@/components/Budget/ComprehensiveBudgetTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -438,7 +438,7 @@ const BudgetManagement = () => {
                 Simplified view of utilization, YTD performance, and revenue across all rigs
               </p>
             </div>
-            <SimplifiedBudgetTables year={selectedYear} />
+            <ComprehensiveBudgetTable year={selectedYear} />
           </div>
         )}
 
