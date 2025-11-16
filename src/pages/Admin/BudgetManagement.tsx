@@ -30,7 +30,7 @@ import { ManualBudgetInput } from "@/components/Budget/ManualBudgetInput";
 import { ActualsBudgetComparison } from "@/components/Budget/ActualsBudgetComparison";
 import { BudgetPreview } from "@/components/Budget/BudgetPreview";
 import { BudgetSummaryDashboard } from "@/components/Budget/BudgetSummaryDashboard";
-import { AllReportsBudgetView } from "@/components/Budget/AllReportsBudgetView";
+import { SimplifiedBudgetTables } from "@/components/Budget/SimplifiedBudgetTables";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -429,23 +429,16 @@ const BudgetManagement = () => {
           </div>
         )}
 
-        {/* All Reports Budget View */}
+        {/* Simplified Budget Tables */}
         {!isLoading && versions && versions.length > 0 && (
           <div className="mt-8">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold">جميع التقارير والميزانيات</h2>
+              <h2 className="text-2xl font-bold">Budget Overview</h2>
               <p className="text-muted-foreground mt-1">
-                عرض شامل لجميع التقارير مع آخر ميزانية مسجلة لكل تقرير
+                Simplified view of utilization, YTD performance, and revenue across all rigs
               </p>
             </div>
-            <AllReportsBudgetView 
-              versionId={versions[0].id}
-              onEditReport={(reportKey) => {
-                setSelectedReport(reportKey);
-                setSelectedVersion(versions[0].id);
-                setEditorOpen(true);
-              }}
-            />
+            <SimplifiedBudgetTables year={selectedYear} />
           </div>
         )}
 
