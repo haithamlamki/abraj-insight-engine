@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
-import { normalizeHeader } from "@/lib/excelParser";
+import { normalizeHeader, matchHeaderToField } from "@/lib/excelParser";
 
 interface HeaderMappingPreviewProps {
   detectedHeaders: string[];
@@ -20,13 +20,16 @@ const reportTypeFields: { [key: string]: { field: string; required: boolean; lab
     { field: 'year', required: true, label: 'Year' },
     { field: 'month', required: true, label: 'Month' },
     { field: 'rig', required: true, label: 'Rig' },
-    { field: 'actual', required: false, label: 'Actual' },
-    { field: 'fuel', required: false, label: 'Fuel' },
-    { field: 'total_revenue', required: false, label: 'Total Revenue' },
-    { field: 'budgeted_revenue', required: false, label: 'Budgeted Revenue' },
-    { field: 'diff', required: false, label: 'Diff' },
+    { field: 'dayrate_actual', required: false, label: 'Day Rate Actual' },
+    { field: 'dayrate_budget', required: false, label: 'Day Rate Budget' },
+    { field: 'working_days', required: false, label: 'Working Days' },
+    { field: 'revenue_actual', required: false, label: 'Revenue Actual' },
+    { field: 'revenue_budget', required: false, label: 'Revenue Budget' },
+    { field: 'variance', required: false, label: 'Variance' },
+    { field: 'fuel_charge', required: false, label: 'Fuel Charge' },
     { field: 'npt_repair', required: false, label: 'NPT Repair' },
     { field: 'npt_zero', required: false, label: 'NPT Zero' },
+    { field: 'client', required: false, label: 'Client' },
     { field: 'comments', required: false, label: 'Comments' },
   ],
   billing_npt: [
@@ -150,15 +153,8 @@ export const HeaderMappingPreview = ({
     // Auto-detect mappings
     const autoMapping: { [key: string]: string } = {};
     expectedFields.forEach(({ field }) => {
-      const normalizedField = normalizeHeader(field);
-      
-      // Find best match in detected headers
-      const match = detectedHeaders.find(header => {
-        const normalizedHeader = normalizeHeader(header);
-        return normalizedHeader === normalizedField || 
-               normalizedHeader.includes(normalizedField) ||
-               normalizedField.includes(normalizedHeader);
-      });
+      // Find best match in detected headers using enhanced matching
+      const match = detectedHeaders.find(header => matchHeaderToField(header, field));
       
       if (match) {
         autoMapping[field] = match;
@@ -194,14 +190,7 @@ export const HeaderMappingPreview = ({
     
     const autoMapping: { [key: string]: string } = {};
     expectedFields.forEach(({ field }) => {
-      const normalizedField = normalizeHeader(field);
-      
-      const match = detectedHeaders.find(header => {
-        const normalizedHeader = normalizeHeader(header);
-        return normalizedHeader === normalizedField || 
-               normalizedHeader.includes(normalizedField) ||
-               normalizedField.includes(normalizedHeader);
-      });
+      const match = detectedHeaders.find(header => matchHeaderToField(header, field));
       
       if (match) {
         autoMapping[field] = match;

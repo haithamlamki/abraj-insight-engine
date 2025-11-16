@@ -1045,7 +1045,53 @@ export function normalizeHeader(str: any): string {
     .replace(/[\u200B-\u200D\uFEFF]/g, '') // Remove zero-width characters
     .replace(/[\s\u00A0]+/g, '') // Remove ALL whitespace including NBSP
     .replace(/[()%.,]/g, '') // Remove common punctuation
+    .replace(/s$/i, '') // Remove trailing 's' for plural handling
     .trim();
+}
+
+/**
+ * Enhanced field matching with support for common variations and abbreviations
+ */
+export function matchHeaderToField(excelHeader: string, dbField: string): boolean {
+  const normalizedHeader = normalizeHeader(excelHeader);
+  const normalizedField = normalizeHeader(dbField);
+  
+  // Direct match after normalization
+  if (normalizedHeader === normalizedField) {
+    return true;
+  }
+  
+  // Common field variations and abbreviations
+  const fieldVariations: { [key: string]: string[] } = {
+    'month': ['month', 'mnth', 'mon'],
+    'year': ['year', 'yr'],
+    'rig': ['rig', 'rignumber', 'rigno', 'rignum'],
+    'dayrateactual': ['actual', 'dayrateactual', 'dayrateact', 'dayrate'],
+    'dayratebudget': ['dayratebudget', 'budgetdayrate', 'dayratebudg'],
+    'workingday': ['workingday', 'workday', 'day'],
+    'revenueactual': ['totalrev', 'revenueactual', 'actualrev', 'revenue', 'actual'],
+    'revenuebudget': ['budgetedrev', 'revenuebudget', 'budgetrev', 'budget'],
+    'variance': ['diff', 'difference', 'variance', 'var'],
+    'fuelcharge': ['fuel', 'fuelcharge', 'fuelcost'],
+    'nptrepair': ['nptrepair', 'repairnpt', 'repair'],
+    'nptzero': ['nptzero', 'zeronpt', 'zero'],
+    'client': ['client', 'customer', 'company'],
+    'comment': ['comment', 'remark', 'note'],
+    'utilizationpercentage': ['utilization', 'utilizationrate', 'util'],
+  };
+  
+  // Check if normalized header matches any variation of the field
+  const variations = fieldVariations[normalizedField] || [normalizedField];
+  if (variations.some(v => normalizedHeader === v || normalizedHeader.includes(v) || v.includes(normalizedHeader))) {
+    return true;
+  }
+  
+  // Fallback: substring matching
+  if (normalizedHeader.includes(normalizedField) || normalizedField.includes(normalizedHeader)) {
+    return true;
+  }
+  
+  return false;
 }
 
 /**
