@@ -109,7 +109,7 @@ const App = () => (
               <Route path="/admin/analytics" element={<ProtectedRoute role="admin"><BudgetAnalytics /></ProtectedRoute>} />
               <Route path="/admin/audit-trail" element={<ProtectedRoute role="admin"><AuditTrail /></ProtectedRoute>} />
               <Route path="/admin/data-quality" element={<ProtectedRoute role="admin"><DataQuality /></ProtectedRoute>} />
-              <Route path="/admin/bulk-editor" element={<ProtectedRoute role="admin"><BulkDataEditor /></ProtectedRoute>} />
+              <Route path="/admin/bulk-data-editor" element={<ProtectedRoute role="admin"><BulkDataEditor /></ProtectedRoute>} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
