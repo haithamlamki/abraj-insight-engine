@@ -102,19 +102,19 @@ export const revenueSchema = z.object({
  * Validation schema for Utilization data
  */
 export const utilizationSchema = z.object({
-  rig: z.string().min(1, "اسم الحفارة مطلوب"),
-  month: z.string().min(1, "الشهر مطلوب"),
-  year: z.number().int().min(2000).max(2100, "السنة غير صحيحة"),
+  rig: z.string().min(1, "Rig name is required"),
+  month: z.string().min(1, "Month is required"),
+  year: z.number().int().min(2000).max(2100, "Year must be between 2000-2100"),
   operating_days: z.number().min(0).max(31).optional().nullable(),
   npt_days: z.number().min(0).max(31).optional().nullable(),
   allowable_npt: z.number().min(0).optional().nullable(),
   working_days: z.number().min(0).max(31).optional().nullable(),
-  utilization_rate: z.number().min(0).max(100, "نسبة الاستخدام يجب أن تكون بين 0-100").optional().nullable(),
+  utilization_rate: z.number().min(0).max(100, "Utilization rate must be between 0-100").optional().nullable(),
   monthly_total_days: z.number().min(28).max(31).optional().nullable(),
   client: z.string().optional().nullable(),
   npt_type: z.string().optional().nullable(),
   comment: z.string().optional().nullable(),
-  status: z.string().min(1, "الحالة مطلوبة"),
+  status: z.string().optional().default('Active'),
 }).refine((data) => {
   if (data.operating_days !== null && data.operating_days !== undefined &&
       data.npt_days !== null && data.npt_days !== undefined &&
@@ -123,7 +123,7 @@ export const utilizationSchema = z.object({
   }
   return true;
 }, {
-  message: "مجموع أيام التشغيل وأيام NPT يتجاوز إجمالي أيام الشهر",
+  message: "Total of operating days and NPT days exceeds monthly total days",
   path: ["operating_days"],
 }).refine((data) => {
   if (data.npt_days !== null && data.npt_days !== undefined &&
@@ -132,7 +132,7 @@ export const utilizationSchema = z.object({
   }
   return true;
 }, {
-  message: "أيام NPT تتجاوز الحد المسموح به بأكثر من 150% - يرجى المراجعة",
+  message: "NPT days exceed allowable NPT by more than 150% - please review",
   path: ["npt_days"],
 });
 
