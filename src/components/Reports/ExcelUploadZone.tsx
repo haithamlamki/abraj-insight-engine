@@ -208,19 +208,23 @@ export const ExcelUploadZone = ({
           const { valid, invalid } = validateRecords(mappedData, schema);
           
           // Separate critical errors from warnings
+          // Critical errors: missing required fields (rig, year, month)
+          // Warnings: missing optional fields, validation warnings
           invalid.forEach(item => {
-            const isCritical = item.errors.some(err => 
-              err.includes('مطلوب') || 
-              err.includes('غير صحيحة') ||
-              err.includes('يجب أن يكون') && !err.includes('يرجى المراجعة')
+            const isCritical = item.errors.some(err =>
+              (err.includes('required') || err.includes('مطلوب')) &&
+              (err.includes('rig') || err.includes('Rig') ||
+               err.includes('year') || err.includes('Year') ||
+               err.includes('month') || err.includes('Month'))
             );
-            
+
             if (isCritical) {
               criticalErrors.push(item);
             } else {
-              warnings.push({ 
-                ...item, 
-                severity: item.errors.some(e => e.includes('يتجاوز')) ? 'warning' : 'info' 
+              // All other errors are treated as warnings/info - won't block import
+              warnings.push({
+                ...item,
+                severity: 'info'
               });
             }
           });

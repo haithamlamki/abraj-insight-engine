@@ -707,34 +707,34 @@ export function validateBillingNPTSummaryData(data: any[]): ValidationError[] {
 
 /**
  * Validate NPT root cause data
- * Only validates essential fields - other fields are optional
+ * Simplified: Only validates core required fields (rig, year, month)
+ * Other fields are optional to allow flexible data import
  */
 export function validateNPTRootCauseData(data: any[]): ValidationError[] {
   const errors: ValidationError[] = [];
-  
+
   console.log(`[validateNPTRootCauseData] Validating ${data.length} rows`);
   if (data.length > 0) {
     console.log(`[validateNPTRootCauseData] First row keys:`, Object.keys(data[0]));
     console.log(`[validateNPTRootCauseData] First row:`, data[0]);
   }
-  
+
   data.forEach((row, index) => {
     // Skip blank rows
     if (isBlankRow(row)) return;
 
-    // Robust header detection - only check essential fields
+    // Robust header detection
     const rig = row['Rig Number'] ?? row.Rig ?? row.rig ?? getByNormalized(row, 'rignumber') ?? getByNormalized(row, 'rig');
     const year = row.Year ?? row.year ?? getByNormalized(row, 'year');
     const monthRaw = row.Month ?? row.month ?? row.Mont ?? row.Mounth ?? getByNormalized(row, 'month');
     const date = row.Date ?? row.date ?? row.Day ?? getByNormalized(row, 'date');
     const hrs = row['Hrs.'] ?? row.Hrs ?? row.Hours ?? getByNormalized(row, 'hrs');
-    const nptType = row['NPT type'] ?? row['NPT Type'] ?? row.npt_type ?? getByNormalized(row, 'npttype');
-    
+
     if (index === 0) {
       console.log(`[validateNPTRootCauseData] Row 0 - rig:`, rig, ', year:', year, ', month:', monthRaw, ', hrs:', hrs);
     }
 
-    // Only validate essential fields - system, root cause, etc. are optional
+    // Only validate core required fields: rig, year, month
     if (!rig) {
       errors.push({
         row: index + 2,
@@ -744,7 +744,7 @@ export function validateNPTRootCauseData(data: any[]): ValidationError[] {
         severity: 'error',
       });
     }
-    
+
     if (!year) {
       errors.push({
         row: index + 2,
@@ -754,7 +754,7 @@ export function validateNPTRootCauseData(data: any[]): ValidationError[] {
         severity: 'error',
       });
     }
-    
+
     if (!monthRaw) {
       errors.push({
         row: index + 2,
@@ -764,8 +764,8 @@ export function validateNPTRootCauseData(data: any[]): ValidationError[] {
         severity: 'error',
       });
     }
-    
-    // If Date missing, we will default to 1 (day of month) during mapping to satisfy NOT NULL constraint
+
+    // INFO messages for optional fields - won't block import
     if (!date && date !== 0) {
       errors.push({
         row: index + 2,
@@ -777,31 +777,22 @@ export function validateNPTRootCauseData(data: any[]): ValidationError[] {
         suggestedFix: 'Set Date to 1'
       });
     }
-    
+
     if (hrs === null || hrs === undefined || hrs === '') {
       errors.push({
         row: index + 2,
         column: 'Hrs.',
-        message: 'Hours is required',
+        message: 'Hours missing – will default to 0',
         value: hrs,
-        severity: 'error',
+        severity: 'info',
+        autoFixable: true,
+        suggestedFix: 'Set Hours to 0'
       });
     }
-    
-    if (!nptType) {
-      errors.push({
-        row: index + 2,
-        column: 'NPT type',
-        message: 'NPT type is required',
-        value: nptType,
-        severity: 'error',
-      });
-    }
-    
-    // System, root cause, equipment fields are optional (especially for Contractual types)
-    // No validation errors for missing optional fields
+
+    // NPT type and System are now optional - no validation errors
   });
-  
+
   return errors;
 }
 
@@ -1251,8 +1242,20 @@ function applyPostMappingTransformations(mapped: any, type: string, originalData
     if (mapped.date === null || mapped.date === undefined || mapped.date === '') {
       mapped.date = 1;
     }
+    // Default missing hours to 0
+    if (mapped.hrs === null || mapped.hrs === undefined || mapped.hrs === '') {
+      mapped.hrs = 0;
+    }
+    // Ensure npt_type has a default value if empty
+    if (!mapped.npt_type || mapped.npt_type === '') {
+      mapped.npt_type = 'Unknown';
+    }
+    // Ensure system has a default value if empty
+    if (!mapped.system || mapped.system === '') {
+      mapped.system = 'Unknown';
+    }
   }
-  
+
   // Extract client and status from comment for utilization data
   if (type === 'utilization') {
     if (mapped.comment) {
@@ -1613,6 +1616,18 @@ export function mapExcelToDbFields(data: any, type: string, customMapping?: { [d
     // Default missing day to 1 to satisfy NOT NULL integer requirement
     if (mapped.date === null || mapped.date === undefined || mapped.date === '') {
       mapped.date = 1;
+    }
+    // Default missing hours to 0
+    if (mapped.hrs === null || mapped.hrs === undefined || mapped.hrs === '') {
+      mapped.hrs = 0;
+    }
+    // Ensure npt_type has a default value if empty
+    if (!mapped.npt_type || mapped.npt_type === '') {
+      mapped.npt_type = 'Unknown';
+    }
+    // Ensure system has a default value if empty
+    if (!mapped.system || mapped.system === '') {
+      mapped.system = 'Unknown';
     }
   }
   // Extract client and status from comment for utilization data

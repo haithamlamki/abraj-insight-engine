@@ -15,15 +15,52 @@ export async function insertData(table: string, data: any) {
 }
 
 /**
- * Check for duplicate records based on rig, year, and month
+ * Get duplicate check keys for different table types
+ */
+function getDuplicateCheckKeys(table: string): string[] {
+  const tableKeyMap: { [key: string]: string[] } = {
+    'revenue': ['rig', 'year', 'month'],
+    'utilization': ['rig', 'year', 'month'],
+    'billing_npt': ['rig', 'year', 'month'],
+    'billing_npt_summary': ['rig', 'year', 'month'],
+    'fuel_consumption': ['rig', 'year', 'month'],
+    'work_orders': ['rig', 'year', 'month'],
+    'customer_satisfaction': ['rig', 'year', 'month'],
+    'npt_root_cause': ['rig_number', 'year', 'month'],
+    'rig_moves': ['rig', 'move_date'],
+    'stock_levels': ['rig', 'item_name'],
+    'well_tracker': ['rig', 'well_name'],
+  };
+  return tableKeyMap[table] || ['rig', 'year', 'month'];
+}
+
+/**
+ * Check for duplicate records based on table-specific key fields
+ * Supports different key combinations for different tables
  */
 export async function checkDuplicates(table: string, dataArray: any[]) {
-  const duplicates: { rig: string; year: number; month: string; count: number }[] = [];
-  
-  // Group by rig, year, month combinations
+  const duplicates: any[] = [];
+  const keys = getDuplicateCheckKeys(table);
+
+  // Skip duplicate check if no data or keys
+  if (dataArray.length === 0 || keys.length === 0) {
+    return duplicates;
+  }
+
+  // Get first record to check if it has the required keys
+  const firstRecord = dataArray[0];
+  const hasAllKeys = keys.every(key => firstRecord[key] !== undefined && firstRecord[key] !== null);
+
+  if (!hasAllKeys) {
+    console.warn(`[checkDuplicates] Some keys missing for table ${table}. Keys: ${keys.join(', ')}`);
+    return duplicates; // Skip duplicate check if keys are missing
+  }
+
+  // Group by key combinations
   const combinations = new Map<string, any[]>();
   dataArray.forEach(record => {
-    const key = `${record.rig}-${record.year}-${record.month}`;
+    const keyValues = keys.map(k => String(record[k] ?? ''));
+    const key = keyValues.join('-');
     if (!combinations.has(key)) {
       combinations.set(key, []);
     }
@@ -32,26 +69,42 @@ export async function checkDuplicates(table: string, dataArray: any[]) {
 
   // Check each combination against database
   for (const [key, records] of combinations) {
-    const [rig, year, month] = key.split('-');
-    const { count, error } = await (supabase as any)
-      .from(table)
-      .select('*', { count: 'exact', head: true })
-      .eq('rig', rig)
-      .eq('year', parseInt(year))
-      .eq('month', month);
+    try {
+      const keyValues = key.split('-');
+      let query = (supabase as any).from(table).select('*', { count: 'exact', head: true });
 
-    if (error) {
-      console.error('Error checking duplicates:', error);
-      continue;
-    }
-
-    if (count && count > 0) {
-      duplicates.push({
-        rig,
-        year: parseInt(year),
-        month,
-        count: records.length,
+      keys.forEach((keyName, idx) => {
+        const value = keyValues[idx];
+        // Convert to appropriate type
+        if (keyName === 'year' || keyName === 'month') {
+          const numVal = parseInt(value);
+          if (!isNaN(numVal)) {
+            query = query.eq(keyName, numVal);
+          } else {
+            query = query.eq(keyName, value);
+          }
+        } else {
+          query = query.eq(keyName, value);
+        }
       });
+
+      const { count, error } = await query;
+
+      if (error) {
+        console.error('Error checking duplicates:', error);
+        continue;
+      }
+
+      if (count && count > 0) {
+        const dupRecord: any = { count: records.length };
+        keys.forEach((keyName, idx) => {
+          const value = keyValues[idx];
+          dupRecord[keyName] = keyName === 'year' ? parseInt(value) : value;
+        });
+        duplicates.push(dupRecord);
+      }
+    } catch (err) {
+      console.error('Error in duplicate check:', err);
     }
   }
 

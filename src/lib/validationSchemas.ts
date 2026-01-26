@@ -138,36 +138,50 @@ export const utilizationSchema = z.object({
 
 /**
  * Validation schema for Billing NPT data
+ * Simplified: Core fields required, others optional
  */
 export const billingNPTSchema = z.object({
   rig: z.string().min(1, "اسم الحفارة مطلوب"),
-  date: z.string().min(1, "التاريخ مطلوب").or(z.date()),
-  npt_hours: z.number().min(0, "ساعات NPT يجب أن تكون رقم موجب").optional().nullable(),
+  year: z.number().int().min(2000).max(2100, "السنة غير صحيحة"),
+  month: z.string().min(1, "الشهر مطلوب"),
+  // Date is optional - will be composed from year/month if not provided
+  date: z.string().optional().nullable().or(z.date().optional().nullable()),
+  npt_hours: z.number().min(0).optional().nullable(),
   npt_type: z.string().optional().nullable(),
   system: z.string().optional().nullable(),
   equipment_failure: z.string().optional().nullable(),
+  parent_equipment_failure: z.string().optional().nullable(),
+  part_equipment_failure: z.string().optional().nullable(),
+  contractual_process: z.string().optional().nullable(),
+  department_responsibility: z.string().optional().nullable(),
+  immediate_cause: z.string().optional().nullable(),
   root_cause: z.string().optional().nullable(),
   corrective_action: z.string().optional().nullable(),
+  future_action: z.string().optional().nullable(),
+  action_party: z.string().optional().nullable(),
   billable: z.boolean().optional().nullable(),
-  year: z.number().int().min(2000).max(2100).optional().nullable(),
-  month: z.string().optional().nullable(),
   notification_number: z.string().optional().nullable(),
+  failure_investigation_reports: z.string().optional().nullable(),
   comments: z.string().optional().nullable(),
 });
 
 /**
  * Validation schema for NPT Root Cause data
+ * Simplified: Only rig_number, year, and month are truly required
+ * Other fields are optional to allow flexible data import
  */
 export const nptRootCauseSchema = z.object({
-  // Required fields (core data)
+  // Core required fields only
   rig_number: z.string().min(1, "Rig Number is required"),
   year: z.number().int().min(2000).max(2100, "Year must be between 2000-2100"),
   month: z.string().min(1, "Month is required"),
-  date: z.number().int().min(1).max(31, "Date must be between 1-31"),
-  hrs: z.number().min(0, "Hours must be a positive number").max(24, "Hours per event should typically not exceed 24"),
-  npt_type: z.string().min(1, "NPT type is required"),
-  system: z.string().min(1, "System is required"),
-  
+
+  // Semi-required fields (with defaults)
+  date: z.number().int().min(1).max(31).optional().nullable().default(1),
+  hrs: z.number().min(0).optional().nullable().default(0),
+  npt_type: z.string().optional().nullable(),
+  system: z.string().optional().nullable(),
+
   // Optional tracking fields (all nullable)
   parent_equipment_failure: z.string().optional().nullable(),
   part_equipment_failure: z.string().optional().nullable(),
@@ -180,28 +194,6 @@ export const nptRootCauseSchema = z.object({
   action_party: z.string().optional().nullable(),
   notification_number: z.string().optional().nullable(),
   failure_investigation_reports: z.string().optional().nullable(),
-}).refine((data) => {
-  // Warning: High-hour events should have root cause analysis documented
-  if (data.hrs > 6 && (!data.root_cause || data.root_cause.trim() === '')) {
-    return false;
-  }
-  return true;
-}, {
-  message: "WARNING: Events over 6 hours should have Root Cause documented for proper analysis",
-  path: ["root_cause"],
-}).refine((data) => {
-  // Warning: Equipment failures should have N2 notification number
-  const hasEquipmentFailure = (data.parent_equipment_failure && data.parent_equipment_failure.trim() !== '') || 
-                              (data.part_equipment_failure && data.part_equipment_failure.trim() !== '');
-  const hasNotificationNumber = data.notification_number && data.notification_number.trim() !== '';
-  
-  if (hasEquipmentFailure && !hasNotificationNumber) {
-    return false;
-  }
-  return true;
-}, {
-  message: "WARNING: Equipment failures should have a Notification Number (N2) for tracking",
-  path: ["notification_number"],
 });
 
 /**
