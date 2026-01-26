@@ -1,19 +1,101 @@
 import { useMemo } from "react";
 import { useReportData } from "./useReportData";
+import { useCrossReportFilters } from "@/contexts/CrossReportFilterContext";
+
+export interface ChartFilters {
+  years?: number[];
+  months?: string[];
+  rigs?: string[];
+  rig?: string;
+  startDate?: string;
+  endDate?: string;
+  nptTypes?: string[];
+  systems?: string[];
+}
 
 /**
- * Hook to aggregate data for charts
+ * Apply filters to data array
  */
-export function useChartData(reportType: string) {
+function applyFilters(data: any[], filters: ChartFilters, reportType: string): any[] {
+  let filtered = [...data];
+
+  // Filter by years
+  if (filters.years && filters.years.length > 0) {
+    filtered = filtered.filter(row => filters.years!.includes(Number(row.year)));
+  }
+
+  // Filter by months
+  if (filters.months && filters.months.length > 0) {
+    filtered = filtered.filter(row => {
+      const rowMonth = row.month || (row.date ? new Date(row.date).toLocaleString('default', { month: 'short' }) : null);
+      return rowMonth && filters.months!.includes(rowMonth);
+    });
+  }
+
+  // Filter by single rig
+  if (filters.rig) {
+    const rigField = reportType === 'npt_root_cause' ? 'rig_number' : 'rig';
+    filtered = filtered.filter(row => row[rigField] === filters.rig);
+  }
+
+  // Filter by multiple rigs
+  if (filters.rigs && filters.rigs.length > 0) {
+    const rigField = reportType === 'npt_root_cause' ? 'rig_number' : 'rig';
+    filtered = filtered.filter(row => filters.rigs!.includes(row[rigField]));
+  }
+
+  // Filter by date range
+  if (filters.startDate || filters.endDate) {
+    filtered = filtered.filter(row => {
+      const rowDate = row.date ? new Date(row.date) :
+                     (row.year && row.month) ? new Date(`${row.month} 1, ${row.year}`) : null;
+      if (!rowDate) return true;
+
+      if (filters.startDate && rowDate < new Date(filters.startDate)) return false;
+      if (filters.endDate && rowDate > new Date(filters.endDate)) return false;
+      return true;
+    });
+  }
+
+  // Filter by NPT types (for npt_root_cause)
+  if (filters.nptTypes && filters.nptTypes.length > 0) {
+    filtered = filtered.filter(row => row.npt_type && filters.nptTypes!.includes(row.npt_type));
+  }
+
+  // Filter by systems (for npt_root_cause)
+  if (filters.systems && filters.systems.length > 0) {
+    filtered = filtered.filter(row => row.system && filters.systems!.includes(row.system));
+  }
+
+  return filtered;
+}
+
+/**
+ * Hook to aggregate data for charts with filter support
+ */
+export function useChartData(reportType: string, localFilters?: ChartFilters) {
   const { data, isLoading, error } = useReportData(reportType);
+  const { getRelevantFilters } = useCrossReportFilters();
 
   const chartData = useMemo(() => {
     if (!data || data.length === 0) return [];
 
+    // Get global filters and merge with local filters
+    const globalFilters = getRelevantFilters(reportType);
+    const mergedFilters: ChartFilters = {
+      ...globalFilters,
+      ...localFilters,
+    };
+
+    // Apply filters to data
+    const filteredData = applyFilters(data, mergedFilters, reportType);
+
+    if (filteredData.length === 0) return [];
+
     switch (reportType) {
       case "revenue": {
         // Group by month
-        const monthlyData = data.reduce((acc: any, row: any) => {
+        const monthlyData = filteredData.reduce((acc: any, row: any) => {
           const key = `${row.month}-${row.year}`;
           if (!acc[key]) {
             acc[key] = {
@@ -39,7 +121,7 @@ export function useChartData(reportType: string) {
 
       case "work_orders": {
         // Group by month
-        const monthlyData = data.reduce((acc: any, row: any) => {
+        const monthlyData = filteredData.reduce((acc: any, row: any) => {
           const key = `${row.month}-${row.year}`;
           if (!acc[key]) {
             acc[key] = {
@@ -58,7 +140,7 @@ export function useChartData(reportType: string) {
 
       case "utilization": {
         // Group by month
-        const monthlyData = data.reduce((acc: any, row: any) => {
+        const monthlyData = filteredData.reduce((acc: any, row: any) => {
           const key = `${row.month}-${row.year}`;
           if (!acc[key]) {
             acc[key] = {
@@ -80,7 +162,7 @@ export function useChartData(reportType: string) {
 
       case "fuel_consumption": {
         // Group by month and year
-        const monthlyData = data.reduce((acc: any, row: any) => {
+        const monthlyData = filteredData.reduce((acc: any, row: any) => {
           const monthKey = `${row.month}-${row.year}`;
           if (!acc[monthKey]) {
             acc[monthKey] = {
@@ -104,7 +186,7 @@ export function useChartData(reportType: string) {
 
       case "rig_moves": {
         // Group by month from move_date
-        const monthlyData = data.reduce((acc: any, row: any) => {
+        const monthlyData = filteredData.reduce((acc: any, row: any) => {
           const date = new Date(row.move_date);
           const monthKey = `${date.toLocaleString('default', { month: 'short' })}-${date.getFullYear()}`;
           if (!acc[monthKey]) {
@@ -126,7 +208,7 @@ export function useChartData(reportType: string) {
 
       case "billing_npt": {
         // Group by month from date
-        const monthlyData = data.reduce((acc: any, row: any) => {
+        const monthlyData = filteredData.reduce((acc: any, row: any) => {
           const date = new Date(row.date);
           const monthKey = `${date.toLocaleString('default', { month: 'short' })}-${date.getFullYear()}`;
           if (!acc[monthKey]) {
@@ -146,7 +228,7 @@ export function useChartData(reportType: string) {
 
       case "customer_satisfaction": {
         // Group by month
-        const monthlyData = data.reduce((acc: any, row: any) => {
+        const monthlyData = filteredData.reduce((acc: any, row: any) => {
           const key = `${row.month}-${row.year}`;
           if (!acc[key]) {
             acc[key] = {
@@ -166,10 +248,62 @@ export function useChartData(reportType: string) {
         }));
       }
 
+      case "npt_root_cause": {
+        // Group by month and year for trend analysis
+        const monthlyData = filteredData.reduce((acc: any, row: any) => {
+          const key = `${row.month}-${row.year}`;
+          if (!acc[key]) {
+            acc[key] = {
+              month: row.month,
+              year: row.year,
+              totalHours: 0,
+              incidents: 0,
+              bySystem: {} as Record<string, number>,
+              byType: {} as Record<string, number>,
+              byRig: {} as Record<string, number>,
+            };
+          }
+          const hours = Number(row.hrs) || 0;
+          acc[key].totalHours += hours;
+          acc[key].incidents += 1;
+
+          // Aggregate by system
+          if (row.system) {
+            acc[key].bySystem[row.system] = (acc[key].bySystem[row.system] || 0) + hours;
+          }
+
+          // Aggregate by NPT type
+          if (row.npt_type) {
+            acc[key].byType[row.npt_type] = (acc[key].byType[row.npt_type] || 0) + hours;
+          }
+
+          // Aggregate by rig
+          if (row.rig_number) {
+            acc[key].byRig[row.rig_number] = (acc[key].byRig[row.rig_number] || 0) + hours;
+          }
+
+          return acc;
+        }, {});
+
+        return Object.values(monthlyData).sort((a: any, b: any) => {
+          if (a.year !== b.year) return a.year - b.year;
+          const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+          return months.indexOf(a.month) - months.indexOf(b.month);
+        });
+      }
+
       default:
         return [];
     }
-  }, [data, reportType]);
+  }, [data, reportType, localFilters, getRelevantFilters]);
 
-  return { chartData, isLoading, error };
+  // Also return filtered data count for statistics
+  const filteredCount = useMemo(() => {
+    if (!data) return 0;
+    const globalFilters = getRelevantFilters(reportType);
+    const mergedFilters = { ...globalFilters, ...localFilters };
+    return applyFilters(data, mergedFilters, reportType).length;
+  }, [data, reportType, localFilters, getRelevantFilters]);
+
+  return { chartData, isLoading, error, filteredCount, totalCount: data?.length || 0 };
 }
